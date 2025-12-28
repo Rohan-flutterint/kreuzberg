@@ -16,7 +16,7 @@ attempt=1
 exists="false"
 
 while [ $attempt -le $max_attempts ]; do
-	echo "::debug::Checking Packagist for kreuzberg/kreuzberg:${version} (attempt ${attempt}/${max_attempts})"
+	echo "::debug::Checking Packagist for kreuzberg/kreuzberg:${version} (attempt ${attempt}/${max_attempts})" >&2
 
 	response=$(curl \
 		--silent \
@@ -37,7 +37,7 @@ while [ $attempt -le $max_attempts ]; do
 
 	if [ $attempt -lt $max_attempts ]; then
 		sleep_time=$((attempt * 5))
-		echo "::warning::Packagist check failed, retrying in ${sleep_time}s..."
+		echo "::warning::Packagist check failed, retrying in ${sleep_time}s..." >&2
 		sleep "$sleep_time"
 	fi
 
@@ -46,11 +46,11 @@ done
 
 if [ "$exists" = "true" ]; then
 	echo "exists=true" >>"$GITHUB_OUTPUT"
-	echo "::notice::PHP package kreuzberg/kreuzberg:${version} already exists on Packagist"
+	echo "::notice::PHP package kreuzberg/kreuzberg:${version} already exists on Packagist" >&2
 elif [ "$exists" = "false" ]; then
 	echo "exists=false" >>"$GITHUB_OUTPUT"
-	echo "::notice::PHP package kreuzberg/kreuzberg:${version} not found on Packagist (will auto-update via Git webhook)"
+	echo "::notice::PHP package kreuzberg/kreuzberg:${version} not found on Packagist (will auto-update via Git webhook)" >&2
 else
-	echo "::error::Failed to check Packagist after $max_attempts attempts"
+	echo "::error::Failed to check Packagist after $max_attempts attempts" >&2
 	exit 1
 fi

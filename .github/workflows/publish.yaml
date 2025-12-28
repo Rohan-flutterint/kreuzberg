@@ -556,6 +556,9 @@ jobs:
         with:
           cache-key-prefix: publish-python-sdist
 
+      - name: Install Task
+        uses: ./.github/actions/install-task
+
       - name: Build sdist
         env:
           DIST_DIR: dist
@@ -1037,6 +1040,9 @@ jobs:
         shell: pwsh
         run: $workspace = ridk exec bash -lc "cygpath -au '$env:GITHUB_WORKSPACE'"; ridk exec bash -lc "cd $workspace && bash scripts/ci/ruby/install-ruby-deps.sh packages/ruby"
 
+      - name: Install Task
+        uses: ./.github/actions/install-task
+
       - name: Build kreuzberg-ffi (Unix)
         if: runner.os != 'Windows'
         run: task rust:ffi:build
@@ -1245,10 +1251,13 @@ jobs:
         shell: pwsh
         run: scripts/ci/go/setup-msys2-windows.ps1
 
+      - name: Install Task
+        uses: ./.github/actions/install-task
+
       - name: Build FFI library (Windows)
         if: matrix.settings.os == 'windows-latest'
-        shell: pwsh
-        run: scripts/ci/go/build-ffi.ps1
+        shell: bash
+        run: task rust:ffi:build
 
       - name: Build FFI library (Unix)
         if: matrix.settings.os != 'windows-latest'
@@ -1360,6 +1369,9 @@ jobs:
         with:
           ort-version: ${{ env.ORT_VERSION }}
           dest-dir: target/release
+
+      - name: Install Task
+        uses: ./.github/actions/install-task
 
       - name: Build FFI library
         shell: bash
@@ -1731,6 +1743,9 @@ jobs:
       - name: Add Rust target
         shell: bash
         run: rustup target add "${{ matrix.rust_target }}"
+
+      - name: Install Task
+        uses: ./.github/actions/install-task
 
       - name: Build FFI library
         shell: bash
@@ -2593,6 +2608,11 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.tag }}
           fetch-depth: 0
+
+      - name: Setup Git credentials
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create Go module tag
         if: ${{ needs.prepare.outputs.release_go == 'true' }}
