@@ -19,6 +19,7 @@ on:
       - 'pyproject.toml'
       - 'scripts/ci/python/**'
       - 'scripts/ci/cache/**'
+      - 'scripts/ci/actions/**'
       - '.github/workflows/ci-python.yaml'
       - '.cargo/config.toml'
   pull_request:
@@ -39,6 +40,7 @@ on:
       - 'pyproject.toml'
       - 'scripts/ci/python/**'
       - 'scripts/ci/cache/**'
+      - 'scripts/ci/actions/**'
       - '.github/workflows/ci-python.yaml'
       - '.cargo/config.toml'
 
