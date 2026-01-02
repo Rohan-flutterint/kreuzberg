@@ -146,7 +146,7 @@ indexmap = "2.12.1"
 tracing = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = [
     "json",
-    "rustls",
+    "rustls-tls",
 ], optional = true }
 pdfium-render = { package = "kreuzberg-pdfium-render", version = "0.9.0", features = [
     "thread_safe",

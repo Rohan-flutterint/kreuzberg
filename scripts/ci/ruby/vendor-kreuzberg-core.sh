@@ -11,9 +11,50 @@ validate_repo_root "$REPO_ROOT" || exit 1
 
 echo "=== Vendoring kreuzberg core crate ==="
 
+# Extract version from root workspace
+core_version=$(awk -F '"' '/^\[workspace.package\]/,/^version =/ {if ($0 ~ /^version =/) {print $2; exit}}' "$REPO_ROOT/Cargo.toml")
+
+# Extract simple version string (handles both "version" and { version = "..." })
+extract_version() {
+  local dep_name="$1"
+  awk -F '"' "
+    /^${dep_name} = \\{ version =/ {print \$2; exit}
+    /^${dep_name} = \"/ {print \$2; exit}
+  " "$REPO_ROOT/Cargo.toml"
+}
+
+TOKIO_VERSION=$(extract_version "tokio")
+SERDE_VERSION=$(extract_version "serde")
+SERDE_JSON_VERSION=$(extract_version "serde_json")
+THISERROR_VERSION=$(extract_version "thiserror")
+ANYHOW_VERSION=$(extract_version "anyhow")
+ASYNC_TRAIT_VERSION=$(extract_version "async-trait")
+LIBC_VERSION=$(extract_version "libc")
+PARKING_LOT_VERSION=$(extract_version "parking_lot")
+TRACING_VERSION=$(extract_version "tracing")
+AHASH_VERSION=$(extract_version "ahash")
+BASE64_VERSION=$(extract_version "base64")
+HEX_VERSION=$(extract_version "hex")
+TOML_VERSION=$(extract_version "toml")
+NUM_CPUS_VERSION=$(extract_version "num_cpus")
+ONCE_CELL_VERSION=$(extract_version "once_cell")
+HTML_TO_MARKDOWN_VERSION=$(extract_version "html-to-markdown-rs")
+REQWEST_VERSION=$(extract_version "reqwest")
+IMAGE_VERSION=$(extract_version "image")
+TEMPFILE_VERSION=$(extract_version "tempfile")
+CRITERION_VERSION=$(extract_version "criterion")
+LZMA_RUST_VERSION=$(extract_version "lzma-rust2")
+
+echo "Extracted versions from root workspace:"
+echo "  core: $core_version"
+echo "  reqwest: $REQWEST_VERSION"
+echo "  tokio: $TOKIO_VERSION"
+
+# Clean and create vendor directory
 rm -rf "$REPO_ROOT/packages/ruby/vendor"
 mkdir -p "$REPO_ROOT/packages/ruby/vendor"
 
+# Copy crates
 cp -R "$REPO_ROOT/crates/kreuzberg" "$REPO_ROOT/packages/ruby/vendor/kreuzberg"
 cp -R "$REPO_ROOT/crates/kreuzberg-tesseract" "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract"
 cp -R "$REPO_ROOT/crates/kreuzberg-ffi" "$REPO_ROOT/packages/ruby/vendor/kreuzberg-ffi"
@@ -22,75 +63,47 @@ if [ -d "$REPO_ROOT/vendor/rb-sys" ]; then
   cp -R "$REPO_ROOT/vendor/rb-sys" "$REPO_ROOT/packages/ruby/vendor/rb-sys"
 fi
 
-rm -rf "$REPO_ROOT/packages/ruby/vendor/kreuzberg/.fastembed_cache"
-rm -rf "$REPO_ROOT/packages/ruby/vendor/kreuzberg/target"
-rm -rf "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract/target"
-rm -rf "$REPO_ROOT/packages/ruby/vendor/kreuzberg-ffi/target"
-rm -rf "$REPO_ROOT/packages/ruby/vendor/rb-sys/target"
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg" -name '*.swp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg" -name '*.bak' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg" -name '*.tmp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg" -name '*~' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.swp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.bak' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.tmp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*~' -delete
-
-if [ -d "$REPO_ROOT/packages/ruby/vendor/rb-sys" ]; then
-  find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.swp' -delete
-  find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.bak' -delete
-  find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.tmp' -delete
-  find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*~' -delete
-fi
-
-core_version=$(awk -F '"' '/^\[workspace.package\]/,/^version =/ {if ($0 ~ /^version =/) {print $2; exit}}' "$REPO_ROOT/Cargo.toml")
-
-for crate_dir in kreuzberg kreuzberg-tesseract; do
-  sed -i.bak "s/^version\.workspace = true/version = \"${core_version}\"/" "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^edition\.workspace = true/edition = "2024"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^rust-version\.workspace = true/rust-version = "1.91"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^authors\.workspace = true/authors = ["Na'\''aman Hirschfeld <nhirschfeld@gmail.com>"]/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^license\.workspace = true/license = "MIT"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+# Clean up build artifacts
+for dir in kreuzberg kreuzberg-tesseract kreuzberg-ffi rb-sys; do
+  if [ -d "$REPO_ROOT/packages/ruby/vendor/$dir" ]; then
+    rm -rf "$REPO_ROOT/packages/ruby/vendor/$dir/.fastembed_cache"
+    rm -rf "$REPO_ROOT/packages/ruby/vendor/$dir/target"
+    find "$REPO_ROOT/packages/ruby/vendor/$dir" -name '*.swp' -delete 2>/dev/null || true
+    find "$REPO_ROOT/packages/ruby/vendor/$dir" -name '*.bak' -delete 2>/dev/null || true
+    find "$REPO_ROOT/packages/ruby/vendor/$dir" -name '*.tmp' -delete 2>/dev/null || true
+    find "$REPO_ROOT/packages/ruby/vendor/$dir" -name '*~' -delete 2>/dev/null || true
+  fi
 done
 
+# Update kreuzberg and kreuzberg-tesseract to use local workspace dependencies
 for crate_dir in kreuzberg kreuzberg-tesseract; do
-  sed -i.bak 's/^ahash = { workspace = true }/ahash = "0.8.12"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^async-trait = { workspace = true }/async-trait = "0.1.89"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^base64 = { workspace = true }/base64 = "0.22.1"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^hex = { workspace = true }/hex = "0.4.3"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^toml = { workspace = true }/toml = "0.9.10"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^libc = { workspace = true }/libc = "0.2.178"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^num_cpus = { workspace = true }/num_cpus = "1.17.0"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^serde = { workspace = true }/serde = { version = "1.0.228", features = ["derive"] }/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^serde_json = { workspace = true }/serde_json = "1.0.145"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^thiserror = { workspace = true }/thiserror = "2.0.17"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^tokio = { workspace = true }/tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "macros", "sync", "process", "fs", "time", "io-util"] }/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^tracing = { workspace = true }/tracing = "0.1"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^anyhow = { workspace = true }/anyhow = "1.0"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^reqwest = { workspace = true, /reqwest = { version = "0.12.25", /' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^image = { workspace = true, /image = { version = "0.25.9", /' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^html-to-markdown-rs = { workspace = true/html-to-markdown-rs = { version = "2.14.11", default-features = false/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^once_cell = { workspace = true }/once_cell = "1.21.3"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^lzma-rust2 = { workspace = true, optional = true }/lzma-rust2 = { version = "0.15.4", optional = true }/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^parking_lot = { workspace = true }/parking_lot = "0.12.3"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  # Replace workspace = true with actual versions for metadata fields
+  sed -i.bak "s/^version.workspace = true/version = \"${core_version}\"/" "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  sed -i.bak 's/^edition.workspace = true/edition = "2024"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  sed -i.bak 's/^rust-version.workspace = true/rust-version = "1.91"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  sed -i.bak 's/^authors.workspace = true/authors = ["Na'\''aman Hirschfeld <nhirschfeld@gmail.com>"]/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  sed -i.bak 's/^license.workspace = true/license = "MIT"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
 
-  sed -i.bak 's/^tempfile = { workspace = true }/tempfile = "3.23.0"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
-  sed -i.bak 's/^criterion = { workspace = true }/criterion = { version = "0.8", features = ["html_reports"] }/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  # Fix reqwest features - remove "rustls" and keep only "json" since rustls-tls is in workspace
+  sed -i.bak 's/"rustls",/"rustls-tls",/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
 
   rm -f "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml.bak"
 done
 
+# Update kreuzberg-tesseract path in kreuzberg
 sed -i.bak \
   's/^kreuzberg-tesseract = { version = "[^"]*", optional = true }/kreuzberg-tesseract = { path = "..\/kreuzberg-tesseract", optional = true }/' \
   "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml"
 rm -f "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml.bak"
 
-cat >"$REPO_ROOT/packages/ruby/vendor/Cargo.toml" <<'EOF'
+# Generate vendor workspace Cargo.toml with extracted versions
+cat >"$REPO_ROOT/packages/ruby/vendor/Cargo.toml" <<EOF
 [workspace]
 members = ["kreuzberg", "kreuzberg-tesseract", "kreuzberg-ffi"]
+resolver = "2"
 
 [workspace.package]
-version = "__CORE_VERSION__"
+version = "${core_version}"
 edition = "2024"
 rust-version = "1.91"
 authors = ["Na'aman Hirschfeld <nhirschfeld@gmail.com>"]
@@ -100,44 +113,52 @@ homepage = "https://kreuzberg.dev"
 
 [workspace.dependencies]
 # Core async runtime
-tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "macros", "sync", "process", "fs", "time", "io-util"] }
+tokio = { version = "${TOKIO_VERSION}", features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "process",
+    "fs",
+    "time",
+    "io-util",
+] }
 
 # Serialization
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.145" }
+serde = { version = "${SERDE_VERSION}", features = ["derive"] }
+serde_json = "${SERDE_JSON_VERSION}"
 
 # Error handling
-thiserror = "2.0.17"
-anyhow = "1.0"
+thiserror = "${THISERROR_VERSION}"
+anyhow = "${ANYHOW_VERSION}"
 
 # Async utilities
-async-trait = "0.1.89"
-libc = "0.2.178"
-parking_lot = "0.12.3"
+async-trait = "${ASYNC_TRAIT_VERSION}"
+libc = "${LIBC_VERSION}"
+parking_lot = "${PARKING_LOT_VERSION}"
 
 # Tracing/observability
-tracing = "0.1"
+tracing = "${TRACING_VERSION}"
 
 # Utilities
-ahash = "0.8.12"
-base64 = "0.22.1"
-hex = "0.4.3"
-toml = "0.9.10"
-num_cpus = "1.17.0"
-once_cell = "1.21.3"
-html-to-markdown-rs = { version = "2.14.11", default-features = false }
-reqwest = { version = "0.12.25", default-features = false }
-image = { version = "0.25.9", default-features = false }
+ahash = "${AHASH_VERSION}"
+base64 = "${BASE64_VERSION}"
+hex = "${HEX_VERSION}"
+toml = "${TOML_VERSION}"
+num_cpus = "${NUM_CPUS_VERSION}"
+once_cell = "${ONCE_CELL_VERSION}"
+html-to-markdown-rs = { version = "${HTML_TO_MARKDOWN_VERSION}", default-features = false }
+reqwest = { version = "${REQWEST_VERSION}", default-features = false, features = ["json", "rustls-tls"] }
+image = { version = "${IMAGE_VERSION}", default-features = false }
+lzma-rust2 = { version = "${LZMA_RUST_VERSION}" }
 
 # Testing (dev)
-tempfile = "3.23.0"
-criterion = { version = "0.8", features = ["html_reports"] }
+tempfile = "${TEMPFILE_VERSION}"
+criterion = { version = "${CRITERION_VERSION}", features = ["html_reports"] }
 EOF
 
-sed -i.bak "s/__CORE_VERSION__/${core_version}/" "$REPO_ROOT/packages/ruby/vendor/Cargo.toml"
-rm -f "$REPO_ROOT/packages/ruby/vendor/Cargo.toml.bak"
-
 echo "Vendoring complete (core version: $core_version)"
+echo "Generated vendor workspace with dynamically extracted versions"
 echo "Native extension Cargo.toml uses:"
 echo "  - path '../../../vendor/kreuzberg' for kreuzberg crate"
 echo "  - rb-sys from crates.io"
