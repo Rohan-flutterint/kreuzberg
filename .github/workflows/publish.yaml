@@ -1763,9 +1763,6 @@ jobs:
       - name: Build C# bindings
         run: task csharp:build:release
 
-      - name: Create artifacts directory
-        run: mkdir -p artifacts/csharp
-
       - name: Pack NuGet package
         run: task csharp:package -- -p:PackageVersion=${{ needs.prepare.outputs.version }} -o artifacts/csharp
 
@@ -1777,8 +1774,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: csharp-nuget
-          path: artifacts/csharp/*.nupkg
+          path: packages/csharp/artifacts/csharp/*.nupkg
           retention-days: 14
+          if-no-files-found: error
 
   csharp-native-assets:
     name: Build C# native assets (${{ matrix.rid }})
