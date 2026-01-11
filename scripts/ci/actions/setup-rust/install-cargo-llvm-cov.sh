@@ -27,11 +27,11 @@ install_cargo_llvm_cov() {
 
 # Try to use existing installation
 if command -v cargo-llvm-cov &>/dev/null; then
-  existing_version=$(cargo-llvm-cov --version 2>&1 || echo "unknown")
+  existing_version=$(cargo llvm-cov --version 2>&1 || echo "unknown")
   echo "cargo-llvm-cov already installed: $existing_version"
 
   # Verify it actually works (not corrupted)
-  if cargo-llvm-cov --version &>/dev/null; then
+  if cargo llvm-cov --version &>/dev/null; then
     echo "cargo-llvm-cov verification passed"
   else
     echo "cargo-llvm-cov verification failed, will reinstall"
@@ -81,4 +81,4 @@ fi
 
 # Final verification
 echo "Final verification of cargo-llvm-cov:"
-cargo-llvm-cov --version
+cargo llvm-cov --version
