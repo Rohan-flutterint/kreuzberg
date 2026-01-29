@@ -531,7 +531,7 @@ public class ErrorHandlingTests
     [Fact]
     public void LoadExtractionConfigFromFile_WithNonexistentFile_ThrowsException()
     {
-        var ex = Assert.Throws<KreuzbergIOException>(() => KreuzbergClient.LoadExtractionConfigFromFile("/nonexistent/config.toml"));
+        var ex = Assert.Throws<KreuzbergValidationException>(() => KreuzbergClient.LoadExtractionConfigFromFile("/nonexistent/config.toml"));
         Assert.NotNull(ex);
     }
 

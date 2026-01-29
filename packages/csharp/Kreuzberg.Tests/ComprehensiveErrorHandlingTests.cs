@@ -133,7 +133,7 @@ public class ComprehensiveErrorHandlingTests
     [Fact]
     public void ExtractFileSync_WithDirectoryPath_ThrowsException()
     {
-        var ex = Assert.Throws<KreuzbergIOException>(() =>
+        var ex = Assert.Throws<KreuzbergValidationException>(() =>
             KreuzbergClient.ExtractFileSync(Path.GetTempPath())
         );
 
@@ -212,12 +212,12 @@ public class ComprehensiveErrorHandlingTests
     [Fact]
     public async Task ExtractFileAsync_InvalidFile_ThrowsDirectException()
     {
-        var ex = await Assert.ThrowsAsync<KreuzbergValidationException>(async () =>
+        var ex = await Assert.ThrowsAsync<KreuzbergIOException>(async () =>
             await KreuzbergClient.ExtractFileAsync("nonexistent.pdf")
         );
 
         Assert.NotNull(ex);
-        Assert.IsType<KreuzbergValidationException>(ex);
+        Assert.IsType<KreuzbergIOException>(ex);
     }
 
     #endregion
@@ -473,7 +473,7 @@ public class ComprehensiveErrorHandlingTests
     public async Task ExtractFileAsync_AfterError_CanRecoverWithValidFile()
     {
         // First, trigger an error
-        await Assert.ThrowsAsync<KreuzbergValidationException>(async () =>
+        await Assert.ThrowsAsync<KreuzbergIOException>(async () =>
             await KreuzbergClient.ExtractFileAsync("nonexistent.pdf")
         );
 
@@ -490,7 +490,7 @@ public class ComprehensiveErrorHandlingTests
     public void ExtractFileSync_AfterError_CanRecoverWithValidFile()
     {
         // First, trigger an error
-        Assert.Throws<KreuzbergValidationException>(() =>
+        Assert.Throws<KreuzbergIOException>(() =>
             KreuzbergClient.ExtractFileSync("nonexistent.pdf")
         );
 
