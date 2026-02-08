@@ -1,7 +1,7 @@
 {
-  "document": "../../../../test_documents/vendored/pdfplumber/pdf/issue-905.pdf",
+  "document": "../../../../test_documents/pdf/searchable.pdf",
   "file_type": "pdf",
-  "file_size": 13656,
+  "file_size": 18810,
   "expected_frameworks": [
     "kreuzberg",
     "docling",
@@ -11,8 +11,8 @@
     "pymupdf4llm"
   ],
   "metadata": {
-    "description": "Document from pdfplumber test suite",
-    "source": "pdfplumber",
+    "description": "Searchable PDF with extractable text content",
+    "source": "kreuzberg",
     "size_category": "small"
   }
 }

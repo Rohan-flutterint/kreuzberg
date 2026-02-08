@@ -9,7 +9,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_batch_bytes_async' do
     E2ERuby.run_fixture_with_method(
       'api_batch_bytes_async',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :batch_async,
       :bytes,
@@ -29,7 +29,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_batch_bytes_sync' do
     E2ERuby.run_fixture_with_method(
       'api_batch_bytes_sync',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :batch_sync,
       :bytes,
@@ -49,7 +49,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_batch_file_async' do
     E2ERuby.run_fixture_with_method(
       'api_batch_file_async',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :batch_async,
       :file,
@@ -69,7 +69,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_batch_file_sync' do
     E2ERuby.run_fixture_with_method(
       'api_batch_file_sync',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :batch_sync,
       :file,
@@ -89,7 +89,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_extract_bytes_async' do
     E2ERuby.run_fixture_with_method(
       'api_extract_bytes_async',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :async,
       :bytes,
@@ -109,7 +109,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_extract_bytes_sync' do
     E2ERuby.run_fixture_with_method(
       'api_extract_bytes_sync',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :sync,
       :bytes,
@@ -129,7 +129,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_extract_file_async' do
     E2ERuby.run_fixture_with_method(
       'api_extract_file_async',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       :async,
       :file,
@@ -149,7 +149,7 @@ RSpec.describe 'contract fixtures' do
   it 'api_extract_file_sync' do
     E2ERuby.run_fixture(
       'api_extract_file_sync',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       requirements: [],
       notes: nil,
@@ -167,7 +167,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_chunking' do
     E2ERuby.run_fixture(
       'config_chunking',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { chunking: { max_chars: 500, max_overlap: 50 } },
       requirements: [],
       notes: nil,
@@ -185,7 +185,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_force_ocr' do
     E2ERuby.run_fixture(
       'config_force_ocr',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { force_ocr: true },
       requirements: %w[tesseract],
       notes: nil,
@@ -202,7 +202,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_images' do
     E2ERuby.run_fixture(
       'config_images',
-      'pdfs/embedded_images_tables.pdf',
+      'pdf/embedded_images_tables.pdf',
       { images: { extract_images: true } },
       requirements: [],
       notes: nil,
@@ -219,7 +219,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_language_detection' do
     E2ERuby.run_fixture(
       'config_language_detection',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { language_detection: { enabled: true } },
       requirements: [],
       notes: nil,
@@ -237,7 +237,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_pages' do
     E2ERuby.run_fixture(
       'config_pages',
-      'pdfs/multi_page.pdf',
+      'pdf/multi_page.pdf',
       { pages: { end: 3, start: 1 } },
       requirements: [],
       notes: nil,
@@ -254,7 +254,7 @@ RSpec.describe 'contract fixtures' do
   it 'config_use_cache_false' do
     E2ERuby.run_fixture(
       'config_use_cache_false',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { use_cache: false },
       requirements: [],
       notes: nil,
@@ -271,7 +271,7 @@ RSpec.describe 'contract fixtures' do
   it 'output_format_djot' do
     E2ERuby.run_fixture(
       'output_format_djot',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { output_format: 'djot' },
       requirements: [],
       notes: nil,
@@ -288,7 +288,7 @@ RSpec.describe 'contract fixtures' do
   it 'output_format_html' do
     E2ERuby.run_fixture(
       'output_format_html',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { output_format: 'html' },
       requirements: [],
       notes: nil,
@@ -305,7 +305,7 @@ RSpec.describe 'contract fixtures' do
   it 'output_format_markdown' do
     E2ERuby.run_fixture(
       'output_format_markdown',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { output_format: 'markdown' },
       requirements: [],
       notes: nil,
@@ -322,7 +322,7 @@ RSpec.describe 'contract fixtures' do
   it 'output_format_plain' do
     E2ERuby.run_fixture(
       'output_format_plain',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { output_format: 'plain' },
       requirements: [],
       notes: nil,
@@ -339,7 +339,7 @@ RSpec.describe 'contract fixtures' do
   it 'result_format_element_based' do
     E2ERuby.run_fixture(
       'result_format_element_based',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { result_format: 'element_based' },
       requirements: [],
       notes: nil,
@@ -356,7 +356,7 @@ RSpec.describe 'contract fixtures' do
   it 'result_format_unified' do
     E2ERuby.run_fixture(
       'result_format_unified',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       { result_format: 'unified' },
       requirements: [],
       notes: nil,

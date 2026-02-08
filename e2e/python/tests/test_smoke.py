@@ -13,7 +13,7 @@ from . import helpers
 def test_smoke_docx_basic() -> None:
     """Smoke test: DOCX with formatted text"""
 
-    document_path = helpers.resolve_document("documents/fake.docx")
+    document_path = helpers.resolve_document("docx/fake.docx")
     if not document_path.exists():
         pytest.skip(f"Skipping smoke_docx_basic: missing document at {document_path}")
 
@@ -29,7 +29,7 @@ def test_smoke_docx_basic() -> None:
 def test_smoke_html_basic() -> None:
     """Smoke test: HTML converted to Markdown"""
 
-    document_path = helpers.resolve_document("web/simple_table.html")
+    document_path = helpers.resolve_document("html/simple_table.html")
     if not document_path.exists():
         pytest.skip(f"Skipping smoke_html_basic: missing document at {document_path}")
 
@@ -60,7 +60,7 @@ def test_smoke_image_png() -> None:
 def test_smoke_json_basic() -> None:
     """Smoke test: JSON file extraction"""
 
-    document_path = helpers.resolve_document("data_formats/simple.json")
+    document_path = helpers.resolve_document("json/simple.json")
     if not document_path.exists():
         pytest.skip(f"Skipping smoke_json_basic: missing document at {document_path}")
 
@@ -75,7 +75,7 @@ def test_smoke_json_basic() -> None:
 def test_smoke_pdf_basic() -> None:
     """Smoke test: PDF with simple text extraction"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping smoke_pdf_basic: missing document at {document_path}")
 
@@ -106,7 +106,7 @@ def test_smoke_txt_basic() -> None:
 def test_smoke_xlsx_basic() -> None:
     """Smoke test: XLSX with basic spreadsheet data including tables"""
 
-    document_path = helpers.resolve_document("spreadsheets/stanley_cups.xlsx")
+    document_path = helpers.resolve_document("xlsx/stanley_cups.xlsx")
     if not document_path.exists():
         pytest.skip(f"Skipping smoke_xlsx_basic: missing document at {document_path}")
 

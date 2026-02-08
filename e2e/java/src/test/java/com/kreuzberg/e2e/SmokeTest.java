@@ -30,7 +30,7 @@ public class SmokeTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "smoke_docx_basic",
-            "documents/fake.docx",
+            "docx/fake.docx",
             config,
             Collections.emptyList(),
             null,
@@ -48,7 +48,7 @@ public class SmokeTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "smoke_html_basic",
-            "web/simple_table.html",
+            "html/simple_table.html",
             config,
             Collections.emptyList(),
             null,
@@ -83,7 +83,7 @@ public class SmokeTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "smoke_json_basic",
-            "data_formats/simple.json",
+            "json/simple.json",
             config,
             Collections.emptyList(),
             null,
@@ -100,7 +100,7 @@ public class SmokeTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "smoke_pdf_basic",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -135,7 +135,7 @@ public class SmokeTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "smoke_xlsx_basic",
-            "spreadsheets/stanley_cups.xlsx",
+            "xlsx/stanley_cups.xlsx",
             config,
             Collections.emptyList(),
             null,

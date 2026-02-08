@@ -30,4 +30,28 @@ describe("image", () => {
 		assertions.assertExpectedMime(result, ["image/jpeg"]);
 		assertions.assertMaxContentLength(result, 100);
 	});
+
+	it("image_svg_basic", async () => {
+		const documentBytes = getFixture("xml/simple_svg.svg");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "image/svg+xml", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "image_svg_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["image/svg+xml"]);
+		assertions.assertMinContentLength(result, 5);
+	});
 });

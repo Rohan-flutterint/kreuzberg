@@ -7,7 +7,7 @@ use kreuzberg::core::config::ExtractionConfig;
 fn test_pdf_assembly_technical() {
     // Assembly language technical manual with large body of text.
 
-    let document_path = resolve_document("pdfs/assembly_language_for_beginners_al4_b_en.pdf");
+    let document_path = resolve_document("pdf/assembly_language_for_beginners_al4_b_en.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_assembly_technical: missing document at {}",
@@ -32,7 +32,7 @@ fn test_pdf_assembly_technical() {
 fn test_pdf_bayesian_data_analysis() {
     // Bayesian data analysis textbook PDF with large content volume.
 
-    let document_path = resolve_document("pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf");
+    let document_path = resolve_document("pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_bayesian_data_analysis: missing document at {}",
@@ -57,7 +57,7 @@ fn test_pdf_bayesian_data_analysis() {
 fn test_pdf_code_and_formula() {
     // PDF containing code snippets and formulas should retain substantial content.
 
-    let document_path = resolve_document("pdfs/code_and_formula.pdf");
+    let document_path = resolve_document("pdf/code_and_formula.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_code_and_formula: missing document at {}",
@@ -80,7 +80,7 @@ fn test_pdf_code_and_formula() {
 fn test_pdf_deep_learning() {
     // Deep learning textbook PDF to ensure long-form extraction quality.
 
-    let document_path = resolve_document("pdfs/fundamentals_of_deep_learning_2014.pdf");
+    let document_path = resolve_document("pdf/fundamentals_of_deep_learning_2014.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_deep_learning: missing document at {}",
@@ -105,7 +105,7 @@ fn test_pdf_deep_learning() {
 fn test_pdf_embedded_images() {
     // PDF with embedded images should extract text and tables when present.
 
-    let document_path = resolve_document("pdfs/embedded_images_tables.pdf");
+    let document_path = resolve_document("pdf/embedded_images_tables.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_embedded_images: missing document at {}",
@@ -129,7 +129,7 @@ fn test_pdf_embedded_images() {
 fn test_pdf_google_doc() {
     // Google Docs exported PDF to verify conversion fidelity.
 
-    let document_path = resolve_document("pdfs/google_doc_document.pdf");
+    let document_path = resolve_document("pdf/google_doc_document.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_google_doc: missing document at {}",
@@ -153,7 +153,7 @@ fn test_pdf_google_doc() {
 fn test_pdf_large_ciml() {
     // Large machine learning textbook PDF to stress extraction length.
 
-    let document_path = resolve_document("pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf");
+    let document_path = resolve_document("pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_large_ciml: missing document at {}",
@@ -178,7 +178,7 @@ fn test_pdf_large_ciml() {
 fn test_pdf_non_english_german() {
     // German technical PDF to ensure non-ASCII content extraction.
 
-    let document_path = resolve_document("pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf");
+    let document_path = resolve_document("pdf/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_non_english_german: missing document at {}",
@@ -203,7 +203,7 @@ fn test_pdf_non_english_german() {
 fn test_pdf_right_to_left() {
     // Right-to-left language PDF to verify RTL extraction.
 
-    let document_path = resolve_document("pdfs/right_to_left_01.pdf");
+    let document_path = resolve_document("pdf/right_to_left_01.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_right_to_left: missing document at {}",
@@ -227,7 +227,7 @@ fn test_pdf_right_to_left() {
 fn test_pdf_simple_text() {
     // Simple text-heavy PDF should extract content without OCR or tables.
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_simple_text: missing document at {}",
@@ -335,7 +335,7 @@ fn test_pdf_technical_stat_learning() {
     // Technical statistical learning PDF requiring substantial extraction.
 
     let document_path =
-        resolve_document("pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf");
+        resolve_document("pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf");
     if !document_path.exists() {
         println!(
             "Skipping pdf_technical_stat_learning: missing document at {}",

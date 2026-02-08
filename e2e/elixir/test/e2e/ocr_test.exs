@@ -54,7 +54,7 @@ defmodule E2E.OcrTest do
     test "ocr_pdf_image_only_german" do
       case E2E.Helpers.run_fixture(
         "ocr_pdf_image_only_german",
-        "pdfs/image_only_german_pdf.pdf",
+        "pdf/image_only_german_pdf.pdf",
         %{force_ocr: true, ocr: %{backend: "tesseract", language: "eng"}},
         requirements: ["tesseract", "tesseract"],
         notes: "Skip if OCR backend unavailable.",
@@ -77,7 +77,7 @@ defmodule E2E.OcrTest do
     test "ocr_pdf_rotated_90" do
       case E2E.Helpers.run_fixture(
         "ocr_pdf_rotated_90",
-        "pdfs/ocr_test_rotated_90.pdf",
+        "pdf/ocr_test_rotated_90.pdf",
         %{force_ocr: true, ocr: %{backend: "tesseract", language: "eng"}},
         requirements: ["tesseract", "tesseract"],
         notes: "Skip automatically when OCR backend is missing.",
@@ -99,7 +99,7 @@ defmodule E2E.OcrTest do
     test "ocr_pdf_tesseract" do
       case E2E.Helpers.run_fixture(
         "ocr_pdf_tesseract",
-        "pdfs/ocr_test.pdf",
+        "pdf/ocr_test.pdf",
         %{force_ocr: true, ocr: %{backend: "tesseract", language: "eng"}},
         requirements: ["tesseract", "tesseract"],
         notes: "Skip automatically if OCR backend is unavailable.",

@@ -4,10 +4,56 @@ use e2e_rust::{assertions, resolve_document};
 use kreuzberg::KreuzbergError;
 use kreuzberg::core::config::ExtractionConfig;
 #[test]
+fn test_office_bibtex_basic() {
+    // BibTeX bibliography extraction.
+
+    let document_path = resolve_document("bibtex/comprehensive.bib");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_bibtex_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_bibtex_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-bibtex", "text/x-bibtex"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_djot_basic() {
+    // Djot markup text extraction.
+
+    let document_path = resolve_document("markdown/tables.djot");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_djot_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_djot_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["text/x-djot", "text/djot"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
 fn test_office_doc_legacy() {
     // Legacy .doc document conversion via LibreOffice.
 
-    let document_path = resolve_document("legacy_office/unit_test_lists.doc");
+    let document_path = resolve_document("doc/unit_test_lists.doc");
     if !document_path.exists() {
         println!(
             "Skipping office_doc_legacy: missing document at {}",
@@ -38,10 +84,33 @@ fn test_office_doc_legacy() {
 }
 
 #[test]
+fn test_office_docbook_basic() {
+    // DocBook XML document extraction.
+
+    let document_path = resolve_document("docbook/docbook-reader.docbook");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_docbook_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_docbook_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/docbook+xml", "text/docbook"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
 fn test_office_docx_basic() {
     // DOCX document extraction baseline.
 
-    let document_path = resolve_document("office/document.docx");
+    let document_path = resolve_document("docx/sample_document.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_basic: missing document at {}",
@@ -67,7 +136,7 @@ fn test_office_docx_basic() {
 fn test_office_docx_equations() {
     // DOCX file containing equations to validate math extraction.
 
-    let document_path = resolve_document("documents/equations.docx");
+    let document_path = resolve_document("docx/equations.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_equations: missing document at {}",
@@ -93,7 +162,7 @@ fn test_office_docx_equations() {
 fn test_office_docx_fake() {
     // Simple DOCX document to verify baseline extraction.
 
-    let document_path = resolve_document("documents/fake.docx");
+    let document_path = resolve_document("docx/fake.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_fake: missing document at {}",
@@ -119,7 +188,7 @@ fn test_office_docx_fake() {
 fn test_office_docx_formatting() {
     // DOCX document heavy on formatting for style preservation.
 
-    let document_path = resolve_document("documents/unit_test_formatting.docx");
+    let document_path = resolve_document("docx/unit_test_formatting.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_formatting: missing document at {}",
@@ -145,7 +214,7 @@ fn test_office_docx_formatting() {
 fn test_office_docx_headers() {
     // DOCX document with complex headers.
 
-    let document_path = resolve_document("documents/unit_test_headers.docx");
+    let document_path = resolve_document("docx/unit_test_headers.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_headers: missing document at {}",
@@ -171,7 +240,7 @@ fn test_office_docx_headers() {
 fn test_office_docx_lists() {
     // DOCX document emphasizing list formatting.
 
-    let document_path = resolve_document("documents/unit_test_lists.docx");
+    let document_path = resolve_document("docx/unit_test_lists.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_lists: missing document at {}",
@@ -197,7 +266,7 @@ fn test_office_docx_lists() {
 fn test_office_docx_tables() {
     // DOCX document containing tables for table-aware extraction.
 
-    let document_path = resolve_document("documents/docx_tables.docx");
+    let document_path = resolve_document("docx/docx_tables.docx");
     if !document_path.exists() {
         println!(
             "Skipping office_docx_tables: missing document at {}",
@@ -225,10 +294,338 @@ fn test_office_docx_tables() {
 }
 
 #[test]
+fn test_office_epub_basic() {
+    // EPUB book extraction with text content.
+
+    let document_path = resolve_document("epub/features.epub");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_epub_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_epub_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/epub+zip"]);
+    assertions::assert_min_content_length(&result, 50);
+}
+
+#[test]
+fn test_office_fb2_basic() {
+    // FictionBook (FB2) document extraction baseline.
+
+    let document_path = resolve_document("fictionbook/basic.fb2");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_fb2_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_fb2_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-fictionbook+xml"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_fictionbook_basic() {
+    // FictionBook (.fb2) text extraction.
+
+    let document_path = resolve_document("fictionbook/basic.fb2");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_fictionbook_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_fictionbook_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-fictionbook+xml", "application/x-fictionbook"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_jats_basic() {
+    // JATS scientific article extraction.
+
+    let document_path = resolve_document("jats/sample_article.jats");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_jats_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_jats_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-jats+xml", "text/jats"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_jupyter_basic() {
+    // Jupyter notebook extraction.
+
+    let document_path = resolve_document("jupyter/rank.ipynb");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_jupyter_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_jupyter_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-ipynb+json"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_latex_basic() {
+    // LaTeX document text extraction.
+
+    let document_path = resolve_document("latex/basic_sections.tex");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_latex_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_latex_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-latex", "text/x-latex"]);
+    assertions::assert_min_content_length(&result, 20);
+}
+
+#[test]
+fn test_office_markdown_basic() {
+    // Markdown document extraction baseline.
+
+    let document_path = resolve_document("markdown/comprehensive.md");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_markdown_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_markdown_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["text/markdown"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_ods_basic() {
+    // Basic ODS spreadsheet extraction.
+
+    let document_path = resolve_document("data_formats/test_01.ods");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_ods_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_ods_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/vnd.oasis.opendocument.spreadsheet"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_odt_bold() {
+    // ODT document with bold formatting.
+
+    let document_path = resolve_document("odt/bold.odt");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_odt_bold: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_odt_bold: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/vnd.oasis.opendocument.text"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_odt_list() {
+    // ODT document containing unordered lists with nesting.
+
+    let document_path = resolve_document("odt/unorderedList.odt");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_odt_list: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_odt_list: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/vnd.oasis.opendocument.text"]);
+    assertions::assert_min_content_length(&result, 30);
+    assertions::assert_content_contains_any(&result, &["list item", "New level", "Pushed us"]);
+}
+
+#[test]
+fn test_office_odt_simple() {
+    // Basic ODT document with paragraphs and headings.
+
+    let document_path = resolve_document("odt/simple.odt");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_odt_simple: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_odt_simple: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/vnd.oasis.opendocument.text"]);
+    assertions::assert_min_content_length(&result, 50);
+    assertions::assert_content_contains_any(&result, &["favorite things", "Parrots", "Analysis"]);
+}
+
+#[test]
+fn test_office_odt_table() {
+    // ODT document with a table structure.
+
+    let document_path = resolve_document("odt/table.odt");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_odt_table: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_odt_table: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/vnd.oasis.opendocument.text"]);
+    assertions::assert_min_content_length(&result, 10);
+    assertions::assert_table_count(&result, Some(1), None);
+}
+
+#[test]
+fn test_office_opml_basic() {
+    // OPML outline document extraction.
+
+    let document_path = resolve_document("opml/outline.opml");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_opml_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_opml_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(
+        &result,
+        &["application/xml+opml", "text/x-opml", "application/x-opml+xml"],
+    );
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_org_basic() {
+    // Org-mode document text extraction.
+
+    let document_path = resolve_document("org/comprehensive.org");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_org_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_org_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["text/x-org", "text/org"]);
+    assertions::assert_min_content_length(&result, 20);
+}
+
+#[test]
 fn test_office_ppsx_slideshow() {
     // PPSX (PowerPoint Show) files should extract slides content identical to PPTX. GitHub Issue #321 Bug 2.
 
-    let document_path = resolve_document("presentations/sample.ppsx");
+    let document_path = resolve_document("pptx/sample.ppsx");
     if !document_path.exists() {
         println!(
             "Skipping office_ppsx_slideshow: missing document at {}",
@@ -254,7 +651,7 @@ fn test_office_ppsx_slideshow() {
 fn test_office_ppt_legacy() {
     // Legacy PowerPoint .ppt file requiring LibreOffice conversion.
 
-    let document_path = resolve_document("legacy_office/simple.ppt");
+    let document_path = resolve_document("ppt/simple.ppt");
     if !document_path.exists() {
         println!(
             "Skipping office_ppt_legacy: missing document at {}",
@@ -288,7 +685,7 @@ fn test_office_ppt_legacy() {
 fn test_office_pptx_basic() {
     // PPTX deck should extract slides content.
 
-    let document_path = resolve_document("presentations/simple.pptx");
+    let document_path = resolve_document("pptx/simple.pptx");
     if !document_path.exists() {
         println!(
             "Skipping office_pptx_basic: missing document at {}",
@@ -314,7 +711,7 @@ fn test_office_pptx_basic() {
 fn test_office_pptx_images() {
     // PPTX presentation containing images to ensure metadata extraction.
 
-    let document_path = resolve_document("presentations/powerpoint_with_image.pptx");
+    let document_path = resolve_document("pptx/powerpoint_with_image.pptx");
     if !document_path.exists() {
         println!(
             "Skipping office_pptx_images: missing document at {}",
@@ -340,7 +737,7 @@ fn test_office_pptx_images() {
 fn test_office_pptx_pitch_deck() {
     // Pitch deck PPTX used to validate large slide extraction.
 
-    let document_path = resolve_document("presentations/pitch_deck_presentation.pptx");
+    let document_path = resolve_document("pptx/pitch_deck_presentation.pptx");
     if !document_path.exists() {
         println!(
             "Skipping office_pptx_pitch_deck: missing document at {}",
@@ -363,10 +760,79 @@ fn test_office_pptx_pitch_deck() {
 }
 
 #[test]
+fn test_office_rst_basic() {
+    // reStructuredText document extraction.
+
+    let document_path = resolve_document("rst/restructured_text.rst");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_rst_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_rst_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["text/x-rst", "text/prs.fallenstein.rst"]);
+    assertions::assert_min_content_length(&result, 20);
+}
+
+#[test]
+fn test_office_rtf_basic() {
+    // RTF document text extraction.
+
+    let document_path = resolve_document("rtf/extraction_test.rtf");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_rtf_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_rtf_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/rtf", "text/rtf"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_office_typst_basic() {
+    // Typst document text extraction.
+
+    let document_path = resolve_document("typst/headings.typ");
+    if !document_path.exists() {
+        println!(
+            "Skipping office_typst_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for office_typst_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-typst", "text/x-typst"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
 fn test_office_xls_legacy() {
     // Legacy XLS spreadsheet to ensure backward compatibility.
 
-    let document_path = resolve_document("spreadsheets/test_excel.xls");
+    let document_path = resolve_document("xls/test_excel.xls");
     if !document_path.exists() {
         println!(
             "Skipping office_xls_legacy: missing document at {}",
@@ -389,7 +855,7 @@ fn test_office_xls_legacy() {
 fn test_office_xlsx_basic() {
     // XLSX spreadsheet should produce metadata and table content.
 
-    let document_path = resolve_document("spreadsheets/stanley_cups.xlsx");
+    let document_path = resolve_document("xlsx/stanley_cups.xlsx");
     if !document_path.exists() {
         println!(
             "Skipping office_xlsx_basic: missing document at {}",
@@ -423,7 +889,7 @@ fn test_office_xlsx_basic() {
 fn test_office_xlsx_multi_sheet() {
     // XLSX workbook with multiple sheets.
 
-    let document_path = resolve_document("spreadsheets/excel_multi_sheet.xlsx");
+    let document_path = resolve_document("xlsx/excel_multi_sheet.xlsx");
     if !document_path.exists() {
         println!(
             "Skipping office_xlsx_multi_sheet: missing document at {}",
@@ -450,7 +916,7 @@ fn test_office_xlsx_multi_sheet() {
 fn test_office_xlsx_office_example() {
     // Simple XLSX spreadsheet shipped alongside office integration tests.
 
-    let document_path = resolve_document("office/excel.xlsx");
+    let document_path = resolve_document("xlsx/test_01.xlsx");
     if !document_path.exists() {
         println!(
             "Skipping office_xlsx_office_example: missing document at {}",

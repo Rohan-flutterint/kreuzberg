@@ -9,7 +9,7 @@ defmodule E2E.PdfTest do
     test "pdf_assembly_technical" do
       case E2E.Helpers.run_fixture(
         "pdf_assembly_technical",
-        "pdfs/assembly_language_for_beginners_al4_b_en.pdf",
+        "pdf/assembly_language_for_beginners_al4_b_en.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -33,7 +33,7 @@ defmodule E2E.PdfTest do
     test "pdf_bayesian_data_analysis" do
       case E2E.Helpers.run_fixture(
         "pdf_bayesian_data_analysis",
-        "pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
+        "pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -57,7 +57,7 @@ defmodule E2E.PdfTest do
     test "pdf_code_and_formula" do
       case E2E.Helpers.run_fixture(
         "pdf_code_and_formula",
-        "pdfs/code_and_formula.pdf",
+        "pdf/code_and_formula.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -79,7 +79,7 @@ defmodule E2E.PdfTest do
     test "pdf_deep_learning" do
       case E2E.Helpers.run_fixture(
         "pdf_deep_learning",
-        "pdfs/fundamentals_of_deep_learning_2014.pdf",
+        "pdf/fundamentals_of_deep_learning_2014.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -103,7 +103,7 @@ defmodule E2E.PdfTest do
     test "pdf_embedded_images" do
       case E2E.Helpers.run_fixture(
         "pdf_embedded_images",
-        "pdfs/embedded_images_tables.pdf",
+        "pdf/embedded_images_tables.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -126,7 +126,7 @@ defmodule E2E.PdfTest do
     test "pdf_google_doc" do
       case E2E.Helpers.run_fixture(
         "pdf_google_doc",
-        "pdfs/google_doc_document.pdf",
+        "pdf/google_doc_document.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -149,7 +149,7 @@ defmodule E2E.PdfTest do
     test "pdf_large_ciml" do
       case E2E.Helpers.run_fixture(
         "pdf_large_ciml",
-        "pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf",
+        "pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -173,7 +173,7 @@ defmodule E2E.PdfTest do
     test "pdf_non_english_german" do
       case E2E.Helpers.run_fixture(
         "pdf_non_english_german",
-        "pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
+        "pdf/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -197,7 +197,7 @@ defmodule E2E.PdfTest do
     test "pdf_right_to_left" do
       case E2E.Helpers.run_fixture(
         "pdf_right_to_left",
-        "pdfs/right_to_left_01.pdf",
+        "pdf/right_to_left_01.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -220,7 +220,7 @@ defmodule E2E.PdfTest do
     test "pdf_simple_text" do
       case E2E.Helpers.run_fixture(
         "pdf_simple_text",
-        "pdfs/fake_memo.pdf",
+        "pdf/fake_memo.pdf",
         nil,
         requirements: [],
         notes: nil,
@@ -313,7 +313,7 @@ defmodule E2E.PdfTest do
     test "pdf_technical_stat_learning" do
       case E2E.Helpers.run_fixture(
         "pdf_technical_stat_learning",
-        "pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
+        "pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
         nil,
         requirements: [],
         notes: nil,

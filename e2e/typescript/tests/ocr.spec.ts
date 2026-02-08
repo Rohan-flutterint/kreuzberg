@@ -76,7 +76,7 @@ describe("ocr fixtures", () => {
 	it(
 		"ocr_pdf_image_only_german",
 		() => {
-			const documentPath = resolveDocument("pdfs/image_only_german_pdf.pdf");
+			const documentPath = resolveDocument("pdf/image_only_german_pdf.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping ocr_pdf_image_only_german: missing document at", documentPath);
 				console.warn("Notes: Skip if OCR backend unavailable.");
@@ -105,7 +105,7 @@ describe("ocr fixtures", () => {
 	it(
 		"ocr_pdf_rotated_90",
 		() => {
-			const documentPath = resolveDocument("pdfs/ocr_test_rotated_90.pdf");
+			const documentPath = resolveDocument("pdf/ocr_test_rotated_90.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping ocr_pdf_rotated_90: missing document at", documentPath);
 				console.warn("Notes: Skip automatically when OCR backend is missing.");
@@ -140,7 +140,7 @@ describe("ocr fixtures", () => {
 	it(
 		"ocr_pdf_tesseract",
 		() => {
-			const documentPath = resolveDocument("pdfs/ocr_test.pdf");
+			const documentPath = resolveDocument("pdf/ocr_test.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping ocr_pdf_tesseract: missing document at", documentPath);
 				console.warn("Notes: Skip automatically if OCR backend is unavailable.");

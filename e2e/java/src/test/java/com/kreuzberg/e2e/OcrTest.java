@@ -65,7 +65,7 @@ public class OcrTest {
         JsonNode config = MAPPER.readTree("{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
         E2EHelpers.runFixture(
             "ocr_pdf_image_only_german",
-            "pdfs/image_only_german_pdf.pdf",
+            "pdf/image_only_german_pdf.pdf",
             config,
             Arrays.asList("tesseract", "tesseract"),
             "Skip if OCR backend unavailable.",
@@ -83,7 +83,7 @@ public class OcrTest {
         JsonNode config = MAPPER.readTree("{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
         E2EHelpers.runFixture(
             "ocr_pdf_rotated_90",
-            "pdfs/ocr_test_rotated_90.pdf",
+            "pdf/ocr_test_rotated_90.pdf",
             config,
             Arrays.asList("tesseract", "tesseract"),
             "Skip automatically when OCR backend is missing.",
@@ -100,7 +100,7 @@ public class OcrTest {
         JsonNode config = MAPPER.readTree("{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
         E2EHelpers.runFixture(
             "ocr_pdf_tesseract",
-            "pdfs/ocr_test.pdf",
+            "pdf/ocr_test.pdf",
             config,
             Arrays.asList("tesseract", "tesseract"),
             "Skip automatically if OCR backend is unavailable.",

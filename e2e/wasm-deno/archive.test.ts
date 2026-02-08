@@ -1,0 +1,68 @@
+// Auto-generated tests for archive fixtures.
+// Run with: deno test --allow-read
+
+import type { ExtractionResult } from "./helpers.ts";
+import { assertions, buildConfig, extractBytes, initWasm, resolveDocument, shouldSkipFixture } from "./helpers.ts";
+
+// Initialize WASM module once at module load time
+await initWasm();
+
+Deno.test("archive_sevenz_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("archives/documents.7z");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-7z-compressed", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "archive_sevenz_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-7z-compressed"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("archive_tar_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("archives/documents.tar");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-tar", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "archive_tar_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-tar", "application/tar"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("archive_zip_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("archives/documents.zip");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/zip", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "archive_zip_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/zip", "application/x-zip-compressed"]);
+	assertions.assertMinContentLength(result, 10);
+});

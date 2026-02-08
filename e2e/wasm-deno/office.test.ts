@@ -23,7 +23,27 @@ Deno.test("office_bibtex_basic", { permissions: { read: true } }, async () => {
 	if (result === null) {
 		return;
 	}
-	assertions.assertExpectedMime(result, ["application/x-bibtex"]);
+	assertions.assertExpectedMime(result, ["application/x-bibtex", "text/x-bibtex"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_djot_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("markdown/tables.djot");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "text/x-djot", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_djot_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["text/x-djot", "text/djot"]);
 	assertions.assertMinContentLength(result, 10);
 });
 
@@ -47,6 +67,26 @@ Deno.test("office_doc_legacy", { permissions: { read: true } }, async () => {
 	}
 	assertions.assertExpectedMime(result, ["application/msword"]);
 	assertions.assertMinContentLength(result, 20);
+});
+
+Deno.test("office_docbook_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("docbook/docbook-reader.docbook");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/docbook+xml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_docbook_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/docbook+xml", "text/docbook"]);
+	assertions.assertMinContentLength(result, 10);
 });
 
 Deno.test("office_docx_basic", { permissions: { read: true } }, async () => {
@@ -219,6 +259,26 @@ Deno.test("office_docx_tables", { permissions: { read: true } }, async () => {
 	assertions.assertTableCount(result, 1, null);
 });
 
+Deno.test("office_epub_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("epub/features.epub");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/epub+zip", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_epub_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/epub+zip"]);
+	assertions.assertMinContentLength(result, 50);
+});
+
 Deno.test("office_fb2_basic", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("fictionbook/basic.fb2");
 	const config = buildConfig(undefined);
@@ -237,6 +297,86 @@ Deno.test("office_fb2_basic", { permissions: { read: true } }, async () => {
 	}
 	assertions.assertExpectedMime(result, ["application/x-fictionbook+xml"]);
 	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_fictionbook_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("fictionbook/basic.fb2");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-fictionbook+xml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_fictionbook_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-fictionbook+xml", "application/x-fictionbook"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_jats_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("jats/sample_article.jats");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-jats+xml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_jats_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-jats+xml", "text/jats"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_jupyter_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("jupyter/rank.ipynb");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-ipynb+json", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_jupyter_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-ipynb+json"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_latex_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("latex/basic_sections.tex");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/x-latex", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_latex_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/x-latex", "text/x-latex"]);
+	assertions.assertMinContentLength(result, 20);
 });
 
 Deno.test("office_markdown_basic", { permissions: { read: true } }, async () => {
@@ -259,6 +399,129 @@ Deno.test("office_markdown_basic", { permissions: { read: true } }, async () => 
 	assertions.assertMinContentLength(result, 10);
 });
 
+Deno.test("office_ods_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("data_formats/test_01.ods");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.oasis.opendocument.spreadsheet", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_ods_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.oasis.opendocument.spreadsheet"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_odt_bold", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("odt/bold.odt");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.oasis.opendocument.text", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_odt_bold", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.oasis.opendocument.text"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("office_odt_list", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("odt/unorderedList.odt");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.oasis.opendocument.text", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_odt_list", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.oasis.opendocument.text"]);
+	assertions.assertMinContentLength(result, 30);
+	assertions.assertContentContainsAny(result, ["list item", "New level", "Pushed us"]);
+});
+
+Deno.test("office_odt_simple", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("odt/simple.odt");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.oasis.opendocument.text", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_odt_simple", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.oasis.opendocument.text"]);
+	assertions.assertMinContentLength(result, 50);
+	assertions.assertContentContainsAny(result, ["favorite things", "Parrots", "Analysis"]);
+});
+
+Deno.test("office_odt_table", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("odt/table.odt");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.oasis.opendocument.text", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_odt_table", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.oasis.opendocument.text"]);
+	assertions.assertMinContentLength(result, 10);
+	assertions.assertTableCount(result, 1, null);
+});
+
+Deno.test("office_opml_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("opml/outline.opml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/xml+opml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "office_opml_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/xml+opml", "text/x-opml", "application/x-opml+xml"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
 Deno.test("office_org_basic", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("org/comprehensive.org");
 	const config = buildConfig(undefined);
@@ -275,8 +538,8 @@ Deno.test("office_org_basic", { permissions: { read: true } }, async () => {
 	if (result === null) {
 		return;
 	}
-	assertions.assertExpectedMime(result, ["text/x-org"]);
-	assertions.assertMinContentLength(result, 10);
+	assertions.assertExpectedMime(result, ["text/x-org", "text/org"]);
+	assertions.assertMinContentLength(result, 20);
 });
 
 Deno.test("office_ppsx_slideshow", { permissions: { read: true } }, async () => {
@@ -413,12 +676,12 @@ Deno.test("office_rst_basic", { permissions: { read: true } }, async () => {
 	if (result === null) {
 		return;
 	}
-	assertions.assertExpectedMime(result, ["text/x-rst"]);
-	assertions.assertMinContentLength(result, 10);
+	assertions.assertExpectedMime(result, ["text/x-rst", "text/prs.fallenstein.rst"]);
+	assertions.assertMinContentLength(result, 20);
 });
 
 Deno.test("office_rtf_basic", { permissions: { read: true } }, async () => {
-	const documentBytes = await resolveDocument("rtf/lorem_ipsum.rtf");
+	const documentBytes = await resolveDocument("rtf/extraction_test.rtf");
 	const config = buildConfig(undefined);
 	let result: ExtractionResult | null = null;
 	try {
@@ -433,13 +696,12 @@ Deno.test("office_rtf_basic", { permissions: { read: true } }, async () => {
 	if (result === null) {
 		return;
 	}
-	assertions.assertExpectedMime(result, ["application/rtf"]);
+	assertions.assertExpectedMime(result, ["application/rtf", "text/rtf"]);
 	assertions.assertMinContentLength(result, 10);
-	assertions.assertContentContainsAny(result, ["lorem", "ipsum"]);
 });
 
 Deno.test("office_typst_basic", { permissions: { read: true } }, async () => {
-	const documentBytes = await resolveDocument("typst/simple.typ");
+	const documentBytes = await resolveDocument("typst/headings.typ");
 	const config = buildConfig(undefined);
 	let result: ExtractionResult | null = null;
 	try {
@@ -454,7 +716,7 @@ Deno.test("office_typst_basic", { permissions: { read: true } }, async () => {
 	if (result === null) {
 		return;
 	}
-	assertions.assertExpectedMime(result, ["application/x-typst"]);
+	assertions.assertExpectedMime(result, ["application/x-typst", "text/x-typst"]);
 	assertions.assertMinContentLength(result, 10);
 });
 

@@ -22,7 +22,7 @@ from . import helpers
 async def test_api_batch_bytes_async() -> None:
     """Tests async batch bytes extraction API (batch_extract_bytes)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_batch_bytes_async: missing document at {document_path}")
 
@@ -42,7 +42,7 @@ async def test_api_batch_bytes_async() -> None:
 def test_api_batch_bytes_sync() -> None:
     """Tests sync batch bytes extraction API (batch_extract_bytes_sync)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_batch_bytes_sync: missing document at {document_path}")
 
@@ -63,7 +63,7 @@ def test_api_batch_bytes_sync() -> None:
 async def test_api_batch_file_async() -> None:
     """Tests async batch file extraction API (batch_extract_file)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_batch_file_async: missing document at {document_path}")
 
@@ -80,7 +80,7 @@ async def test_api_batch_file_async() -> None:
 def test_api_batch_file_sync() -> None:
     """Tests sync batch file extraction API (batch_extract_file_sync)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_batch_file_sync: missing document at {document_path}")
 
@@ -98,7 +98,7 @@ def test_api_batch_file_sync() -> None:
 async def test_api_extract_bytes_async() -> None:
     """Tests async bytes extraction API (extract_bytes)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_extract_bytes_async: missing document at {document_path}")
 
@@ -117,7 +117,7 @@ async def test_api_extract_bytes_async() -> None:
 def test_api_extract_bytes_sync() -> None:
     """Tests sync bytes extraction API (extract_bytes_sync)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_extract_bytes_sync: missing document at {document_path}")
 
@@ -137,7 +137,7 @@ def test_api_extract_bytes_sync() -> None:
 async def test_api_extract_file_async() -> None:
     """Tests async file extraction API (extract_file)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_extract_file_async: missing document at {document_path}")
 
@@ -153,7 +153,7 @@ async def test_api_extract_file_async() -> None:
 def test_api_extract_file_sync() -> None:
     """Tests sync file extraction API (extract_file_sync)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping api_extract_file_sync: missing document at {document_path}")
 
@@ -169,7 +169,7 @@ def test_api_extract_file_sync() -> None:
 def test_config_chunking() -> None:
     """Tests chunking configuration with chunk assertions"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_chunking: missing document at {document_path}")
 
@@ -185,7 +185,7 @@ def test_config_chunking() -> None:
 def test_config_force_ocr() -> None:
     """Tests force_ocr configuration option"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_force_ocr: missing document at {document_path}")
 
@@ -200,7 +200,7 @@ def test_config_force_ocr() -> None:
 def test_config_images() -> None:
     """Tests image extraction configuration with image assertions"""
 
-    document_path = helpers.resolve_document("pdfs/embedded_images_tables.pdf")
+    document_path = helpers.resolve_document("pdf/embedded_images_tables.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_images: missing document at {document_path}")
 
@@ -215,7 +215,7 @@ def test_config_images() -> None:
 def test_config_language_detection() -> None:
     """Tests language detection configuration"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_language_detection: missing document at {document_path}")
 
@@ -231,7 +231,7 @@ def test_config_language_detection() -> None:
 def test_config_pages() -> None:
     """Tests page configuration with page assertions"""
 
-    document_path = helpers.resolve_document("pdfs/multi_page.pdf")
+    document_path = helpers.resolve_document("pdf/multi_page.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_pages: missing document at {document_path}")
 
@@ -246,7 +246,7 @@ def test_config_pages() -> None:
 def test_config_use_cache_false() -> None:
     """Tests use_cache=false configuration option"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping config_use_cache_false: missing document at {document_path}")
 
@@ -261,7 +261,7 @@ def test_config_use_cache_false() -> None:
 def test_output_format_djot() -> None:
     """Tests Djot output format"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping output_format_djot: missing document at {document_path}")
 
@@ -277,7 +277,7 @@ def test_output_format_djot() -> None:
 def test_output_format_html() -> None:
     """Tests HTML output format"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping output_format_html: missing document at {document_path}")
 
@@ -293,7 +293,7 @@ def test_output_format_html() -> None:
 def test_output_format_markdown() -> None:
     """Tests Markdown output format"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping output_format_markdown: missing document at {document_path}")
 
@@ -309,7 +309,7 @@ def test_output_format_markdown() -> None:
 def test_output_format_plain() -> None:
     """Tests Plain output format"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping output_format_plain: missing document at {document_path}")
 
@@ -325,7 +325,7 @@ def test_output_format_plain() -> None:
 def test_result_format_element_based() -> None:
     """Tests ElementBased result format with element assertions"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping result_format_element_based: missing document at {document_path}")
 
@@ -341,7 +341,7 @@ def test_result_format_element_based() -> None:
 def test_result_format_unified() -> None:
     """Tests Unified result format (default)"""
 
-    document_path = helpers.resolve_document("pdfs/fake_memo.pdf")
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping result_format_unified: missing document at {document_path}")
 

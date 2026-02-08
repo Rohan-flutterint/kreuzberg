@@ -1,0 +1,55 @@
+# Auto-generated tests for archive fixtures.
+from __future__ import annotations
+
+import pytest
+
+from kreuzberg import (
+    extract_file_sync,
+)
+
+from . import helpers
+
+
+def test_archive_sevenz_basic() -> None:
+    """7-Zip archive extraction."""
+
+    document_path = helpers.resolve_document("archives/documents.7z")
+    if not document_path.exists():
+        pytest.skip(f"Skipping archive_sevenz_basic: missing document at {document_path}")
+
+    config = helpers.build_config(None)
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/x-7z-compressed"])
+    helpers.assert_min_content_length(result, 10)
+
+
+def test_archive_tar_basic() -> None:
+    """TAR archive extraction."""
+
+    document_path = helpers.resolve_document("archives/documents.tar")
+    if not document_path.exists():
+        pytest.skip(f"Skipping archive_tar_basic: missing document at {document_path}")
+
+    config = helpers.build_config(None)
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/x-tar", "application/tar"])
+    helpers.assert_min_content_length(result, 10)
+
+
+def test_archive_zip_basic() -> None:
+    """ZIP archive extraction."""
+
+    document_path = helpers.resolve_document("archives/documents.zip")
+    if not document_path.exists():
+        pytest.skip(f"Skipping archive_zip_basic: missing document at {document_path}")
+
+    config = helpers.build_config(None)
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/zip", "application/x-zip-compressed"])
+    helpers.assert_min_content_length(result, 10)

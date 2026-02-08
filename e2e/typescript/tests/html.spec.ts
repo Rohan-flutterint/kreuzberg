@@ -12,7 +12,7 @@ describe("html fixtures", () => {
 	it(
 		"html_complex_layout",
 		() => {
-			const documentPath = resolveDocument("web/taylor_swift.html");
+			const documentPath = resolveDocument("html/taylor_swift.html");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping html_complex_layout: missing document at", documentPath);
 				return;
@@ -39,7 +39,7 @@ describe("html fixtures", () => {
 	it(
 		"html_simple_table",
 		() => {
-			const documentPath = resolveDocument("web/simple_table.html");
+			const documentPath = resolveDocument("html/simple_table.html");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping html_simple_table: missing document at", documentPath);
 				return;

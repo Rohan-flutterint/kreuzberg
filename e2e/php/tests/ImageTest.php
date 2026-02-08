@@ -31,4 +31,23 @@ class ImageTest extends TestCase
         Helpers::assertMaxContentLength($result, 100);
     }
 
+    /**
+     * SVG image extraction.
+     */
+    public function test_image_svg_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('xml/simple_svg.svg');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping image_svg_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['image/svg+xml']);
+        Helpers::assertMinContentLength($result, 5);
+    }
+
 }

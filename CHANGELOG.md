@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.2.15] - 2026-02-08
 
 ### Added
 
@@ -15,7 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Agent Skill for document extraction**: Added `skills/kreuzberg/SKILL.md` following the [Agent Skills](https://agentskills.io) open standard, with comprehensive instructions for Python, Node.js, Rust, and CLI usage. Includes 8 detailed reference files covering API signatures, configuration, supported formats, plugins, and all language bindings. Works with Claude Code, Codex, Gemini CLI, Cursor, VS Code, Amp, Goose, Roo Code, and any compatible tool.
 
+#### MIME Type Mappings
+- Added `.docbook` (`application/docbook+xml`) and `.jats` (`application/x-jats+xml`) file extension mappings.
+
 ### Fixed
+
+#### ODT List and Section Extraction
+- Fixed ODT extractor not handling `text:list` and `text:section` elements. Documents containing bulleted/numbered lists or sections returned empty content.
+
+#### UTF-16 EML Parsing
+- Fixed EML files encoded in UTF-16 (LE/BE, with or without BOM) returning empty content. Detects UTF-16 encoding via BOM markers and heuristic byte-pattern analysis, transcoding to UTF-8 before parsing.
 
 #### Email Attachment Metadata Serialization
 - Fixed email extraction inserting a comma-joined string `"attachments"` into the `additional` metadata HashMap, which via `#[serde(flatten)]` overwrote the structured `EmailMetadata.attachments` array. This caused deserialization failures in Go, C#, and other typed bindings when processing emails with attachments.
@@ -34,18 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### PDF Error Handling Regression
 - Reverted incorrect change from v4.2.14 that silently returned empty results for corrupted/malformed PDFs instead of propagating errors. Corrupted PDFs now correctly return `PdfError::InvalidPdf` and password-protected PDFs return `PdfError::PasswordRequired` as expected.
-- Removed regression tests that asserted the incorrect empty-result behavior.
-
-#### String Intern Reference Counting Test
-- Fixed flaky `test_intern_reference_counting` test caused by shared global state between concurrent tests. Replaced fragile absolute-count assertions with pointer-equality verification.
-
-#### WASM Size Limit
-- Bumped WASM uncompressed size limit from 13MB to 15MB in CI verification script to accommodate recent office format additions.
 
 ### Changed
-
-#### Benchmark Harness: Java JSON Escaping
-- Fixed `quote()` function in `KreuzbergExtractJava.java` to escape all JSON control characters (U+0000–U+001F), not just `\`, `"`, `\n`, `\r`. This resolves 44 harness errors from invalid JSON output on files containing tab, form-feed, or other control characters.
 
 #### API Parity
 - Added `security_limits` field to all 9 language bindings (TypeScript, Go, Python, Ruby, PHP, Java, C#, WASM, Elixir) for API parity with Rust core `ExtractionConfig`.

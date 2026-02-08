@@ -54,10 +54,61 @@ fn whitespace_regex() -> &'static Regex {
     WHITESPACE_RE.get_or_init(|| Regex::new(r"\s+").unwrap())
 }
 
+/// Detect UTF-16 encoding (with or without BOM) and transcode to UTF-8 if needed.
+///
+/// `mail_parser` expects ASCII/UTF-8 input. If the EML file is encoded as
+/// UTF-16, we transcode it to UTF-8 first.
+///
+/// Detection strategy:
+/// 1. Check for BOM (`FF FE` = LE, `FE FF` = BE)
+/// 2. If no BOM, use heuristic: EML files start with ASCII headers, so
+///    alternating zero bytes indicate UTF-16 encoding.
+fn maybe_transcode_utf16(data: &[u8]) -> Option<Vec<u8>> {
+    if data.len() < 4 {
+        return None;
+    }
+
+    let (is_le, skip) = if data[0] == 0xFF && data[1] == 0xFE {
+        (true, 2)
+    } else if data[0] == 0xFE && data[1] == 0xFF {
+        (false, 2)
+    } else if data[1] == 0x00 && data[3] == 0x00 && data[0] != 0x00 && data[2] != 0x00 {
+        // No BOM, but looks like UTF-16 LE (e.g. "M\0I\0M\0E\0")
+        (true, 0)
+    } else if data[0] == 0x00 && data[2] == 0x00 && data[1] != 0x00 && data[3] != 0x00 {
+        // No BOM, but looks like UTF-16 BE (e.g. "\0M\0I\0M\0E")
+        (false, 0)
+    } else {
+        return None;
+    };
+
+    let payload = &data[skip..];
+    let even_len = payload.len() & !1;
+    let u16_iter = (0..even_len).step_by(2).map(|i| {
+        if is_le {
+            u16::from_le_bytes([payload[i], payload[i + 1]])
+        } else {
+            u16::from_be_bytes([payload[i], payload[i + 1]])
+        }
+    });
+
+    match String::from_utf16(&u16_iter.collect::<Vec<u16>>()) {
+        Ok(s) => Some(s.into_bytes()),
+        Err(_) => None,
+    }
+}
+
 /// Parse .eml file content (RFC822 format)
 pub fn parse_eml_content(data: &[u8]) -> Result<EmailExtractionResult> {
+    // Transcode UTF-16 to UTF-8 if a BOM is detected
+    let data = if let Some(transcoded) = maybe_transcode_utf16(data) {
+        std::borrow::Cow::Owned(transcoded)
+    } else {
+        std::borrow::Cow::Borrowed(data)
+    };
+
     let message = mail_parser::MessageParser::default()
-        .parse(data)
+        .parse(&data)
         .ok_or_else(|| KreuzbergError::parsing("Failed to parse EML file: invalid email format".to_string()))?;
 
     let subject = message.subject().map(|s| s.to_string());

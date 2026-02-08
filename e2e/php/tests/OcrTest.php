@@ -56,7 +56,7 @@ class OcrTest extends TestCase
      */
     public function test_ocr_pdf_image_only_german(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/image_only_german_pdf.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/image_only_german_pdf.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping ocr_pdf_image_only_german: missing document at ' . $documentPath);
         }
@@ -76,7 +76,7 @@ class OcrTest extends TestCase
      */
     public function test_ocr_pdf_rotated_90(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/ocr_test_rotated_90.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/ocr_test_rotated_90.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping ocr_pdf_rotated_90: missing document at ' . $documentPath);
         }
@@ -95,7 +95,7 @@ class OcrTest extends TestCase
      */
     public function test_ocr_pdf_tesseract(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/ocr_test.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/ocr_test.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping ocr_pdf_tesseract: missing document at ' . $documentPath);
         }

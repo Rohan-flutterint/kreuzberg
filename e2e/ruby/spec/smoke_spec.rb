@@ -9,7 +9,7 @@ RSpec.describe 'smoke fixtures' do
   it 'smoke_docx_basic' do
     E2ERuby.run_fixture(
       'smoke_docx_basic',
-      'documents/fake.docx',
+      'docx/fake.docx',
       nil,
       requirements: [],
       notes: nil,
@@ -27,7 +27,7 @@ RSpec.describe 'smoke fixtures' do
   it 'smoke_html_basic' do
     E2ERuby.run_fixture(
       'smoke_html_basic',
-      'web/simple_table.html',
+      'html/simple_table.html',
       nil,
       requirements: [],
       notes: nil,
@@ -62,7 +62,7 @@ RSpec.describe 'smoke fixtures' do
   it 'smoke_json_basic' do
     E2ERuby.run_fixture(
       'smoke_json_basic',
-      'data_formats/simple.json',
+      'json/simple.json',
       nil,
       requirements: [],
       notes: nil,
@@ -79,7 +79,7 @@ RSpec.describe 'smoke fixtures' do
   it 'smoke_pdf_basic' do
     E2ERuby.run_fixture(
       'smoke_pdf_basic',
-      'pdfs/fake_memo.pdf',
+      'pdf/fake_memo.pdf',
       nil,
       requirements: [],
       notes: nil,
@@ -114,7 +114,7 @@ RSpec.describe 'smoke fixtures' do
   it 'smoke_xlsx_basic' do
     E2ERuby.run_fixture(
       'smoke_xlsx_basic',
-      'spreadsheets/stanley_cups.xlsx',
+      'xlsx/stanley_cups.xlsx',
       nil,
       requirements: [],
       notes: nil,

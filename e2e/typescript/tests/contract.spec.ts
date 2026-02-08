@@ -22,7 +22,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_batch_bytes_async",
 		async () => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_batch_bytes_async: missing document at", documentPath);
 				return;
@@ -53,7 +53,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_batch_bytes_sync",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_batch_bytes_sync: missing document at", documentPath);
 				return;
@@ -84,7 +84,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_batch_file_async",
 		async () => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_batch_file_async: missing document at", documentPath);
 				return;
@@ -113,7 +113,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_batch_file_sync",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_batch_file_sync: missing document at", documentPath);
 				return;
@@ -142,7 +142,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_extract_bytes_async",
 		async () => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_extract_bytes_async: missing document at", documentPath);
 				return;
@@ -172,7 +172,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_extract_bytes_sync",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_extract_bytes_sync: missing document at", documentPath);
 				return;
@@ -202,7 +202,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_extract_file_async",
 		async () => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_extract_file_async: missing document at", documentPath);
 				return;
@@ -230,7 +230,7 @@ describe("contract fixtures", () => {
 	it(
 		"api_extract_file_sync",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping api_extract_file_sync: missing document at", documentPath);
 				return;
@@ -258,7 +258,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_chunking",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_chunking: missing document at", documentPath);
 				return;
@@ -286,7 +286,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_force_ocr",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_force_ocr: missing document at", documentPath);
 				return;
@@ -313,7 +313,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_images",
 		() => {
-			const documentPath = resolveDocument("pdfs/embedded_images_tables.pdf");
+			const documentPath = resolveDocument("pdf/embedded_images_tables.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_images: missing document at", documentPath);
 				return;
@@ -340,7 +340,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_language_detection",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_language_detection: missing document at", documentPath);
 				return;
@@ -368,7 +368,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_pages",
 		() => {
-			const documentPath = resolveDocument("pdfs/multi_page.pdf");
+			const documentPath = resolveDocument("pdf/multi_page.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_pages: missing document at", documentPath);
 				return;
@@ -395,7 +395,7 @@ describe("contract fixtures", () => {
 	it(
 		"config_use_cache_false",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping config_use_cache_false: missing document at", documentPath);
 				return;
@@ -422,7 +422,7 @@ describe("contract fixtures", () => {
 	it(
 		"output_format_djot",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping output_format_djot: missing document at", documentPath);
 				return;
@@ -449,7 +449,7 @@ describe("contract fixtures", () => {
 	it(
 		"output_format_html",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping output_format_html: missing document at", documentPath);
 				return;
@@ -476,7 +476,7 @@ describe("contract fixtures", () => {
 	it(
 		"output_format_markdown",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping output_format_markdown: missing document at", documentPath);
 				return;
@@ -503,7 +503,7 @@ describe("contract fixtures", () => {
 	it(
 		"output_format_plain",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping output_format_plain: missing document at", documentPath);
 				return;
@@ -530,7 +530,7 @@ describe("contract fixtures", () => {
 	it(
 		"result_format_element_based",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping result_format_element_based: missing document at", documentPath);
 				return;
@@ -557,7 +557,7 @@ describe("contract fixtures", () => {
 	it(
 		"result_format_unified",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping result_format_unified: missing document at", documentPath);
 				return;

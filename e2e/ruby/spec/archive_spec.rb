@@ -1,0 +1,60 @@
+# frozen_string_literal: true
+
+# Auto-generated tests for archive fixtures.
+
+# rubocop:disable RSpec/DescribeClass, RSpec/ExampleLength, Metrics/BlockLength
+require_relative 'spec_helper'
+
+RSpec.describe 'archive fixtures' do
+  it 'archive_sevenz_basic' do
+    E2ERuby.run_fixture(
+      'archive_sevenz_basic',
+      'archives/documents.7z',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/x-7z-compressed']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 10)
+    end
+  end
+
+  it 'archive_tar_basic' do
+    E2ERuby.run_fixture(
+      'archive_tar_basic',
+      'archives/documents.tar',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/x-tar', 'application/tar']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 10)
+    end
+  end
+
+  it 'archive_zip_basic' do
+    E2ERuby.run_fixture(
+      'archive_zip_basic',
+      'archives/documents.zip',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/zip', 'application/x-zip-compressed']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 10)
+    end
+  end
+end
+# rubocop:enable RSpec/DescribeClass, RSpec/ExampleLength, Metrics/BlockLength

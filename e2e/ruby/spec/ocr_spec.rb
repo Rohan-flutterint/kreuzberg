@@ -44,7 +44,7 @@ RSpec.describe 'ocr fixtures' do
   it 'ocr_pdf_image_only_german' do
     E2ERuby.run_fixture(
       'ocr_pdf_image_only_german',
-      'pdfs/image_only_german_pdf.pdf',
+      'pdf/image_only_german_pdf.pdf',
       { force_ocr: true, ocr: { backend: 'tesseract', language: 'eng' } },
       requirements: %w[tesseract tesseract],
       notes: 'Skip if OCR backend unavailable.',
@@ -62,7 +62,7 @@ RSpec.describe 'ocr fixtures' do
   it 'ocr_pdf_rotated_90' do
     E2ERuby.run_fixture(
       'ocr_pdf_rotated_90',
-      'pdfs/ocr_test_rotated_90.pdf',
+      'pdf/ocr_test_rotated_90.pdf',
       { force_ocr: true, ocr: { backend: 'tesseract', language: 'eng' } },
       requirements: %w[tesseract tesseract],
       notes: 'Skip automatically when OCR backend is missing.',
@@ -79,7 +79,7 @@ RSpec.describe 'ocr fixtures' do
   it 'ocr_pdf_tesseract' do
     E2ERuby.run_fixture(
       'ocr_pdf_tesseract',
-      'pdfs/ocr_test.pdf',
+      'pdf/ocr_test.pdf',
       { force_ocr: true, ocr: { backend: 'tesseract', language: 'eng' } },
       requirements: %w[tesseract tesseract],
       notes: 'Skip automatically if OCR backend is unavailable.',

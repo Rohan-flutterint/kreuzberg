@@ -13,11 +13,49 @@ use PHPUnit\Framework\TestCase;
 class OfficeTest extends TestCase
 {
     /**
+     * BibTeX bibliography extraction.
+     */
+    public function test_office_bibtex_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('bibtex/comprehensive.bib');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_bibtex_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-bibtex', 'text/x-bibtex']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * Djot markup text extraction.
+     */
+    public function test_office_djot_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('markdown/tables.djot');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_djot_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['text/x-djot', 'text/djot']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
      * Legacy .doc document conversion via LibreOffice.
      */
     public function test_office_doc_legacy(): void
     {
-        $documentPath = Helpers::resolveDocument('legacy_office/unit_test_lists.doc');
+        $documentPath = Helpers::resolveDocument('doc/unit_test_lists.doc');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_doc_legacy: missing document at ' . $documentPath);
         }
@@ -32,11 +70,30 @@ class OfficeTest extends TestCase
     }
 
     /**
+     * DocBook XML document extraction.
+     */
+    public function test_office_docbook_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('docbook/docbook-reader.docbook');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_docbook_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/docbook+xml', 'text/docbook']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
      * DOCX document extraction baseline.
      */
     public function test_office_docx_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('office/document.docx');
+        $documentPath = Helpers::resolveDocument('docx/sample_document.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_basic: missing document at ' . $documentPath);
         }
@@ -55,7 +112,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_equations(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/equations.docx');
+        $documentPath = Helpers::resolveDocument('docx/equations.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_equations: missing document at ' . $documentPath);
         }
@@ -74,7 +131,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_fake(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/fake.docx');
+        $documentPath = Helpers::resolveDocument('docx/fake.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_fake: missing document at ' . $documentPath);
         }
@@ -93,7 +150,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_formatting(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/unit_test_formatting.docx');
+        $documentPath = Helpers::resolveDocument('docx/unit_test_formatting.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_formatting: missing document at ' . $documentPath);
         }
@@ -112,7 +169,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_headers(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/unit_test_headers.docx');
+        $documentPath = Helpers::resolveDocument('docx/unit_test_headers.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_headers: missing document at ' . $documentPath);
         }
@@ -131,7 +188,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_lists(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/unit_test_lists.docx');
+        $documentPath = Helpers::resolveDocument('docx/unit_test_lists.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_lists: missing document at ' . $documentPath);
         }
@@ -150,7 +207,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_docx_tables(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/docx_tables.docx');
+        $documentPath = Helpers::resolveDocument('docx/docx_tables.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_docx_tables: missing document at ' . $documentPath);
         }
@@ -167,11 +224,280 @@ class OfficeTest extends TestCase
     }
 
     /**
+     * EPUB book extraction with text content.
+     */
+    public function test_office_epub_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('epub/features.epub');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_epub_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/epub+zip']);
+        Helpers::assertMinContentLength($result, 50);
+    }
+
+    /**
+     * FictionBook (FB2) document extraction baseline.
+     */
+    public function test_office_fb2_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('fictionbook/basic.fb2');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_fb2_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-fictionbook+xml']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * FictionBook (.fb2) text extraction.
+     */
+    public function test_office_fictionbook_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('fictionbook/basic.fb2');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_fictionbook_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-fictionbook+xml', 'application/x-fictionbook']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * JATS scientific article extraction.
+     */
+    public function test_office_jats_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('jats/sample_article.jats');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_jats_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-jats+xml', 'text/jats']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * Jupyter notebook extraction.
+     */
+    public function test_office_jupyter_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('jupyter/rank.ipynb');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_jupyter_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-ipynb+json']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * LaTeX document text extraction.
+     */
+    public function test_office_latex_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('latex/basic_sections.tex');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_latex_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-latex', 'text/x-latex']);
+        Helpers::assertMinContentLength($result, 20);
+    }
+
+    /**
+     * Markdown document extraction baseline.
+     */
+    public function test_office_markdown_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('markdown/comprehensive.md');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_markdown_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['text/markdown']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * Basic ODS spreadsheet extraction.
+     */
+    public function test_office_ods_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('data_formats/test_01.ods');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_ods_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.oasis.opendocument.spreadsheet']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * ODT document with bold formatting.
+     */
+    public function test_office_odt_bold(): void
+    {
+        $documentPath = Helpers::resolveDocument('odt/bold.odt');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_odt_bold: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.oasis.opendocument.text']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * ODT document containing unordered lists with nesting.
+     */
+    public function test_office_odt_list(): void
+    {
+        $documentPath = Helpers::resolveDocument('odt/unorderedList.odt');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_odt_list: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.oasis.opendocument.text']);
+        Helpers::assertMinContentLength($result, 30);
+        Helpers::assertContentContainsAny($result, ['list item', 'New level', 'Pushed us']);
+    }
+
+    /**
+     * Basic ODT document with paragraphs and headings.
+     */
+    public function test_office_odt_simple(): void
+    {
+        $documentPath = Helpers::resolveDocument('odt/simple.odt');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_odt_simple: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.oasis.opendocument.text']);
+        Helpers::assertMinContentLength($result, 50);
+        Helpers::assertContentContainsAny($result, ['favorite things', 'Parrots', 'Analysis']);
+    }
+
+    /**
+     * ODT document with a table structure.
+     */
+    public function test_office_odt_table(): void
+    {
+        $documentPath = Helpers::resolveDocument('odt/table.odt');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_odt_table: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.oasis.opendocument.text']);
+        Helpers::assertMinContentLength($result, 10);
+        Helpers::assertTableCount($result, 1, null);
+    }
+
+    /**
+     * OPML outline document extraction.
+     */
+    public function test_office_opml_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('opml/outline.opml');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_opml_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/xml+opml', 'text/x-opml', 'application/x-opml+xml']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * Org-mode document text extraction.
+     */
+    public function test_office_org_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('org/comprehensive.org');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_org_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['text/x-org', 'text/org']);
+        Helpers::assertMinContentLength($result, 20);
+    }
+
+    /**
      * PPSX (PowerPoint Show) files should extract slides content identical to PPTX. GitHub Issue #321 Bug 2.
      */
     public function test_office_ppsx_slideshow(): void
     {
-        $documentPath = Helpers::resolveDocument('presentations/sample.ppsx');
+        $documentPath = Helpers::resolveDocument('pptx/sample.ppsx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_ppsx_slideshow: missing document at ' . $documentPath);
         }
@@ -190,7 +516,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_ppt_legacy(): void
     {
-        $documentPath = Helpers::resolveDocument('legacy_office/simple.ppt');
+        $documentPath = Helpers::resolveDocument('ppt/simple.ppt');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_ppt_legacy: missing document at ' . $documentPath);
         }
@@ -209,7 +535,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_pptx_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('presentations/simple.pptx');
+        $documentPath = Helpers::resolveDocument('pptx/simple.pptx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_pptx_basic: missing document at ' . $documentPath);
         }
@@ -228,7 +554,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_pptx_images(): void
     {
-        $documentPath = Helpers::resolveDocument('presentations/powerpoint_with_image.pptx');
+        $documentPath = Helpers::resolveDocument('pptx/powerpoint_with_image.pptx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_pptx_images: missing document at ' . $documentPath);
         }
@@ -247,7 +573,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_pptx_pitch_deck(): void
     {
-        $documentPath = Helpers::resolveDocument('presentations/pitch_deck_presentation.pptx');
+        $documentPath = Helpers::resolveDocument('pptx/pitch_deck_presentation.pptx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_pptx_pitch_deck: missing document at ' . $documentPath);
         }
@@ -262,11 +588,68 @@ class OfficeTest extends TestCase
     }
 
     /**
+     * reStructuredText document extraction.
+     */
+    public function test_office_rst_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('rst/restructured_text.rst');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_rst_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['text/x-rst', 'text/prs.fallenstein.rst']);
+        Helpers::assertMinContentLength($result, 20);
+    }
+
+    /**
+     * RTF document text extraction.
+     */
+    public function test_office_rtf_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('rtf/extraction_test.rtf');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_rtf_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/rtf', 'text/rtf']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * Typst document text extraction.
+     */
+    public function test_office_typst_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('typst/headings.typ');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping office_typst_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/x-typst', 'text/x-typst']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
      * Legacy XLS spreadsheet to ensure backward compatibility.
      */
     public function test_office_xls_legacy(): void
     {
-        $documentPath = Helpers::resolveDocument('spreadsheets/test_excel.xls');
+        $documentPath = Helpers::resolveDocument('xls/test_excel.xls');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_xls_legacy: missing document at ' . $documentPath);
         }
@@ -285,7 +668,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_xlsx_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('spreadsheets/stanley_cups.xlsx');
+        $documentPath = Helpers::resolveDocument('xlsx/stanley_cups.xlsx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_xlsx_basic: missing document at ' . $documentPath);
         }
@@ -308,7 +691,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_xlsx_multi_sheet(): void
     {
-        $documentPath = Helpers::resolveDocument('spreadsheets/excel_multi_sheet.xlsx');
+        $documentPath = Helpers::resolveDocument('xlsx/excel_multi_sheet.xlsx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_xlsx_multi_sheet: missing document at ' . $documentPath);
         }
@@ -328,7 +711,7 @@ class OfficeTest extends TestCase
      */
     public function test_office_xlsx_office_example(): void
     {
-        $documentPath = Helpers::resolveDocument('office/excel.xlsx');
+        $documentPath = Helpers::resolveDocument('xlsx/test_01.xlsx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping office_xlsx_office_example: missing document at ' . $documentPath);
         }

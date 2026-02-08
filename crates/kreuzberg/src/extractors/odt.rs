@@ -186,7 +186,7 @@ fn extract_content_text(archive: &mut zip::ZipArchive<Cursor<Vec<u8>>>) -> crate
     Ok(text_parts.join("\n").trim().to_string())
 }
 
-/// Helper function to process document elements (paragraphs, headings, tables)
+/// Helper function to process document elements (paragraphs, headings, tables, lists)
 /// Only processes direct children, avoiding nested content like table cells
 fn process_document_elements(parent: roxmltree::Node, text_parts: &mut Vec<String>) {
     for node in parent.children() {
@@ -213,7 +213,45 @@ fn process_document_elements(parent: roxmltree::Node, text_parts: &mut Vec<Strin
                     text_parts.push(String::new());
                 }
             }
+            "list" => {
+                process_list_elements(node, text_parts, 0);
+                text_parts.push(String::new());
+            }
+            "section" => {
+                process_document_elements(node, text_parts);
+            }
             _ => {}
+        }
+    }
+}
+
+/// Process list elements recursively, handling nested lists with indentation
+fn process_list_elements(list_node: roxmltree::Node, text_parts: &mut Vec<String>, depth: usize) {
+    let indent = "  ".repeat(depth);
+    for item in list_node.children() {
+        if item.tag_name().name() == "list-item" {
+            for child in item.children() {
+                match child.tag_name().name() {
+                    "p" => {
+                        if let Some(text) = extract_node_text(child)
+                            && !text.trim().is_empty()
+                        {
+                            text_parts.push(format!("{indent}- {}", text.trim()));
+                        }
+                    }
+                    "h" => {
+                        if let Some(text) = extract_node_text(child)
+                            && !text.trim().is_empty()
+                        {
+                            text_parts.push(format!("{indent}- # {}", text.trim()));
+                        }
+                    }
+                    "list" => {
+                        process_list_elements(child, text_parts, depth + 1);
+                    }
+                    _ => {}
+                }
+            }
         }
     }
 }

@@ -42,4 +42,21 @@ public class ImageTest {
         );
     }
 
+    @Test
+    public void imageSvgBasic() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "image_svg_basic",
+            "xml/simple_svg.svg",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("image/svg+xml"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 5);
+            }
+        );
+    }
+
 }

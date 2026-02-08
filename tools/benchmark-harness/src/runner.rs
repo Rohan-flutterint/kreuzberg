@@ -665,13 +665,21 @@ impl BenchmarkRunner {
                 let warmup_file = fixture.resolve_document_path(fixture_dir);
 
                 println!("Warming up {} with {}...", adapter.name(), warmup_file.display());
+                let warmup_clock = std::time::Instant::now();
                 match adapter.warmup(&warmup_file, self.config.timeout).await {
                     Ok(cold_start) => {
                         println!("  Cold start: {:?}", cold_start);
                         self.cold_start_durations.insert(adapter.name().to_string(), cold_start);
                     }
                     Err(e) => {
-                        eprintln!("  Warning: Warmup failed for {}: {}", adapter.name(), e);
+                        let elapsed = warmup_clock.elapsed();
+                        eprintln!(
+                            "  Warning: Warmup failed for {}: {} (elapsed: {:?})",
+                            adapter.name(),
+                            e,
+                            elapsed
+                        );
+                        self.cold_start_durations.insert(adapter.name().to_string(), elapsed);
                     }
                 }
             } else {

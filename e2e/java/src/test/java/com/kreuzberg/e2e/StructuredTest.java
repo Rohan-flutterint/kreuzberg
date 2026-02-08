@@ -26,6 +26,23 @@ public class StructuredTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
+    public void structuredCsvBasic() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "structured_csv_basic",
+            "csv/stanley_cups.csv",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("text/csv"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 20);
+            }
+        );
+    }
+
+    @Test
     public void structuredJsonBasic() throws Exception {
         JsonNode config = null;
         E2EHelpers.runFixture(
@@ -48,7 +65,7 @@ public class StructuredTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "structured_json_simple",
-            "data_formats/simple.json",
+            "json/simple.json",
             config,
             Collections.emptyList(),
             null,
@@ -62,11 +79,45 @@ public class StructuredTest {
     }
 
     @Test
+    public void structuredTomlBasic() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "structured_toml_basic",
+            "data_formats/cargo.toml",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/toml", "text/toml"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 10);
+            }
+        );
+    }
+
+    @Test
+    public void structuredYamlBasic() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "structured_yaml_basic",
+            "yaml/simple.yaml",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 10);
+            }
+        );
+    }
+
+    @Test
     public void structuredYamlSimple() throws Exception {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "structured_yaml_simple",
-            "data_formats/simple.yaml",
+            "yaml/simple.yaml",
             config,
             Collections.emptyList(),
             null,

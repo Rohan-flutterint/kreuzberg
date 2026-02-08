@@ -17,7 +17,7 @@ class SmokeTest extends TestCase
      */
     public function test_smoke_docx_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('documents/fake.docx');
+        $documentPath = Helpers::resolveDocument('docx/fake.docx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping smoke_docx_basic: missing document at ' . $documentPath);
         }
@@ -37,7 +37,7 @@ class SmokeTest extends TestCase
      */
     public function test_smoke_html_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('web/simple_table.html');
+        $documentPath = Helpers::resolveDocument('html/simple_table.html');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping smoke_html_basic: missing document at ' . $documentPath);
         }
@@ -76,7 +76,7 @@ class SmokeTest extends TestCase
      */
     public function test_smoke_json_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('data_formats/simple.json');
+        $documentPath = Helpers::resolveDocument('json/simple.json');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping smoke_json_basic: missing document at ' . $documentPath);
         }
@@ -95,7 +95,7 @@ class SmokeTest extends TestCase
      */
     public function test_smoke_pdf_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping smoke_pdf_basic: missing document at ' . $documentPath);
         }
@@ -134,7 +134,7 @@ class SmokeTest extends TestCase
      */
     public function test_smoke_xlsx_basic(): void
     {
-        $documentPath = Helpers::resolveDocument('spreadsheets/stanley_cups.xlsx');
+        $documentPath = Helpers::resolveDocument('xlsx/stanley_cups.xlsx');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping smoke_xlsx_basic: missing document at ' . $documentPath);
         }

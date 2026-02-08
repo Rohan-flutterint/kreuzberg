@@ -1,0 +1,92 @@
+// Auto-generated tests for archive fixtures.
+
+import { existsSync, readFileSync } from "node:fs";
+import type { ExtractionResult } from "@kreuzberg/node";
+import { extractFileSync } from "@kreuzberg/node";
+import { describe, it } from "vitest";
+import { assertions, buildConfig, resolveDocument, shouldSkipFixture } from "./helpers.js";
+
+const TEST_TIMEOUT_MS = 60_000;
+
+describe("archive fixtures", () => {
+	it(
+		"archive_sevenz_basic",
+		() => {
+			const documentPath = resolveDocument("archives/documents.7z");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping archive_sevenz_basic: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig(undefined);
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "archive_sevenz_basic", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["application/x-7z-compressed"]);
+			assertions.assertMinContentLength(result, 10);
+		},
+		TEST_TIMEOUT_MS,
+	);
+
+	it(
+		"archive_tar_basic",
+		() => {
+			const documentPath = resolveDocument("archives/documents.tar");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping archive_tar_basic: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig(undefined);
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "archive_tar_basic", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["application/x-tar", "application/tar"]);
+			assertions.assertMinContentLength(result, 10);
+		},
+		TEST_TIMEOUT_MS,
+	);
+
+	it(
+		"archive_zip_basic",
+		() => {
+			const documentPath = resolveDocument("archives/documents.zip");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping archive_zip_basic: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig(undefined);
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "archive_zip_basic", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["application/zip", "application/x-zip-compressed"]);
+			assertions.assertMinContentLength(result, 10);
+		},
+		TEST_TIMEOUT_MS,
+	);
+});

@@ -27,5 +27,27 @@ defmodule E2E.ImageTest do
           flunk("Extraction failed: #{inspect(reason)}")
       end
     end
+
+    test "image_svg_basic" do
+      case E2E.Helpers.run_fixture(
+        "image_svg_basic",
+        "xml/simple_svg.svg",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["image/svg+xml"])
+          |> E2E.Helpers.assert_min_content_length(5)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
   end
 end

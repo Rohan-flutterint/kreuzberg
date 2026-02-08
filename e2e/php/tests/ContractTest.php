@@ -17,7 +17,7 @@ class ContractTest extends TestCase
      */
     public function test_api_batch_bytes_async(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_batch_bytes_async: missing document at ' . $documentPath);
         }
@@ -40,7 +40,7 @@ class ContractTest extends TestCase
      */
     public function test_api_batch_bytes_sync(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_batch_bytes_sync: missing document at ' . $documentPath);
         }
@@ -63,7 +63,7 @@ class ContractTest extends TestCase
      */
     public function test_api_batch_file_async(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_batch_file_async: missing document at ' . $documentPath);
         }
@@ -84,7 +84,7 @@ class ContractTest extends TestCase
      */
     public function test_api_batch_file_sync(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_batch_file_sync: missing document at ' . $documentPath);
         }
@@ -105,7 +105,7 @@ class ContractTest extends TestCase
      */
     public function test_api_extract_bytes_async(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_extract_bytes_async: missing document at ' . $documentPath);
         }
@@ -127,7 +127,7 @@ class ContractTest extends TestCase
      */
     public function test_api_extract_bytes_sync(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_extract_bytes_sync: missing document at ' . $documentPath);
         }
@@ -149,7 +149,7 @@ class ContractTest extends TestCase
      */
     public function test_api_extract_file_async(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_extract_file_async: missing document at ' . $documentPath);
         }
@@ -169,7 +169,7 @@ class ContractTest extends TestCase
      */
     public function test_api_extract_file_sync(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping api_extract_file_sync: missing document at ' . $documentPath);
         }
@@ -189,7 +189,7 @@ class ContractTest extends TestCase
      */
     public function test_config_chunking(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_chunking: missing document at ' . $documentPath);
         }
@@ -209,7 +209,7 @@ class ContractTest extends TestCase
      */
     public function test_config_force_ocr(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_force_ocr: missing document at ' . $documentPath);
         }
@@ -228,7 +228,7 @@ class ContractTest extends TestCase
      */
     public function test_config_images(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/embedded_images_tables.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/embedded_images_tables.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_images: missing document at ' . $documentPath);
         }
@@ -247,7 +247,7 @@ class ContractTest extends TestCase
      */
     public function test_config_language_detection(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_language_detection: missing document at ' . $documentPath);
         }
@@ -267,7 +267,7 @@ class ContractTest extends TestCase
      */
     public function test_config_pages(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/multi_page.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/multi_page.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_pages: missing document at ' . $documentPath);
         }
@@ -286,7 +286,7 @@ class ContractTest extends TestCase
      */
     public function test_config_use_cache_false(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping config_use_cache_false: missing document at ' . $documentPath);
         }
@@ -305,7 +305,7 @@ class ContractTest extends TestCase
      */
     public function test_output_format_djot(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping output_format_djot: missing document at ' . $documentPath);
         }
@@ -324,7 +324,7 @@ class ContractTest extends TestCase
      */
     public function test_output_format_html(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping output_format_html: missing document at ' . $documentPath);
         }
@@ -343,7 +343,7 @@ class ContractTest extends TestCase
      */
     public function test_output_format_markdown(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping output_format_markdown: missing document at ' . $documentPath);
         }
@@ -362,7 +362,7 @@ class ContractTest extends TestCase
      */
     public function test_output_format_plain(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping output_format_plain: missing document at ' . $documentPath);
         }
@@ -381,7 +381,7 @@ class ContractTest extends TestCase
      */
     public function test_result_format_element_based(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping result_format_element_based: missing document at ' . $documentPath);
         }
@@ -400,7 +400,7 @@ class ContractTest extends TestCase
      */
     public function test_result_format_unified(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping result_format_unified: missing document at ' . $documentPath);
         }

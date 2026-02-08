@@ -11,6 +11,32 @@ namespace Kreuzberg.E2E.Office {
     public class OfficeTests
     {
         [SkippableFact]
+        public void OfficeBibtexBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("bibtex/comprehensive.bib");
+            TestHelpers.SkipIfOfficeTestOnWindows("bibtex/comprehensive.bib");
+            var documentPath = TestHelpers.EnsureDocument("bibtex/comprehensive.bib", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-bibtex", "text/x-bibtex" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeDjotBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("markdown/tables.djot");
+            TestHelpers.SkipIfOfficeTestOnWindows("markdown/tables.djot");
+            var documentPath = TestHelpers.EnsureDocument("markdown/tables.djot", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "text/x-djot", "text/djot" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
         public void OfficeDocLegacy()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("doc/unit_test_lists.doc");
@@ -24,11 +50,24 @@ namespace Kreuzberg.E2E.Office {
         }
 
         [SkippableFact]
+        public void OfficeDocbookBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("docbook/docbook-reader.docbook");
+            TestHelpers.SkipIfOfficeTestOnWindows("docbook/docbook-reader.docbook");
+            var documentPath = TestHelpers.EnsureDocument("docbook/docbook-reader.docbook", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/docbook+xml", "text/docbook" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
         public void OfficeDocxBasic()
         {
-            TestHelpers.SkipIfLegacyOfficeDisabled("docx/extraction_test.docx");
-            TestHelpers.SkipIfOfficeTestOnWindows("docx/extraction_test.docx");
-            var documentPath = TestHelpers.EnsureDocument("docx/extraction_test.docx", true);
+            TestHelpers.SkipIfLegacyOfficeDisabled("docx/sample_document.docx");
+            TestHelpers.SkipIfOfficeTestOnWindows("docx/sample_document.docx");
+            var documentPath = TestHelpers.EnsureDocument("docx/sample_document.docx", true);
             var config = TestHelpers.BuildConfig(null);
 
             var result = KreuzbergClient.ExtractFileSync(documentPath, config);
@@ -117,6 +156,191 @@ namespace Kreuzberg.E2E.Office {
         }
 
         [SkippableFact]
+        public void OfficeEpubBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("epub/features.epub");
+            TestHelpers.SkipIfOfficeTestOnWindows("epub/features.epub");
+            var documentPath = TestHelpers.EnsureDocument("epub/features.epub", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/epub+zip" });
+            TestHelpers.AssertMinContentLength(result, 50);
+        }
+
+        [SkippableFact]
+        public void OfficeFb2Basic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("fictionbook/basic.fb2");
+            TestHelpers.SkipIfOfficeTestOnWindows("fictionbook/basic.fb2");
+            var documentPath = TestHelpers.EnsureDocument("fictionbook/basic.fb2", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-fictionbook+xml" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeFictionbookBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("fictionbook/basic.fb2");
+            TestHelpers.SkipIfOfficeTestOnWindows("fictionbook/basic.fb2");
+            var documentPath = TestHelpers.EnsureDocument("fictionbook/basic.fb2", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-fictionbook+xml", "application/x-fictionbook" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeJatsBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("jats/sample_article.jats");
+            TestHelpers.SkipIfOfficeTestOnWindows("jats/sample_article.jats");
+            var documentPath = TestHelpers.EnsureDocument("jats/sample_article.jats", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-jats+xml", "text/jats" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeJupyterBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("jupyter/rank.ipynb");
+            TestHelpers.SkipIfOfficeTestOnWindows("jupyter/rank.ipynb");
+            var documentPath = TestHelpers.EnsureDocument("jupyter/rank.ipynb", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-ipynb+json" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeLatexBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("latex/basic_sections.tex");
+            TestHelpers.SkipIfOfficeTestOnWindows("latex/basic_sections.tex");
+            var documentPath = TestHelpers.EnsureDocument("latex/basic_sections.tex", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-latex", "text/x-latex" });
+            TestHelpers.AssertMinContentLength(result, 20);
+        }
+
+        [SkippableFact]
+        public void OfficeMarkdownBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("markdown/comprehensive.md");
+            TestHelpers.SkipIfOfficeTestOnWindows("markdown/comprehensive.md");
+            var documentPath = TestHelpers.EnsureDocument("markdown/comprehensive.md", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "text/markdown" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeOdsBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("data_formats/test_01.ods");
+            TestHelpers.SkipIfOfficeTestOnWindows("data_formats/test_01.ods");
+            var documentPath = TestHelpers.EnsureDocument("data_formats/test_01.ods", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/vnd.oasis.opendocument.spreadsheet" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeOdtBold()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("odt/bold.odt");
+            TestHelpers.SkipIfOfficeTestOnWindows("odt/bold.odt");
+            var documentPath = TestHelpers.EnsureDocument("odt/bold.odt", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/vnd.oasis.opendocument.text" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeOdtList()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("odt/unorderedList.odt");
+            TestHelpers.SkipIfOfficeTestOnWindows("odt/unorderedList.odt");
+            var documentPath = TestHelpers.EnsureDocument("odt/unorderedList.odt", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/vnd.oasis.opendocument.text" });
+            TestHelpers.AssertMinContentLength(result, 30);
+            TestHelpers.AssertContentContainsAny(result, new[] { "list item", "New level", "Pushed us" });
+        }
+
+        [SkippableFact]
+        public void OfficeOdtSimple()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("odt/simple.odt");
+            TestHelpers.SkipIfOfficeTestOnWindows("odt/simple.odt");
+            var documentPath = TestHelpers.EnsureDocument("odt/simple.odt", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/vnd.oasis.opendocument.text" });
+            TestHelpers.AssertMinContentLength(result, 50);
+            TestHelpers.AssertContentContainsAny(result, new[] { "favorite things", "Parrots", "Analysis" });
+        }
+
+        [SkippableFact]
+        public void OfficeOdtTable()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("odt/table.odt");
+            TestHelpers.SkipIfOfficeTestOnWindows("odt/table.odt");
+            var documentPath = TestHelpers.EnsureDocument("odt/table.odt", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/vnd.oasis.opendocument.text" });
+            TestHelpers.AssertMinContentLength(result, 10);
+            TestHelpers.AssertTableCount(result, 1, null);
+        }
+
+        [SkippableFact]
+        public void OfficeOpmlBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("opml/outline.opml");
+            TestHelpers.SkipIfOfficeTestOnWindows("opml/outline.opml");
+            var documentPath = TestHelpers.EnsureDocument("opml/outline.opml", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/xml+opml", "text/x-opml", "application/x-opml+xml" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeOrgBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("org/comprehensive.org");
+            TestHelpers.SkipIfOfficeTestOnWindows("org/comprehensive.org");
+            var documentPath = TestHelpers.EnsureDocument("org/comprehensive.org", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "text/x-org", "text/org" });
+            TestHelpers.AssertMinContentLength(result, 20);
+        }
+
+        [SkippableFact]
         public void OfficePpsxSlideshow()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("pptx/sample.ppsx");
@@ -182,6 +406,45 @@ namespace Kreuzberg.E2E.Office {
         }
 
         [SkippableFact]
+        public void OfficeRstBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("rst/restructured_text.rst");
+            TestHelpers.SkipIfOfficeTestOnWindows("rst/restructured_text.rst");
+            var documentPath = TestHelpers.EnsureDocument("rst/restructured_text.rst", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "text/x-rst", "text/prs.fallenstein.rst" });
+            TestHelpers.AssertMinContentLength(result, 20);
+        }
+
+        [SkippableFact]
+        public void OfficeRtfBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("rtf/extraction_test.rtf");
+            TestHelpers.SkipIfOfficeTestOnWindows("rtf/extraction_test.rtf");
+            var documentPath = TestHelpers.EnsureDocument("rtf/extraction_test.rtf", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/rtf", "text/rtf" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void OfficeTypstBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("typst/headings.typ");
+            TestHelpers.SkipIfOfficeTestOnWindows("typst/headings.typ");
+            var documentPath = TestHelpers.EnsureDocument("typst/headings.typ", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/x-typst", "text/x-typst" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
         public void OfficeXlsLegacy()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("xls/test_excel.xls");
@@ -230,9 +493,9 @@ namespace Kreuzberg.E2E.Office {
         [SkippableFact]
         public void OfficeXlsxOfficeExample()
         {
-            TestHelpers.SkipIfLegacyOfficeDisabled("xlsx/excel_multi_sheet.xlsx");
-            TestHelpers.SkipIfOfficeTestOnWindows("xlsx/excel_multi_sheet.xlsx");
-            var documentPath = TestHelpers.EnsureDocument("xlsx/excel_multi_sheet.xlsx", true);
+            TestHelpers.SkipIfLegacyOfficeDisabled("xlsx/test_01.xlsx");
+            TestHelpers.SkipIfOfficeTestOnWindows("xlsx/test_01.xlsx");
+            var documentPath = TestHelpers.EnsureDocument("xlsx/test_01.xlsx", true);
             var config = TestHelpers.BuildConfig(null);
 
             var result = KreuzbergClient.ExtractFileSync(documentPath, config);

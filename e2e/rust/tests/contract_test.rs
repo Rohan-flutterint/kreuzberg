@@ -8,7 +8,7 @@ use kreuzberg::core::config::ExtractionConfig;
 async fn test_api_batch_bytes_async() {
     // Tests async batch bytes extraction API (batch_extract_bytes)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_batch_bytes_async: missing document at {}",
@@ -35,7 +35,7 @@ async fn test_api_batch_bytes_async() {
 fn test_api_batch_bytes_sync() {
     // Tests sync batch bytes extraction API (batch_extract_bytes_sync)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_batch_bytes_sync: missing document at {}",
@@ -62,7 +62,7 @@ fn test_api_batch_bytes_sync() {
 async fn test_api_batch_file_async() {
     // Tests async batch file extraction API (batch_extract_file)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_batch_file_async: missing document at {}",
@@ -86,7 +86,7 @@ async fn test_api_batch_file_async() {
 fn test_api_batch_file_sync() {
     // Tests sync batch file extraction API (batch_extract_file_sync)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_batch_file_sync: missing document at {}",
@@ -110,7 +110,7 @@ fn test_api_batch_file_sync() {
 async fn test_api_extract_bytes_async() {
     // Tests async bytes extraction API (extract_bytes)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_extract_bytes_async: missing document at {}",
@@ -137,7 +137,7 @@ async fn test_api_extract_bytes_async() {
 fn test_api_extract_bytes_sync() {
     // Tests sync bytes extraction API (extract_bytes_sync)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_extract_bytes_sync: missing document at {}",
@@ -164,7 +164,7 @@ fn test_api_extract_bytes_sync() {
 async fn test_api_extract_file_async() {
     // Tests async file extraction API (extract_file)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_extract_file_async: missing document at {}",
@@ -188,7 +188,7 @@ async fn test_api_extract_file_async() {
 fn test_api_extract_file_sync() {
     // Tests sync file extraction API (extract_file_sync)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping api_extract_file_sync: missing document at {}",
@@ -212,7 +212,7 @@ fn test_api_extract_file_sync() {
 fn test_config_chunking() {
     // Tests chunking configuration with chunk assertions
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping config_chunking: missing document at {}",
@@ -244,7 +244,7 @@ fn test_config_chunking() {
 fn test_config_force_ocr() {
     // Tests force_ocr configuration option
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping config_force_ocr: missing document at {}",
@@ -283,7 +283,7 @@ fn test_config_force_ocr() {
 fn test_config_images() {
     // Tests image extraction configuration with image assertions
 
-    let document_path = resolve_document("pdfs/embedded_images_tables.pdf");
+    let document_path = resolve_document("pdf/embedded_images_tables.pdf");
     if !document_path.exists() {
         println!(
             "Skipping config_images: missing document at {}",
@@ -313,7 +313,7 @@ fn test_config_images() {
 fn test_config_language_detection() {
     // Tests language detection configuration
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping config_language_detection: missing document at {}",
@@ -344,7 +344,7 @@ fn test_config_language_detection() {
 fn test_config_pages() {
     // Tests page configuration with page assertions
 
-    let document_path = resolve_document("pdfs/multi_page.pdf");
+    let document_path = resolve_document("pdf/multi_page.pdf");
     if !document_path.exists() {
         println!("Skipping config_pages: missing document at {}", document_path.display());
         return;
@@ -372,7 +372,7 @@ fn test_config_pages() {
 fn test_config_use_cache_false() {
     // Tests use_cache=false configuration option
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping config_use_cache_false: missing document at {}",
@@ -400,7 +400,7 @@ fn test_config_use_cache_false() {
 fn test_output_format_djot() {
     // Tests Djot output format
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping output_format_djot: missing document at {}",
@@ -428,7 +428,7 @@ fn test_output_format_djot() {
 fn test_output_format_html() {
     // Tests HTML output format
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping output_format_html: missing document at {}",
@@ -456,7 +456,7 @@ fn test_output_format_html() {
 fn test_output_format_markdown() {
     // Tests Markdown output format
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping output_format_markdown: missing document at {}",
@@ -484,7 +484,7 @@ fn test_output_format_markdown() {
 fn test_output_format_plain() {
     // Tests Plain output format
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping output_format_plain: missing document at {}",
@@ -512,7 +512,7 @@ fn test_output_format_plain() {
 fn test_result_format_element_based() {
     // Tests ElementBased result format with element assertions
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping result_format_element_based: missing document at {}",
@@ -540,7 +540,7 @@ fn test_result_format_element_based() {
 fn test_result_format_unified() {
     // Tests Unified result format (default)
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping result_format_unified: missing document at {}",

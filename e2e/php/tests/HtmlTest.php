@@ -17,7 +17,7 @@ class HtmlTest extends TestCase
      */
     public function test_html_complex_layout(): void
     {
-        $documentPath = Helpers::resolveDocument('web/taylor_swift.html');
+        $documentPath = Helpers::resolveDocument('html/taylor_swift.html');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping html_complex_layout: missing document at ' . $documentPath);
         }
@@ -36,7 +36,7 @@ class HtmlTest extends TestCase
      */
     public function test_html_simple_table(): void
     {
-        $documentPath = Helpers::resolveDocument('web/simple_table.html');
+        $documentPath = Helpers::resolveDocument('html/simple_table.html');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping html_simple_table: missing document at ' . $documentPath);
         }

@@ -6,67 +6,67 @@ package e2e
 import "testing"
 
 func TestPdfPdfAssemblyTechnical(t *testing.T) {
-	result := runExtraction(t, "pdfs/assembly_language_for_beginners_al4_b_en.pdf", nil)
+	result := runExtraction(t, "pdf/assembly_language_for_beginners_al4_b_en.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 5000)
 	assertContentContainsAny(t, result, []string{"assembly", "register", "instruction"})
 }
 
 func TestPdfPdfBayesianDataAnalysis(t *testing.T) {
-	result := runExtraction(t, "pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf", nil)
+	result := runExtraction(t, "pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10000)
 	assertContentContainsAny(t, result, []string{"Bayesian", "probability", "distribution"})
 }
 
 func TestPdfPdfCodeAndFormula(t *testing.T) {
-	result := runExtraction(t, "pdfs/code_and_formula.pdf", nil)
+	result := runExtraction(t, "pdf/code_and_formula.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 100)
 }
 
 func TestPdfPdfDeepLearning(t *testing.T) {
-	result := runExtraction(t, "pdfs/fundamentals_of_deep_learning_2014.pdf", nil)
+	result := runExtraction(t, "pdf/fundamentals_of_deep_learning_2014.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 1000)
 	assertContentContainsAny(t, result, []string{"neural", "network", "deep learning"})
 }
 
 func TestPdfPdfEmbeddedImages(t *testing.T) {
-	result := runExtraction(t, "pdfs/embedded_images_tables.pdf", nil)
+	result := runExtraction(t, "pdf/embedded_images_tables.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 50)
 	assertTableCount(t, result, intPtr(0), nil)
 }
 
 func TestPdfPdfGoogleDoc(t *testing.T) {
-	result := runExtraction(t, "pdfs/google_doc_document.pdf", nil)
+	result := runExtraction(t, "pdf/google_doc_document.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 50)
 }
 
 func TestPdfPdfLargeCiml(t *testing.T) {
-	result := runExtraction(t, "pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf", nil)
+	result := runExtraction(t, "pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10000)
 	assertContentContainsAny(t, result, []string{"machine learning", "algorithm", "training"})
 }
 
 func TestPdfPdfNonEnglishGerman(t *testing.T) {
-	result := runExtraction(t, "pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf", nil)
+	result := runExtraction(t, "pdf/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 100)
 	assertContentContainsAny(t, result, []string{"Intel", "paging"})
 }
 
 func TestPdfPdfRightToLeft(t *testing.T) {
-	result := runExtraction(t, "pdfs/right_to_left_01.pdf", nil)
+	result := runExtraction(t, "pdf/right_to_left_01.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 50)
 }
 
 func TestPdfPdfSimpleText(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtraction(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 50)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "To Whom it May Concern", "Mallori"})
@@ -95,7 +95,7 @@ func TestPdfPdfTablesSmall(t *testing.T) {
 }
 
 func TestPdfPdfTechnicalStatLearning(t *testing.T) {
-	result := runExtraction(t, "pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf", nil)
+	result := runExtraction(t, "pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10000)
 	assertContentContainsAny(t, result, []string{"statistical", "regression", "learning"})

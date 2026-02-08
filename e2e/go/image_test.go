@@ -12,3 +12,9 @@ func TestImageImageMetadataOnly(t *testing.T) {
 	assertExpectedMime(t, result, []string{"image/jpeg"})
 	assertMaxContentLength(t, result, 100)
 }
+
+func TestImageImageSvgBasic(t *testing.T) {
+	result := runExtraction(t, "xml/simple_svg.svg", nil)
+	assertExpectedMime(t, result, []string{"image/svg+xml"})
+	assertMinContentLength(t, result, 5)
+}

@@ -17,7 +17,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_assembly_technical(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/assembly_language_for_beginners_al4_b_en.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/assembly_language_for_beginners_al4_b_en.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_assembly_technical: missing document at ' . $documentPath);
         }
@@ -38,7 +38,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_bayesian_data_analysis(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_bayesian_data_analysis: missing document at ' . $documentPath);
         }
@@ -59,7 +59,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_code_and_formula(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/code_and_formula.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/code_and_formula.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_code_and_formula: missing document at ' . $documentPath);
         }
@@ -78,7 +78,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_deep_learning(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fundamentals_of_deep_learning_2014.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fundamentals_of_deep_learning_2014.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_deep_learning: missing document at ' . $documentPath);
         }
@@ -99,7 +99,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_embedded_images(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/embedded_images_tables.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/embedded_images_tables.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_embedded_images: missing document at ' . $documentPath);
         }
@@ -119,7 +119,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_google_doc(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/google_doc_document.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/google_doc_document.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_google_doc: missing document at ' . $documentPath);
         }
@@ -139,7 +139,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_large_ciml(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_large_ciml: missing document at ' . $documentPath);
         }
@@ -160,7 +160,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_non_english_german(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_non_english_german: missing document at ' . $documentPath);
         }
@@ -181,7 +181,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_right_to_left(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/right_to_left_01.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/right_to_left_01.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_right_to_left: missing document at ' . $documentPath);
         }
@@ -201,7 +201,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_simple_text(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/fake_memo.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_simple_text: missing document at ' . $documentPath);
         }
@@ -282,7 +282,7 @@ class PdfTest extends TestCase
      */
     public function test_pdf_technical_stat_learning(): void
     {
-        $documentPath = Helpers::resolveDocument('pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf');
+        $documentPath = Helpers::resolveDocument('pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping pdf_technical_stat_learning: missing document at ' . $documentPath);
         }

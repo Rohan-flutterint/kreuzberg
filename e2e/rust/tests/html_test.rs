@@ -7,7 +7,7 @@ use kreuzberg::core::config::ExtractionConfig;
 fn test_html_complex_layout() {
     // Large Wikipedia HTML page to validate complex conversion.
 
-    let document_path = resolve_document("web/taylor_swift.html");
+    let document_path = resolve_document("html/taylor_swift.html");
     if !document_path.exists() {
         println!(
             "Skipping html_complex_layout: missing document at {}",
@@ -30,7 +30,7 @@ fn test_html_complex_layout() {
 fn test_html_simple_table() {
     // HTML table converted to markdown should retain structure.
 
-    let document_path = resolve_document("web/simple_table.html");
+    let document_path = resolve_document("html/simple_table.html");
     if !document_path.exists() {
         println!(
             "Skipping html_simple_table: missing document at {}",

@@ -22,5 +22,22 @@ RSpec.describe 'image fixtures' do
       E2ERuby::Assertions.assert_max_content_length(result, 100)
     end
   end
+
+  it 'image_svg_basic' do
+    E2ERuby.run_fixture(
+      'image_svg_basic',
+      'xml/simple_svg.svg',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['image/svg+xml']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 5)
+    end
+  end
 end
 # rubocop:enable RSpec/DescribeClass, RSpec/ExampleLength, Metrics/BlockLength

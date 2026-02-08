@@ -6,13 +6,13 @@ package e2e
 import "testing"
 
 func TestHtmlHtmlComplexLayout(t *testing.T) {
-	result := runExtraction(t, "web/taylor_swift.html", nil)
+	result := runExtraction(t, "html/taylor_swift.html", nil)
 	assertExpectedMime(t, result, []string{"text/html"})
 	assertMinContentLength(t, result, 1000)
 }
 
 func TestHtmlHtmlSimpleTable(t *testing.T) {
-	result := runExtraction(t, "web/simple_table.html", nil)
+	result := runExtraction(t, "html/simple_table.html", nil)
 	assertExpectedMime(t, result, []string{"text/html"})
 	assertMinContentLength(t, result, 100)
 	assertContentContainsAll(t, result, []string{"Product", "Category", "Price", "Stock", "Laptop", "Electronics", "Sample Data Table"})

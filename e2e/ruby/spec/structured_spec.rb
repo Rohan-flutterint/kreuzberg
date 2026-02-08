@@ -6,6 +6,23 @@
 require_relative 'spec_helper'
 
 RSpec.describe 'structured fixtures' do
+  it 'structured_csv_basic' do
+    E2ERuby.run_fixture(
+      'structured_csv_basic',
+      'csv/stanley_cups.csv',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['text/csv']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 20)
+    end
+  end
+
   it 'structured_json_basic' do
     E2ERuby.run_fixture(
       'structured_json_basic',
@@ -27,7 +44,7 @@ RSpec.describe 'structured fixtures' do
   it 'structured_json_simple' do
     E2ERuby.run_fixture(
       'structured_json_simple',
-      'data_formats/simple.json',
+      'json/simple.json',
       nil,
       requirements: [],
       notes: nil,
@@ -42,10 +59,44 @@ RSpec.describe 'structured fixtures' do
     end
   end
 
+  it 'structured_toml_basic' do
+    E2ERuby.run_fixture(
+      'structured_toml_basic',
+      'data_formats/cargo.toml',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/toml', 'text/toml']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 10)
+    end
+  end
+
+  it 'structured_yaml_basic' do
+    E2ERuby.run_fixture(
+      'structured_yaml_basic',
+      'yaml/simple.yaml',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/yaml', 'text/yaml', 'text/x-yaml', 'application/x-yaml']
+      )
+      E2ERuby::Assertions.assert_min_content_length(result, 10)
+    end
+  end
+
   it 'structured_yaml_simple' do
     E2ERuby.run_fixture(
       'structured_yaml_simple',
-      'data_formats/simple.yaml',
+      'yaml/simple.yaml',
       nil,
       requirements: [],
       notes: nil,

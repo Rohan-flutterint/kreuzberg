@@ -6,6 +6,28 @@ defmodule E2E.StructuredTest do
   use ExUnit.Case, async: false
 
   describe "structured fixtures" do
+    test "structured_csv_basic" do
+      case E2E.Helpers.run_fixture(
+        "structured_csv_basic",
+        "csv/stanley_cups.csv",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/csv"])
+          |> E2E.Helpers.assert_min_content_length(20)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "structured_json_basic" do
       case E2E.Helpers.run_fixture(
         "structured_json_basic",
@@ -32,7 +54,7 @@ defmodule E2E.StructuredTest do
     test "structured_json_simple" do
       case E2E.Helpers.run_fixture(
         "structured_json_simple",
-        "data_formats/simple.json",
+        "json/simple.json",
         nil,
         requirements: [],
         notes: nil,
@@ -52,10 +74,54 @@ defmodule E2E.StructuredTest do
       end
     end
 
+    test "structured_toml_basic" do
+      case E2E.Helpers.run_fixture(
+        "structured_toml_basic",
+        "data_formats/cargo.toml",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/toml", "text/toml"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "structured_yaml_basic" do
+      case E2E.Helpers.run_fixture(
+        "structured_yaml_basic",
+        "yaml/simple.yaml",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "structured_yaml_simple" do
       case E2E.Helpers.run_fixture(
         "structured_yaml_simple",
-        "data_formats/simple.yaml",
+        "yaml/simple.yaml",
         nil,
         requirements: [],
         notes: nil,

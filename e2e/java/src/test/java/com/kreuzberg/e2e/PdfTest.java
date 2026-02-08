@@ -30,7 +30,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_assembly_technical",
-            "pdfs/assembly_language_for_beginners_al4_b_en.pdf",
+            "pdf/assembly_language_for_beginners_al4_b_en.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -49,7 +49,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_bayesian_data_analysis",
-            "pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
+            "pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -68,7 +68,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_code_and_formula",
-            "pdfs/code_and_formula.pdf",
+            "pdf/code_and_formula.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -85,7 +85,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_deep_learning",
-            "pdfs/fundamentals_of_deep_learning_2014.pdf",
+            "pdf/fundamentals_of_deep_learning_2014.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -104,7 +104,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_embedded_images",
-            "pdfs/embedded_images_tables.pdf",
+            "pdf/embedded_images_tables.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -122,7 +122,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_google_doc",
-            "pdfs/google_doc_document.pdf",
+            "pdf/google_doc_document.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -140,7 +140,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_large_ciml",
-            "pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf",
+            "pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -159,7 +159,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_non_english_german",
-            "pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
+            "pdf/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -178,7 +178,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_right_to_left",
-            "pdfs/right_to_left_01.pdf",
+            "pdf/right_to_left_01.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -196,7 +196,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_simple_text",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -269,7 +269,7 @@ public class PdfTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "pdf_technical_stat_learning",
-            "pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
+            "pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
             config,
             Collections.emptyList(),
             null,

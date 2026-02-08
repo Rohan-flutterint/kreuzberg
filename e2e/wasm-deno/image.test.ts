@@ -26,3 +26,23 @@ Deno.test("image_metadata_only", { permissions: { read: true } }, async () => {
 	assertions.assertExpectedMime(result, ["image/jpeg"]);
 	assertions.assertMaxContentLength(result, 100);
 });
+
+Deno.test("image_svg_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("xml/simple_svg.svg");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "image/svg+xml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "image_svg_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["image/svg+xml"]);
+	assertions.assertMinContentLength(result, 5);
+});

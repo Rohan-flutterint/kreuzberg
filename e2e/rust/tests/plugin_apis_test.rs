@@ -17,7 +17,7 @@ fn test_config_discover() {
     std::fs::write(
         &config_path,
         r#"[chunking]
-max_characters = 50
+max_chars = 50
 "#,
     )
     .expect("Failed to write config file");
@@ -49,8 +49,8 @@ fn test_config_from_file() {
     std::fs::write(
         &config_path,
         r#"[chunking]
-max_characters = 100
-overlap = 20
+max_chars = 100
+max_overlap = 20
 
 [language_detection]
 enabled = false

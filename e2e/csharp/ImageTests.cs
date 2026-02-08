@@ -23,5 +23,18 @@ namespace Kreuzberg.E2E.Image {
             TestHelpers.AssertMaxContentLength(result, 100);
         }
 
+        [SkippableFact]
+        public void ImageSvgBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("xml/simple_svg.svg");
+            TestHelpers.SkipIfOfficeTestOnWindows("xml/simple_svg.svg");
+            var documentPath = TestHelpers.EnsureDocument("xml/simple_svg.svg", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "image/svg+xml" });
+            TestHelpers.AssertMinContentLength(result, 5);
+        }
+
     }
 }

@@ -26,6 +26,75 @@ public class EmailTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
+    public void emailEmlHtmlBody() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "email_eml_html_body",
+            "email/html_only.eml",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("message/rfc822"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 10);
+            }
+        );
+    }
+
+    @Test
+    public void emailEmlMultipart() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "email_eml_multipart",
+            "email/html_email_multipart.eml",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("message/rfc822"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 10);
+            }
+        );
+    }
+
+    @Test
+    public void emailEmlUtf16() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "email_eml_utf16",
+            "vendored/unstructured/eml/fake-email-utf-16.eml",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("message/rfc822"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 50);
+                E2EHelpers.Assertions.assertContentContainsAny(result, Arrays.asList("Test Email", "Roses are red"));
+            }
+        );
+    }
+
+    @Test
+    public void emailMsgBasic() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "email_msg_basic",
+            "email/fake_email.msg",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/vnd.ms-outlook"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 10);
+            }
+        );
+    }
+
+    @Test
     public void emailSampleEml() throws Exception {
         JsonNode config = null;
         E2EHelpers.runFixture(

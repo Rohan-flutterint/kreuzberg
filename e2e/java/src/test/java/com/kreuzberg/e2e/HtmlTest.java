@@ -30,7 +30,7 @@ public class HtmlTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "html_complex_layout",
-            "web/taylor_swift.html",
+            "html/taylor_swift.html",
             config,
             Collections.emptyList(),
             null,
@@ -47,7 +47,7 @@ public class HtmlTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "html_simple_table",
-            "web/simple_table.html",
+            "html/simple_table.html",
             config,
             Collections.emptyList(),
             null,

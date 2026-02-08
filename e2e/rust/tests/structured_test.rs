@@ -4,6 +4,29 @@ use e2e_rust::{assertions, resolve_document};
 use kreuzberg::core::config::ExtractionConfig;
 
 #[test]
+fn test_structured_csv_basic() {
+    // CSV data file extraction.
+
+    let document_path = resolve_document("csv/stanley_cups.csv");
+    if !document_path.exists() {
+        println!(
+            "Skipping structured_csv_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for structured_csv_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["text/csv"]);
+    assertions::assert_min_content_length(&result, 20);
+}
+
+#[test]
 fn test_structured_json_basic() {
     // Structured JSON extraction should stream and preserve content.
 
@@ -31,7 +54,7 @@ fn test_structured_json_basic() {
 fn test_structured_json_simple() {
     // Simple JSON document to verify structured extraction.
 
-    let document_path = resolve_document("data_formats/simple.json");
+    let document_path = resolve_document("json/simple.json");
     if !document_path.exists() {
         println!(
             "Skipping structured_json_simple: missing document at {}",
@@ -52,10 +75,59 @@ fn test_structured_json_simple() {
 }
 
 #[test]
+fn test_structured_toml_basic() {
+    // TOML configuration file extraction.
+
+    let document_path = resolve_document("data_formats/cargo.toml");
+    if !document_path.exists() {
+        println!(
+            "Skipping structured_toml_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for structured_toml_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/toml", "text/toml"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_structured_yaml_basic() {
+    // YAML file text extraction.
+
+    let document_path = resolve_document("yaml/simple.yaml");
+    if !document_path.exists() {
+        println!(
+            "Skipping structured_yaml_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for structured_yaml_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(
+        &result,
+        &["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"],
+    );
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
 fn test_structured_yaml_simple() {
     // Simple YAML document to validate structured extraction.
 
-    let document_path = resolve_document("data_formats/simple.yaml");
+    let document_path = resolve_document("yaml/simple.yaml");
     if !document_path.exists() {
         println!(
             "Skipping structured_yaml_simple: missing document at {}",

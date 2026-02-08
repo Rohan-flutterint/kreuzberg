@@ -7,6 +7,30 @@ import { describe, expect, it } from "vitest";
 import { assertions, buildConfig, getFixture, shouldSkipFixture } from "./helpers.js";
 
 describe("structured", () => {
+	it("structured_csv_basic", async () => {
+		const documentBytes = getFixture("csv/stanley_cups.csv");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "text/csv", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "structured_csv_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["text/csv"]);
+		assertions.assertMinContentLength(result, 20);
+	});
+
 	it("structured_json_basic", async () => {
 		const documentBytes = getFixture("json/sample_document.json");
 		if (documentBytes === null) {
@@ -55,6 +79,54 @@ describe("structured", () => {
 		assertions.assertExpectedMime(result, ["application/json"]);
 		assertions.assertMinContentLength(result, 10);
 		assertions.assertContentContainsAny(result, ["{", "name"]);
+	});
+
+	it("structured_toml_basic", async () => {
+		const documentBytes = getFixture("data_formats/cargo.toml");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "application/toml", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "structured_toml_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["application/toml", "text/toml"]);
+		assertions.assertMinContentLength(result, 10);
+	});
+
+	it("structured_yaml_basic", async () => {
+		const documentBytes = getFixture("yaml/simple.yaml");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "application/yaml", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "structured_yaml_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"]);
+		assertions.assertMinContentLength(result, 10);
 	});
 
 	it("structured_yaml_simple", async () => {

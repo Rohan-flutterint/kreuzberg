@@ -44,7 +44,7 @@ def test_ocr_image_no_text() -> None:
 def test_ocr_pdf_image_only_german() -> None:
     """Image-only German PDF requiring OCR to extract text."""
 
-    document_path = helpers.resolve_document("pdfs/image_only_german_pdf.pdf")
+    document_path = helpers.resolve_document("pdf/image_only_german_pdf.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_pdf_image_only_german: missing document at {document_path}")
 
@@ -60,7 +60,7 @@ def test_ocr_pdf_image_only_german() -> None:
 def test_ocr_pdf_rotated_90() -> None:
     """Rotated page PDF requiring OCR to verify orientation handling."""
 
-    document_path = helpers.resolve_document("pdfs/ocr_test_rotated_90.pdf")
+    document_path = helpers.resolve_document("pdf/ocr_test_rotated_90.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_pdf_rotated_90: missing document at {document_path}")
 
@@ -75,7 +75,7 @@ def test_ocr_pdf_rotated_90() -> None:
 def test_ocr_pdf_tesseract() -> None:
     """Scanned PDF requires OCR to extract text."""
 
-    document_path = helpers.resolve_document("pdfs/ocr_test.pdf")
+    document_path = helpers.resolve_document("pdf/ocr_test.pdf")
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_pdf_tesseract: missing document at {document_path}")
 

@@ -1,0 +1,73 @@
+// Auto-generated tests for archive fixtures.
+#![allow(clippy::too_many_lines)]
+use e2e_rust::{assertions, resolve_document};
+use kreuzberg::core::config::ExtractionConfig;
+
+#[test]
+fn test_archive_sevenz_basic() {
+    // 7-Zip archive extraction.
+
+    let document_path = resolve_document("archives/documents.7z");
+    if !document_path.exists() {
+        println!(
+            "Skipping archive_sevenz_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for archive_sevenz_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-7z-compressed"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_archive_tar_basic() {
+    // TAR archive extraction.
+
+    let document_path = resolve_document("archives/documents.tar");
+    if !document_path.exists() {
+        println!(
+            "Skipping archive_tar_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for archive_tar_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/x-tar", "application/tar"]);
+    assertions::assert_min_content_length(&result, 10);
+}
+
+#[test]
+fn test_archive_zip_basic() {
+    // ZIP archive extraction.
+
+    let document_path = resolve_document("archives/documents.zip");
+    if !document_path.exists() {
+        println!(
+            "Skipping archive_zip_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for archive_zip_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/zip", "application/x-zip-compressed"]);
+    assertions::assert_min_content_length(&result, 10);
+}

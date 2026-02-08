@@ -5,6 +5,12 @@ package e2e
 
 import "testing"
 
+func TestStructuredStructuredCsvBasic(t *testing.T) {
+	result := runExtraction(t, "csv/stanley_cups.csv", nil)
+	assertExpectedMime(t, result, []string{"text/csv"})
+	assertMinContentLength(t, result, 20)
+}
+
 func TestStructuredStructuredJsonBasic(t *testing.T) {
 	result := runExtraction(t, "json/sample_document.json", nil)
 	assertExpectedMime(t, result, []string{"application/json"})
@@ -13,14 +19,26 @@ func TestStructuredStructuredJsonBasic(t *testing.T) {
 }
 
 func TestStructuredStructuredJsonSimple(t *testing.T) {
-	result := runExtraction(t, "data_formats/simple.json", nil)
+	result := runExtraction(t, "json/simple.json", nil)
 	assertExpectedMime(t, result, []string{"application/json"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"{", "name"})
 }
 
+func TestStructuredStructuredTomlBasic(t *testing.T) {
+	result := runExtraction(t, "data_formats/cargo.toml", nil)
+	assertExpectedMime(t, result, []string{"application/toml", "text/toml"})
+	assertMinContentLength(t, result, 10)
+}
+
+func TestStructuredStructuredYamlBasic(t *testing.T) {
+	result := runExtraction(t, "yaml/simple.yaml", nil)
+	assertExpectedMime(t, result, []string{"application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"})
+	assertMinContentLength(t, result, 10)
+}
+
 func TestStructuredStructuredYamlSimple(t *testing.T) {
-	result := runExtraction(t, "data_formats/simple.yaml", nil)
+	result := runExtraction(t, "yaml/simple.yaml", nil)
 	assertExpectedMime(t, result, []string{"application/x-yaml"})
 	assertMinContentLength(t, result, 10)
 }

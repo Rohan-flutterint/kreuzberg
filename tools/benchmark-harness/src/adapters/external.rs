@@ -7,6 +7,10 @@ use super::ocr_flag;
 /// Maximum per-extraction timeout for persistent adapters (seconds).
 const PERSISTENT_MAX_TIMEOUT_SECS: u64 = 180;
 
+/// Higher timeout for slow ML frameworks (mineru, pymupdf4llm) that load
+/// large models and can take significantly longer on first extractions.
+const SLOW_ML_TIMEOUT_SECS: u64 = 300;
+
 /// Margin between the Python-side and Rust-side timeouts.
 /// The Python script handles timeouts internally (via multiprocessing fork),
 /// reporting the result as a JSON error. The Rust-side timeout is a safety net
@@ -357,7 +361,7 @@ pub fn create_pymupdf4llm_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter
     let supported_formats = get_supported_formats("pymupdf4llm");
     Ok(
         SubprocessAdapter::with_persistent_mode("pymupdf4llm", command, args, vec![], supported_formats)
-            .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
+            .with_max_timeout(Duration::from_secs(SLOW_ML_TIMEOUT_SECS)),
     )
 }
 
@@ -392,7 +396,7 @@ pub fn create_mineru_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let supported_formats = get_supported_formats("mineru");
     Ok(
         SubprocessAdapter::with_persistent_mode("mineru", command, args, vec![], supported_formats)
-            .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
+            .with_max_timeout(Duration::from_secs(SLOW_ML_TIMEOUT_SECS)),
     )
 }
 

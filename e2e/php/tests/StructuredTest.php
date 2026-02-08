@@ -13,6 +13,25 @@ use PHPUnit\Framework\TestCase;
 class StructuredTest extends TestCase
 {
     /**
+     * CSV data file extraction.
+     */
+    public function test_structured_csv_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('csv/stanley_cups.csv');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping structured_csv_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['text/csv']);
+        Helpers::assertMinContentLength($result, 20);
+    }
+
+    /**
      * Structured JSON extraction should stream and preserve content.
      */
     public function test_structured_json_basic(): void
@@ -37,7 +56,7 @@ class StructuredTest extends TestCase
      */
     public function test_structured_json_simple(): void
     {
-        $documentPath = Helpers::resolveDocument('data_formats/simple.json');
+        $documentPath = Helpers::resolveDocument('json/simple.json');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping structured_json_simple: missing document at ' . $documentPath);
         }
@@ -53,11 +72,49 @@ class StructuredTest extends TestCase
     }
 
     /**
+     * TOML configuration file extraction.
+     */
+    public function test_structured_toml_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('data_formats/cargo.toml');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping structured_toml_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/toml', 'text/toml']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
+     * YAML file text extraction.
+     */
+    public function test_structured_yaml_basic(): void
+    {
+        $documentPath = Helpers::resolveDocument('yaml/simple.yaml');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping structured_yaml_basic: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/yaml', 'text/yaml', 'text/x-yaml', 'application/x-yaml']);
+        Helpers::assertMinContentLength($result, 10);
+    }
+
+    /**
      * Simple YAML document to validate structured extraction.
      */
     public function test_structured_yaml_simple(): void
     {
-        $documentPath = Helpers::resolveDocument('data_formats/simple.yaml');
+        $documentPath = Helpers::resolveDocument('yaml/simple.yaml');
         if (!file_exists($documentPath)) {
             $this->markTestSkipped('Skipping structured_yaml_simple: missing document at ' . $documentPath);
         }

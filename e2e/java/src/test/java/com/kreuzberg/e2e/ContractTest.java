@@ -28,7 +28,7 @@ public class ContractTest {
     @Test
     public void apiBatchBytesAsync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_batch_bytes_async: missing document at %s", documentPath);
@@ -68,7 +68,7 @@ public class ContractTest {
     @Test
     public void apiBatchBytesSync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_batch_bytes_sync: missing document at %s", documentPath);
@@ -104,7 +104,7 @@ public class ContractTest {
     @Test
     public void apiBatchFileAsync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_batch_file_async: missing document at %s", documentPath);
@@ -142,7 +142,7 @@ public class ContractTest {
     @Test
     public void apiBatchFileSync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_batch_file_sync: missing document at %s", documentPath);
@@ -176,7 +176,7 @@ public class ContractTest {
     @Test
     public void apiExtractBytesAsync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_extract_bytes_async: missing document at %s", documentPath);
@@ -212,7 +212,7 @@ public class ContractTest {
     @Test
     public void apiExtractBytesSync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_extract_bytes_sync: missing document at %s", documentPath);
@@ -244,7 +244,7 @@ public class ContractTest {
     @Test
     public void apiExtractFileAsync() throws Exception {
         JsonNode config = null;
-        Path documentPath = E2EHelpers.resolveDocument("pdfs/fake_memo.pdf");
+        Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
             String msg = String.format("Skipping api_extract_file_async: missing document at %s", documentPath);
@@ -280,7 +280,7 @@ public class ContractTest {
         JsonNode config = null;
         E2EHelpers.runFixture(
             "api_extract_file_sync",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -298,7 +298,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"chunking\":{\"max_chars\":500,\"max_overlap\":50}}");
         E2EHelpers.runFixture(
             "config_chunking",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -316,7 +316,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"force_ocr\":true}");
         E2EHelpers.runFixture(
             "config_force_ocr",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Arrays.asList("tesseract"),
             null,
@@ -333,7 +333,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"images\":{\"extract_images\":true}}");
         E2EHelpers.runFixture(
             "config_images",
-            "pdfs/embedded_images_tables.pdf",
+            "pdf/embedded_images_tables.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -350,7 +350,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"language_detection\":{\"enabled\":true}}");
         E2EHelpers.runFixture(
             "config_language_detection",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -368,7 +368,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"pages\":{\"end\":3,\"start\":1}}");
         E2EHelpers.runFixture(
             "config_pages",
-            "pdfs/multi_page.pdf",
+            "pdf/multi_page.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -385,7 +385,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"use_cache\":false}");
         E2EHelpers.runFixture(
             "config_use_cache_false",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -402,7 +402,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"output_format\":\"djot\"}");
         E2EHelpers.runFixture(
             "output_format_djot",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -419,7 +419,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"output_format\":\"html\"}");
         E2EHelpers.runFixture(
             "output_format_html",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -436,7 +436,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"output_format\":\"markdown\"}");
         E2EHelpers.runFixture(
             "output_format_markdown",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -453,7 +453,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"output_format\":\"plain\"}");
         E2EHelpers.runFixture(
             "output_format_plain",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -470,7 +470,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"result_format\":\"element_based\"}");
         E2EHelpers.runFixture(
             "result_format_element_based",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,
@@ -487,7 +487,7 @@ public class ContractTest {
         JsonNode config = MAPPER.readTree("{\"result_format\":\"unified\"}");
         E2EHelpers.runFixture(
             "result_format_unified",
-            "pdfs/fake_memo.pdf",
+            "pdf/fake_memo.pdf",
             config,
             Collections.emptyList(),
             null,

@@ -6,7 +6,7 @@ package e2e
 import "testing"
 
 func TestContractApiBatchBytesAsync(t *testing.T) {
-	results := runBatchExtractionAsync(t, []string{"pdfs/fake_memo.pdf"}, nil)
+	results := runBatchExtractionAsync(t, []string{"pdf/fake_memo.pdf"}, nil)
 	if len(results) == 0 {
 		t.Fatal("expected at least one result from batch extraction")
 	}
@@ -17,7 +17,7 @@ func TestContractApiBatchBytesAsync(t *testing.T) {
 }
 
 func TestContractApiBatchBytesSync(t *testing.T) {
-	results := runBatchExtraction(t, []string{"pdfs/fake_memo.pdf"}, nil)
+	results := runBatchExtraction(t, []string{"pdf/fake_memo.pdf"}, nil)
 	if len(results) == 0 {
 		t.Fatal("expected at least one result from batch extraction")
 	}
@@ -28,7 +28,7 @@ func TestContractApiBatchBytesSync(t *testing.T) {
 }
 
 func TestContractApiBatchFileAsync(t *testing.T) {
-	results := runBatchExtractionAsync(t, []string{"pdfs/fake_memo.pdf"}, nil)
+	results := runBatchExtractionAsync(t, []string{"pdf/fake_memo.pdf"}, nil)
 	if len(results) == 0 {
 		t.Fatal("expected at least one result from batch extraction")
 	}
@@ -39,7 +39,7 @@ func TestContractApiBatchFileAsync(t *testing.T) {
 }
 
 func TestContractApiBatchFileSync(t *testing.T) {
-	results := runBatchExtraction(t, []string{"pdfs/fake_memo.pdf"}, nil)
+	results := runBatchExtraction(t, []string{"pdf/fake_memo.pdf"}, nil)
 	if len(results) == 0 {
 		t.Fatal("expected at least one result from batch extraction")
 	}
@@ -50,35 +50,35 @@ func TestContractApiBatchFileSync(t *testing.T) {
 }
 
 func TestContractApiExtractBytesAsync(t *testing.T) {
-	result := runExtractionBytesAsync(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtractionBytesAsync(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "Mallori"})
 }
 
 func TestContractApiExtractBytesSync(t *testing.T) {
-	result := runExtractionBytes(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtractionBytes(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "Mallori"})
 }
 
 func TestContractApiExtractFileAsync(t *testing.T) {
-	result := runExtractionAsync(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtractionAsync(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "Mallori"})
 }
 
 func TestContractApiExtractFileSync(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtraction(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "Mallori"})
 }
 
 func TestContractConfigChunking(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "chunking": {
 	"max_chars": 500,
 	"max_overlap": 50
@@ -90,7 +90,7 @@ func TestContractConfigChunking(t *testing.T) {
 }
 
 func TestContractConfigForceOcr(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "force_ocr": true
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -98,7 +98,7 @@ func TestContractConfigForceOcr(t *testing.T) {
 }
 
 func TestContractConfigImages(t *testing.T) {
-	result := runExtraction(t, "pdfs/embedded_images_tables.pdf", []byte(`{
+	result := runExtraction(t, "pdf/embedded_images_tables.pdf", []byte(`{
 "images": {
 	"extract_images": true
 }
@@ -108,7 +108,7 @@ func TestContractConfigImages(t *testing.T) {
 }
 
 func TestContractConfigLanguageDetection(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "language_detection": {
 	"enabled": true
 }
@@ -119,7 +119,7 @@ func TestContractConfigLanguageDetection(t *testing.T) {
 }
 
 func TestContractConfigPages(t *testing.T) {
-	result := runExtraction(t, "pdfs/multi_page.pdf", []byte(`{
+	result := runExtraction(t, "pdf/multi_page.pdf", []byte(`{
 "pages": {
 	"end": 3,
 	"start": 1
@@ -130,7 +130,7 @@ func TestContractConfigPages(t *testing.T) {
 }
 
 func TestContractConfigUseCacheFalse(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "use_cache": false
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -138,7 +138,7 @@ func TestContractConfigUseCacheFalse(t *testing.T) {
 }
 
 func TestContractOutputFormatDjot(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "output_format": "djot"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -146,7 +146,7 @@ func TestContractOutputFormatDjot(t *testing.T) {
 }
 
 func TestContractOutputFormatHtml(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "output_format": "html"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -154,7 +154,7 @@ func TestContractOutputFormatHtml(t *testing.T) {
 }
 
 func TestContractOutputFormatMarkdown(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "output_format": "markdown"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -162,7 +162,7 @@ func TestContractOutputFormatMarkdown(t *testing.T) {
 }
 
 func TestContractOutputFormatPlain(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "output_format": "plain"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -170,7 +170,7 @@ func TestContractOutputFormatPlain(t *testing.T) {
 }
 
 func TestContractResultFormatElementBased(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "result_format": "element_based"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -178,7 +178,7 @@ func TestContractResultFormatElementBased(t *testing.T) {
 }
 
 func TestContractResultFormatUnified(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", []byte(`{
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "result_format": "unified"
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})

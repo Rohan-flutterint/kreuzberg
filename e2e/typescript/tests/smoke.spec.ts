@@ -12,7 +12,7 @@ describe("smoke fixtures", () => {
 	it(
 		"smoke_docx_basic",
 		() => {
-			const documentPath = resolveDocument("documents/fake.docx");
+			const documentPath = resolveDocument("docx/fake.docx");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping smoke_docx_basic: missing document at", documentPath);
 				return;
@@ -42,7 +42,7 @@ describe("smoke fixtures", () => {
 	it(
 		"smoke_html_basic",
 		() => {
-			const documentPath = resolveDocument("web/simple_table.html");
+			const documentPath = resolveDocument("html/simple_table.html");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping smoke_html_basic: missing document at", documentPath);
 				return;
@@ -100,7 +100,7 @@ describe("smoke fixtures", () => {
 	it(
 		"smoke_json_basic",
 		() => {
-			const documentPath = resolveDocument("data_formats/simple.json");
+			const documentPath = resolveDocument("json/simple.json");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping smoke_json_basic: missing document at", documentPath);
 				return;
@@ -127,7 +127,7 @@ describe("smoke fixtures", () => {
 	it(
 		"smoke_pdf_basic",
 		() => {
-			const documentPath = resolveDocument("pdfs/fake_memo.pdf");
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping smoke_pdf_basic: missing document at", documentPath);
 				return;
@@ -182,7 +182,7 @@ describe("smoke fixtures", () => {
 	it(
 		"smoke_xlsx_basic",
 		() => {
-			const documentPath = resolveDocument("spreadsheets/stanley_cups.xlsx");
+			const documentPath = resolveDocument("xlsx/stanley_cups.xlsx");
 			if (!existsSync(documentPath)) {
 				console.warn("Skipping smoke_xlsx_basic: missing document at", documentPath);
 				return;

@@ -13,7 +13,7 @@ from . import helpers
 def test_html_complex_layout() -> None:
     """Large Wikipedia HTML page to validate complex conversion."""
 
-    document_path = helpers.resolve_document("web/taylor_swift.html")
+    document_path = helpers.resolve_document("html/taylor_swift.html")
     if not document_path.exists():
         pytest.skip(f"Skipping html_complex_layout: missing document at {document_path}")
 
@@ -28,7 +28,7 @@ def test_html_complex_layout() -> None:
 def test_html_simple_table() -> None:
     """HTML table converted to markdown should retain structure."""
 
-    document_path = helpers.resolve_document("web/simple_table.html")
+    document_path = helpers.resolve_document("html/simple_table.html")
     if not document_path.exists():
         pytest.skip(f"Skipping html_simple_table: missing document at {document_path}")
 

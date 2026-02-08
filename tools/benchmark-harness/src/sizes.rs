@@ -60,16 +60,24 @@ pub fn measure_framework_sizes() -> Result<FrameworkSizes> {
     let mut sizes = HashMap::new();
 
     for (name, method, description) in FRAMEWORKS {
-        if let Ok(Some(size)) = measure_framework(name, method) {
-            sizes.insert(
-                name.to_string(),
-                FrameworkSize {
-                    size_bytes: size,
-                    method: method.to_string(),
-                    description: description.to_string(),
-                    estimated: false,
-                },
-            );
+        match measure_framework(name, method) {
+            Ok(Some(size)) => {
+                sizes.insert(
+                    name.to_string(),
+                    FrameworkSize {
+                        size_bytes: size,
+                        method: method.to_string(),
+                        description: description.to_string(),
+                        estimated: false,
+                    },
+                );
+            }
+            Ok(None) => {
+                eprintln!("Size measurement: {} ({}) - not installed, skipping", name, method);
+            }
+            Err(e) => {
+                eprintln!("Size measurement: {} ({}) - failed: {}", name, method, e);
+            }
         }
     }
 
@@ -158,56 +166,67 @@ fn extract_package_name(framework: &str) -> &str {
     }
 }
 
-/// Measure Python package size using pip show
+/// Measure Python package size using pip show (with uv pip show fallback)
 fn measure_pip_package(package: &str) -> Result<Option<u64>> {
-    let output = Command::new("pip").args(["show", "-f", package]).output().ok();
+    // Try `pip show` first, then fall back to `uv pip show`
+    let pip_output = Command::new("pip").args(["show", "-f", package]).output().ok();
+    let uv_output = if pip_output.as_ref().is_some_and(|o| o.status.success()) {
+        None
+    } else {
+        eprintln!("  pip show failed for {}, trying uv pip show", package);
+        Command::new("uv").args(["pip", "show", "-f", package]).output().ok()
+    };
+
+    let output = pip_output
+        .filter(|o| o.status.success())
+        .or_else(|| uv_output.filter(|o| o.status.success()));
 
     if let Some(output) = output {
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout = String::from_utf8_lossy(&output.stdout);
 
-            // Find Location line
-            if let Some(location_line) = stdout.lines().find(|l| l.starts_with("Location:")) {
-                let location = location_line.strip_prefix("Location:").unwrap().trim();
-                let location_path = Path::new(location);
+        // Find Location line
+        if let Some(location_line) = stdout.lines().find(|l| l.starts_with("Location:")) {
+            let location = location_line.strip_prefix("Location:").unwrap().trim();
+            let location_path = Path::new(location);
 
-                // Try package directory first (e.g. {location}/kreuzberg/)
-                let package_dir = location_path.join(package.replace('-', "_"));
-                if package_dir.exists() {
-                    return Ok(Some(dir_size(&package_dir)));
+            // Try package directory first (e.g. {location}/kreuzberg/)
+            let package_dir = location_path.join(package.replace('-', "_"));
+            if package_dir.exists() {
+                return Ok(Some(dir_size(&package_dir)));
+            }
+
+            // Fall back to summing individual files listed by pip show -f
+            // This handles native extensions (maturin) where files are at top-level
+            let mut in_files_section = false;
+            let mut total_size: u64 = 0;
+            let mut found_files = false;
+            for line in stdout.lines() {
+                if line.starts_with("Files:") {
+                    in_files_section = true;
+                    continue;
                 }
-
-                // Fall back to summing individual files listed by pip show -f
-                // This handles native extensions (maturin) where files are at top-level
-                let mut in_files_section = false;
-                let mut total_size: u64 = 0;
-                let mut found_files = false;
-                for line in stdout.lines() {
-                    if line.starts_with("Files:") {
-                        in_files_section = true;
+                if in_files_section {
+                    let file_rel = line.trim();
+                    if file_rel.is_empty() {
                         continue;
                     }
-                    if in_files_section {
-                        let file_rel = line.trim();
-                        if file_rel.is_empty() {
-                            continue;
-                        }
-                        // Lines after Files: that don't start with whitespace are new sections
-                        if !line.starts_with(' ') && !line.starts_with('\t') {
-                            break;
-                        }
-                        let file_path = location_path.join(file_rel);
-                        if let Ok(metadata) = fs::metadata(&file_path) {
-                            total_size += metadata.len();
-                            found_files = true;
-                        }
+                    // Lines after Files: that don't start with whitespace are new sections
+                    if !line.starts_with(' ') && !line.starts_with('\t') {
+                        break;
+                    }
+                    let file_path = location_path.join(file_rel);
+                    if let Ok(metadata) = fs::metadata(&file_path) {
+                        total_size += metadata.len();
+                        found_files = true;
                     }
                 }
-                if found_files {
-                    return Ok(Some(total_size));
-                }
+            }
+            if found_files {
+                return Ok(Some(total_size));
             }
         }
+    } else {
+        eprintln!("  Neither pip nor uv could measure size for {}", package);
     }
 
     Ok(None)
@@ -528,6 +547,8 @@ fn measure_nuget_package(name: &str) -> Result<Option<u64>> {
         "packages/csharp/bin/Debug".to_string(),
         "packages/csharp/Kreuzberg/bin/Release".to_string(),
         "packages/csharp/Kreuzberg/bin/Debug".to_string(),
+        "packages/csharp/Benchmark/bin/Release".to_string(),
+        "packages/csharp/Benchmark/bin/Debug".to_string(),
     ];
 
     for path in nuget_paths {

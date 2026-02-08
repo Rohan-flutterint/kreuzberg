@@ -11,6 +11,19 @@ namespace Kreuzberg.E2E.Structured {
     public class StructuredTests
     {
         [SkippableFact]
+        public void StructuredCsvBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("csv/stanley_cups.csv");
+            TestHelpers.SkipIfOfficeTestOnWindows("csv/stanley_cups.csv");
+            var documentPath = TestHelpers.EnsureDocument("csv/stanley_cups.csv", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "text/csv" });
+            TestHelpers.AssertMinContentLength(result, 20);
+        }
+
+        [SkippableFact]
         public void StructuredJsonBasic()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("json/sample_document.json");
@@ -36,6 +49,32 @@ namespace Kreuzberg.E2E.Structured {
             TestHelpers.AssertExpectedMime(result, new[] { "application/json" });
             TestHelpers.AssertMinContentLength(result, 10);
             TestHelpers.AssertContentContainsAny(result, new[] { "{", "name" });
+        }
+
+        [SkippableFact]
+        public void StructuredTomlBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("data_formats/cargo.toml");
+            TestHelpers.SkipIfOfficeTestOnWindows("data_formats/cargo.toml");
+            var documentPath = TestHelpers.EnsureDocument("data_formats/cargo.toml", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/toml", "text/toml" });
+            TestHelpers.AssertMinContentLength(result, 10);
+        }
+
+        [SkippableFact]
+        public void StructuredYamlBasic()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("yaml/simple.yaml");
+            TestHelpers.SkipIfOfficeTestOnWindows("yaml/simple.yaml");
+            var documentPath = TestHelpers.EnsureDocument("yaml/simple.yaml", true);
+            var config = TestHelpers.BuildConfig(null);
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml" });
+            TestHelpers.AssertMinContentLength(result, 10);
         }
 
         [SkippableFact]

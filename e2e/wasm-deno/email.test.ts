@@ -7,6 +7,87 @@ import { assertions, buildConfig, extractBytes, initWasm, resolveDocument, shoul
 // Initialize WASM module once at module load time
 await initWasm();
 
+Deno.test("email_eml_html_body", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("email/html_only.eml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "message/rfc822", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "email_eml_html_body", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["message/rfc822"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("email_eml_multipart", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("email/html_email_multipart.eml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "message/rfc822", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "email_eml_multipart", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["message/rfc822"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("email_eml_utf16", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("vendored/unstructured/eml/fake-email-utf-16.eml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "message/rfc822", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "email_eml_utf16", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["message/rfc822"]);
+	assertions.assertMinContentLength(result, 50);
+	assertions.assertContentContainsAny(result, ["Test Email", "Roses are red"]);
+});
+
+Deno.test("email_msg_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("email/fake_email.msg");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/vnd.ms-outlook", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "email_msg_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.ms-outlook"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
 Deno.test("email_sample_eml", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("email/sample_email.eml");
 	const config = buildConfig(undefined);

@@ -9,7 +9,7 @@ RSpec.describe 'html fixtures' do
   it 'html_complex_layout' do
     E2ERuby.run_fixture(
       'html_complex_layout',
-      'web/taylor_swift.html',
+      'html/taylor_swift.html',
       nil,
       requirements: [],
       notes: nil,
@@ -26,7 +26,7 @@ RSpec.describe 'html fixtures' do
   it 'html_simple_table' do
     E2ERuby.run_fixture(
       'html_simple_table',
-      'web/simple_table.html',
+      'html/simple_table.html',
       nil,
       requirements: [],
       notes: nil,

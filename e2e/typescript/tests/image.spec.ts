@@ -35,4 +35,31 @@ describe("image fixtures", () => {
 		},
 		TEST_TIMEOUT_MS,
 	);
+
+	it(
+		"image_svg_basic",
+		() => {
+			const documentPath = resolveDocument("xml/simple_svg.svg");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping image_svg_basic: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig(undefined);
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "image_svg_basic", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["image/svg+xml"]);
+			assertions.assertMinContentLength(result, 5);
+		},
+		TEST_TIMEOUT_MS,
+	);
 });

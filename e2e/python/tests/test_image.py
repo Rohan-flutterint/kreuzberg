@@ -23,3 +23,18 @@ def test_image_metadata_only() -> None:
 
     helpers.assert_expected_mime(result, ["image/jpeg"])
     helpers.assert_max_content_length(result, 100)
+
+
+def test_image_svg_basic() -> None:
+    """SVG image extraction."""
+
+    document_path = helpers.resolve_document("xml/simple_svg.svg")
+    if not document_path.exists():
+        pytest.skip(f"Skipping image_svg_basic: missing document at {document_path}")
+
+    config = helpers.build_config(None)
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["image/svg+xml"])
+    helpers.assert_min_content_length(result, 5)

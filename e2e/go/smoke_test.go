@@ -6,14 +6,14 @@ package e2e
 import "testing"
 
 func TestSmokeSmokeDocxBasic(t *testing.T) {
-	result := runExtraction(t, "documents/fake.docx", nil)
+	result := runExtraction(t, "docx/fake.docx", nil)
 	assertExpectedMime(t, result, []string{"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
 	assertMinContentLength(t, result, 20)
 	assertContentContainsAny(t, result, []string{"Lorem", "ipsum", "document", "text"})
 }
 
 func TestSmokeSmokeHtmlBasic(t *testing.T) {
-	result := runExtraction(t, "web/simple_table.html", nil)
+	result := runExtraction(t, "html/simple_table.html", nil)
 	assertExpectedMime(t, result, []string{"text/html"})
 	assertMinContentLength(t, result, 10)
 	assertContentContainsAny(t, result, []string{"#", "**", "simple", "HTML"})
@@ -25,13 +25,13 @@ func TestSmokeSmokeImagePng(t *testing.T) {
 }
 
 func TestSmokeSmokeJsonBasic(t *testing.T) {
-	result := runExtraction(t, "data_formats/simple.json", nil)
+	result := runExtraction(t, "json/simple.json", nil)
 	assertExpectedMime(t, result, []string{"application/json"})
 	assertMinContentLength(t, result, 5)
 }
 
 func TestSmokeSmokePdfBasic(t *testing.T) {
-	result := runExtraction(t, "pdfs/fake_memo.pdf", nil)
+	result := runExtraction(t, "pdf/fake_memo.pdf", nil)
 	assertExpectedMime(t, result, []string{"application/pdf"})
 	assertMinContentLength(t, result, 50)
 	assertContentContainsAny(t, result, []string{"May 5, 2023", "To Whom it May Concern"})
@@ -44,7 +44,7 @@ func TestSmokeSmokeTxtBasic(t *testing.T) {
 }
 
 func TestSmokeSmokeXlsxBasic(t *testing.T) {
-	result := runExtraction(t, "spreadsheets/stanley_cups.xlsx", nil)
+	result := runExtraction(t, "xlsx/stanley_cups.xlsx", nil)
 	assertExpectedMime(t, result, []string{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
 	assertMinContentLength(t, result, 100)
 	assertContentContainsAll(t, result, []string{"Team", "Location", "Stanley Cups", "Blues", "Flyers", "Maple Leafs", "STL", "PHI", "TOR"})

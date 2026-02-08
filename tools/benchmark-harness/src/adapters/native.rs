@@ -209,13 +209,23 @@ impl FrameworkAdapter for NativeAdapter {
             p99_memory_bytes: resource_stats.p99_memory_bytes,
         };
 
+        let (success, error_message, error_kind) = if extraction_result.content.trim().is_empty() {
+            (
+                false,
+                Some("Framework returned empty content".to_string()),
+                ErrorKind::EmptyContent,
+            )
+        } else {
+            (true, None, ErrorKind::None)
+        };
+
         Ok(BenchmarkResult {
             framework: self.name().to_string(),
             file_path: file_path.to_path_buf(),
             file_size,
-            success: true,
-            error_message: None,
-            error_kind: ErrorKind::None,
+            success,
+            error_message,
+            error_kind,
             duration,
             extraction_duration: Some(extraction_duration),
             subprocess_overhead: Some(Duration::ZERO), // No subprocess for native Rust

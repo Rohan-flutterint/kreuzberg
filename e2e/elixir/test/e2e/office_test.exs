@@ -6,10 +6,54 @@ defmodule E2E.OfficeTest do
   use ExUnit.Case, async: false
 
   describe "office fixtures" do
+    test "office_bibtex_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_bibtex_basic",
+        "bibtex/comprehensive.bib",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-bibtex", "text/x-bibtex"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_djot_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_djot_basic",
+        "markdown/tables.djot",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/x-djot", "text/djot"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "office_doc_legacy" do
       case E2E.Helpers.run_fixture(
         "office_doc_legacy",
-        "legacy_office/unit_test_lists.doc",
+        "doc/unit_test_lists.doc",
         nil,
         requirements: ["libreoffice", "libreoffice"],
         notes: "LibreOffice must be installed for conversion.",
@@ -28,10 +72,32 @@ defmodule E2E.OfficeTest do
       end
     end
 
+    test "office_docbook_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_docbook_basic",
+        "docbook/docbook-reader.docbook",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/docbook+xml", "text/docbook"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "office_docx_basic" do
       case E2E.Helpers.run_fixture(
         "office_docx_basic",
-        "office/document.docx",
+        "docx/sample_document.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -53,7 +119,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_equations" do
       case E2E.Helpers.run_fixture(
         "office_docx_equations",
-        "documents/equations.docx",
+        "docx/equations.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -75,7 +141,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_fake" do
       case E2E.Helpers.run_fixture(
         "office_docx_fake",
-        "documents/fake.docx",
+        "docx/fake.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -97,7 +163,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_formatting" do
       case E2E.Helpers.run_fixture(
         "office_docx_formatting",
-        "documents/unit_test_formatting.docx",
+        "docx/unit_test_formatting.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -119,7 +185,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_headers" do
       case E2E.Helpers.run_fixture(
         "office_docx_headers",
-        "documents/unit_test_headers.docx",
+        "docx/unit_test_headers.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -141,7 +207,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_lists" do
       case E2E.Helpers.run_fixture(
         "office_docx_lists",
-        "documents/unit_test_lists.docx",
+        "docx/unit_test_lists.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -163,7 +229,7 @@ defmodule E2E.OfficeTest do
     test "office_docx_tables" do
       case E2E.Helpers.run_fixture(
         "office_docx_tables",
-        "documents/docx_tables.docx",
+        "docx/docx_tables.docx",
         nil,
         requirements: [],
         notes: nil,
@@ -184,10 +250,321 @@ defmodule E2E.OfficeTest do
       end
     end
 
+    test "office_epub_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_epub_basic",
+        "epub/features.epub",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/epub+zip"])
+          |> E2E.Helpers.assert_min_content_length(50)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_fb2_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_fb2_basic",
+        "fictionbook/basic.fb2",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-fictionbook+xml"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_fictionbook_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_fictionbook_basic",
+        "fictionbook/basic.fb2",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-fictionbook+xml", "application/x-fictionbook"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_jats_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_jats_basic",
+        "jats/sample_article.jats",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-jats+xml", "text/jats"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_jupyter_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_jupyter_basic",
+        "jupyter/rank.ipynb",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-ipynb+json"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_latex_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_latex_basic",
+        "latex/basic_sections.tex",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-latex", "text/x-latex"])
+          |> E2E.Helpers.assert_min_content_length(20)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_markdown_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_markdown_basic",
+        "markdown/comprehensive.md",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/markdown"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_ods_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_ods_basic",
+        "data_formats/test_01.ods",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.oasis.opendocument.spreadsheet"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_odt_bold" do
+      case E2E.Helpers.run_fixture(
+        "office_odt_bold",
+        "odt/bold.odt",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.oasis.opendocument.text"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_odt_list" do
+      case E2E.Helpers.run_fixture(
+        "office_odt_list",
+        "odt/unorderedList.odt",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.oasis.opendocument.text"])
+          |> E2E.Helpers.assert_min_content_length(30)
+          |> E2E.Helpers.assert_content_contains_any(["list item", "New level", "Pushed us"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_odt_simple" do
+      case E2E.Helpers.run_fixture(
+        "office_odt_simple",
+        "odt/simple.odt",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.oasis.opendocument.text"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_content_contains_any(["favorite things", "Parrots", "Analysis"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_odt_table" do
+      case E2E.Helpers.run_fixture(
+        "office_odt_table",
+        "odt/table.odt",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.oasis.opendocument.text"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_table_count(1, nil)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_opml_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_opml_basic",
+        "opml/outline.opml",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/xml+opml", "text/x-opml", "application/x-opml+xml"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_org_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_org_basic",
+        "org/comprehensive.org",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/x-org", "text/org"])
+          |> E2E.Helpers.assert_min_content_length(20)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "office_ppsx_slideshow" do
       case E2E.Helpers.run_fixture(
         "office_ppsx_slideshow",
-        "presentations/sample.ppsx",
+        "pptx/sample.ppsx",
         nil,
         requirements: [],
         notes: nil,
@@ -209,7 +586,7 @@ defmodule E2E.OfficeTest do
     test "office_ppt_legacy" do
       case E2E.Helpers.run_fixture(
         "office_ppt_legacy",
-        "legacy_office/simple.ppt",
+        "ppt/simple.ppt",
         nil,
         requirements: ["libreoffice", "libreoffice"],
         notes: "Skip if LibreOffice conversion is unavailable.",
@@ -231,7 +608,7 @@ defmodule E2E.OfficeTest do
     test "office_pptx_basic" do
       case E2E.Helpers.run_fixture(
         "office_pptx_basic",
-        "presentations/simple.pptx",
+        "pptx/simple.pptx",
         nil,
         requirements: [],
         notes: nil,
@@ -253,7 +630,7 @@ defmodule E2E.OfficeTest do
     test "office_pptx_images" do
       case E2E.Helpers.run_fixture(
         "office_pptx_images",
-        "presentations/powerpoint_with_image.pptx",
+        "pptx/powerpoint_with_image.pptx",
         nil,
         requirements: [],
         notes: nil,
@@ -275,7 +652,7 @@ defmodule E2E.OfficeTest do
     test "office_pptx_pitch_deck" do
       case E2E.Helpers.run_fixture(
         "office_pptx_pitch_deck",
-        "presentations/pitch_deck_presentation.pptx",
+        "pptx/pitch_deck_presentation.pptx",
         nil,
         requirements: [],
         notes: nil,
@@ -294,10 +671,76 @@ defmodule E2E.OfficeTest do
       end
     end
 
+    test "office_rst_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_rst_basic",
+        "rst/restructured_text.rst",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/x-rst", "text/prs.fallenstein.rst"])
+          |> E2E.Helpers.assert_min_content_length(20)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_rtf_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_rtf_basic",
+        "rtf/extraction_test.rtf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/rtf", "text/rtf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "office_typst_basic" do
+      case E2E.Helpers.run_fixture(
+        "office_typst_basic",
+        "typst/headings.typ",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/x-typst", "text/x-typst"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "office_xls_legacy" do
       case E2E.Helpers.run_fixture(
         "office_xls_legacy",
-        "spreadsheets/test_excel.xls",
+        "xls/test_excel.xls",
         nil,
         requirements: [],
         notes: nil,
@@ -319,7 +762,7 @@ defmodule E2E.OfficeTest do
     test "office_xlsx_basic" do
       case E2E.Helpers.run_fixture(
         "office_xlsx_basic",
-        "spreadsheets/stanley_cups.xlsx",
+        "xlsx/stanley_cups.xlsx",
         nil,
         requirements: [],
         notes: nil,
@@ -345,7 +788,7 @@ defmodule E2E.OfficeTest do
     test "office_xlsx_multi_sheet" do
       case E2E.Helpers.run_fixture(
         "office_xlsx_multi_sheet",
-        "spreadsheets/excel_multi_sheet.xlsx",
+        "xlsx/excel_multi_sheet.xlsx",
         nil,
         requirements: [],
         notes: nil,
@@ -368,7 +811,7 @@ defmodule E2E.OfficeTest do
     test "office_xlsx_office_example" do
       case E2E.Helpers.run_fixture(
         "office_xlsx_office_example",
-        "office/excel.xlsx",
+        "xlsx/test_01.xlsx",
         nil,
         requirements: [],
         notes: nil,

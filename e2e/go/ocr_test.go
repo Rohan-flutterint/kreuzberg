@@ -31,7 +31,7 @@ func TestOcrOcrImageNoText(t *testing.T) {
 }
 
 func TestOcrOcrPdfImageOnlyGerman(t *testing.T) {
-	result := runExtraction(t, "pdfs/image_only_german_pdf.pdf", []byte(`{
+	result := runExtraction(t, "pdf/image_only_german_pdf.pdf", []byte(`{
 "force_ocr": true,
 "ocr": {
 	"backend": "tesseract",
@@ -43,7 +43,7 @@ func TestOcrOcrPdfImageOnlyGerman(t *testing.T) {
 }
 
 func TestOcrOcrPdfRotated90(t *testing.T) {
-	result := runExtraction(t, "pdfs/ocr_test_rotated_90.pdf", []byte(`{
+	result := runExtraction(t, "pdf/ocr_test_rotated_90.pdf", []byte(`{
 "force_ocr": true,
 "ocr": {
 	"backend": "tesseract",
@@ -55,7 +55,7 @@ func TestOcrOcrPdfRotated90(t *testing.T) {
 }
 
 func TestOcrOcrPdfTesseract(t *testing.T) {
-	result := runExtraction(t, "pdfs/ocr_test.pdf", []byte(`{
+	result := runExtraction(t, "pdf/ocr_test.pdf", []byte(`{
 "force_ocr": true,
 "ocr": {
 	"backend": "tesseract",

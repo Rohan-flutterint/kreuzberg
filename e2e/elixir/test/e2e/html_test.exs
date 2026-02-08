@@ -9,7 +9,7 @@ defmodule E2E.HtmlTest do
     test "html_complex_layout" do
       case E2E.Helpers.run_fixture(
         "html_complex_layout",
-        "web/taylor_swift.html",
+        "html/taylor_swift.html",
         nil,
         requirements: [],
         notes: nil,
@@ -31,7 +31,7 @@ defmodule E2E.HtmlTest do
     test "html_simple_table" do
       case E2E.Helpers.run_fixture(
         "html_simple_table",
-        "web/simple_table.html",
+        "html/simple_table.html",
         nil,
         requirements: [],
         notes: nil,

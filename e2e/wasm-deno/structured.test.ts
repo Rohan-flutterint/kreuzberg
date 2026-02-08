@@ -7,6 +7,26 @@ import { assertions, buildConfig, extractBytes, initWasm, resolveDocument, shoul
 // Initialize WASM module once at module load time
 await initWasm();
 
+Deno.test("structured_csv_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("csv/stanley_cups.csv");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "text/csv", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "structured_csv_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["text/csv"]);
+	assertions.assertMinContentLength(result, 20);
+});
+
 Deno.test("structured_json_basic", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("json/sample_document.json");
 	const config = buildConfig(undefined);
@@ -47,6 +67,46 @@ Deno.test("structured_json_simple", { permissions: { read: true } }, async () =>
 	assertions.assertExpectedMime(result, ["application/json"]);
 	assertions.assertMinContentLength(result, 10);
 	assertions.assertContentContainsAny(result, ["{", "name"]);
+});
+
+Deno.test("structured_toml_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("data_formats/cargo.toml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/toml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "structured_toml_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/toml", "text/toml"]);
+	assertions.assertMinContentLength(result, 10);
+});
+
+Deno.test("structured_yaml_basic", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("yaml/simple.yaml");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/yaml", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "structured_yaml_basic", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"]);
+	assertions.assertMinContentLength(result, 10);
 });
 
 Deno.test("structured_yaml_simple", { permissions: { read: true } }, async () => {

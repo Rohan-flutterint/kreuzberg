@@ -30,3 +30,26 @@ fn test_image_metadata_only() {
     assertions::assert_expected_mime(&result, &["image/jpeg"]);
     assertions::assert_max_content_length(&result, 100);
 }
+
+#[test]
+fn test_image_svg_basic() {
+    // SVG image extraction.
+
+    let document_path = resolve_document("xml/simple_svg.svg");
+    if !document_path.exists() {
+        println!(
+            "Skipping image_svg_basic: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for image_svg_basic: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["image/svg+xml"]);
+    assertions::assert_min_content_length(&result, 5);
+}

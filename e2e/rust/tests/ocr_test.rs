@@ -94,7 +94,7 @@ fn test_ocr_image_no_text() {
 fn test_ocr_pdf_image_only_german() {
     // Image-only German PDF requiring OCR to extract text.
 
-    let document_path = resolve_document("pdfs/image_only_german_pdf.pdf");
+    let document_path = resolve_document("pdf/image_only_german_pdf.pdf");
     if !document_path.exists() {
         println!(
             "Skipping ocr_pdf_image_only_german: missing document at {}",
@@ -141,7 +141,7 @@ fn test_ocr_pdf_image_only_german() {
 fn test_ocr_pdf_rotated_90() {
     // Rotated page PDF requiring OCR to verify orientation handling.
 
-    let document_path = resolve_document("pdfs/ocr_test_rotated_90.pdf");
+    let document_path = resolve_document("pdf/ocr_test_rotated_90.pdf");
     if !document_path.exists() {
         println!(
             "Skipping ocr_pdf_rotated_90: missing document at {}",
@@ -184,7 +184,7 @@ fn test_ocr_pdf_rotated_90() {
 fn test_ocr_pdf_tesseract() {
     // Scanned PDF requires OCR to extract text.
 
-    let document_path = resolve_document("pdfs/ocr_test.pdf");
+    let document_path = resolve_document("pdf/ocr_test.pdf");
     if !document_path.exists() {
         println!(
             "Skipping ocr_pdf_tesseract: missing document at {}",

@@ -118,6 +118,8 @@ static EXT_TO_MIME: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("fb2", "application/x-fictionbook+xml");
     m.insert("opml", "application/xml+opml");
     m.insert("dbk", "application/docbook+xml");
+    m.insert("docbook", "application/docbook+xml");
+    m.insert("jats", "application/x-jats+xml");
     m.insert("ipynb", "application/x-ipynb+json");
     m.insert("tex", "application/x-latex");
     m.insert("latex", "application/x-latex");

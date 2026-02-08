@@ -7,7 +7,7 @@ use kreuzberg::core::config::ExtractionConfig;
 fn test_smoke_docx_basic() {
     // Smoke test: DOCX with formatted text
 
-    let document_path = resolve_document("documents/fake.docx");
+    let document_path = resolve_document("docx/fake.docx");
     if !document_path.exists() {
         println!(
             "Skipping smoke_docx_basic: missing document at {}",
@@ -34,7 +34,7 @@ fn test_smoke_docx_basic() {
 fn test_smoke_html_basic() {
     // Smoke test: HTML converted to Markdown
 
-    let document_path = resolve_document("web/simple_table.html");
+    let document_path = resolve_document("html/simple_table.html");
     if !document_path.exists() {
         println!(
             "Skipping smoke_html_basic: missing document at {}",
@@ -81,7 +81,7 @@ fn test_smoke_image_png() {
 fn test_smoke_json_basic() {
     // Smoke test: JSON file extraction
 
-    let document_path = resolve_document("data_formats/simple.json");
+    let document_path = resolve_document("json/simple.json");
     if !document_path.exists() {
         println!(
             "Skipping smoke_json_basic: missing document at {}",
@@ -104,7 +104,7 @@ fn test_smoke_json_basic() {
 fn test_smoke_pdf_basic() {
     // Smoke test: PDF with simple text extraction
 
-    let document_path = resolve_document("pdfs/fake_memo.pdf");
+    let document_path = resolve_document("pdf/fake_memo.pdf");
     if !document_path.exists() {
         println!(
             "Skipping smoke_pdf_basic: missing document at {}",
@@ -151,7 +151,7 @@ fn test_smoke_txt_basic() {
 fn test_smoke_xlsx_basic() {
     // Smoke test: XLSX with basic spreadsheet data including tables
 
-    let document_path = resolve_document("spreadsheets/stanley_cups.xlsx");
+    let document_path = resolve_document("xlsx/stanley_cups.xlsx");
     if !document_path.exists() {
         println!(
             "Skipping smoke_xlsx_basic: missing document at {}",

@@ -1,0 +1,81 @@
+// Auto-generated tests for archive fixtures.
+// Designed for Cloudflare Workers with Vitest + Miniflare
+
+import type { ExtractionResult } from "@kreuzberg/wasm";
+import { extractBytes } from "@kreuzberg/wasm";
+import { describe, expect, it } from "vitest";
+import { assertions, buildConfig, getFixture, shouldSkipFixture } from "./helpers.js";
+
+describe("archive", () => {
+	it("archive_sevenz_basic", async () => {
+		const documentBytes = getFixture("archives/documents.7z");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "application/x-7z-compressed", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "archive_sevenz_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["application/x-7z-compressed"]);
+		assertions.assertMinContentLength(result, 10);
+	});
+
+	it("archive_tar_basic", async () => {
+		const documentBytes = getFixture("archives/documents.tar");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "application/x-tar", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "archive_tar_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["application/x-tar", "application/tar"]);
+		assertions.assertMinContentLength(result, 10);
+	});
+
+	it("archive_zip_basic", async () => {
+		const documentBytes = getFixture("archives/documents.zip");
+		if (documentBytes === null) {
+			console.warn("[SKIP] Test skipped: fixture not available in Cloudflare Workers environment");
+			return;
+		}
+
+		const config = buildConfig(undefined);
+		let result: ExtractionResult | null = null;
+		try {
+			result = await extractBytes(documentBytes, "application/zip", config);
+		} catch (error) {
+			if (shouldSkipFixture(error, "archive_zip_basic", [], undefined)) {
+				return;
+			}
+			throw error;
+		}
+		if (result === null) {
+			return;
+		}
+		assertions.assertExpectedMime(result, ["application/zip", "application/x-zip-compressed"]);
+		assertions.assertMinContentLength(result, 10);
+	});
+});
