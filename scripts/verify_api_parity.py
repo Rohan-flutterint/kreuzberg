@@ -358,6 +358,11 @@ class APIParityValidator:
 
         interface_body = match.group(1)
 
+        # Strip JSDoc / line comments so they don't produce false-positive field names
+        # (e.g. "* Default: false" was matched as a field called "Default")
+        interface_body = re.sub(r'/\*\*.*?\*/', '', interface_body, flags=re.DOTALL)
+        interface_body = re.sub(r'//[^\n]*', '', interface_body)
+
         # Extract field names (excluding methods)
         field_pattern = r'(\w+)\??\s*:\s*(?!.*\()'
         fields = set()

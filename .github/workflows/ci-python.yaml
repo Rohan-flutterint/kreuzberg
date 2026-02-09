@@ -378,6 +378,9 @@ jobs:
         with:
           ort-version: ${{ env.ORT_VERSION }}
 
+      - name: Setup PaddleOCR Models
+        uses: ./.github/actions/setup-paddle-ocr-models
+
       - name: Install Task
         uses: ./.github/actions/install-task
 

@@ -12,21 +12,13 @@ aarch64-unknown-linux-gnu)
 x86_64-unknown-linux-musl | aarch64-unknown-linux-musl)
   sudo apt-get install -y musl-tools g++
 
-  # musl-tools only ships musl-gcc (C). clipper-sys and other crates that
-  # compile C++ need a musl-g++ wrapper. We derive the specs-file path from
-  # the installed musl-gcc script so this works on both x86_64 and aarch64.
-  MUSL_GCC="$(command -v musl-gcc)"
-  SPECS_FILE="$(sed -n 's/.*-specs[[:space:]]*"\?\([^"]*musl-gcc\.specs\)"\?.*/\1/p' "$MUSL_GCC" | head -1)"
-  if [ -z "$SPECS_FILE" ]; then
-    echo "ERROR: could not extract specs path from musl-gcc" >&2
-    exit 1
-  fi
-  sudo tee /usr/local/bin/musl-g++ >/dev/null <<WRAPPER
-#!/bin/sh
-exec "\${REALCXX:-g++}" "\$@" -specs "$SPECS_FILE"
-WRAPPER
-  sudo chmod +x /usr/local/bin/musl-g++
-  echo "Created musl-g++ wrapper using specs: $SPECS_FILE"
+  # musl-tools only ships musl-gcc (C compiler wrapper). C++ crates like
+  # clipper-sys need musl-g++. We use plain g++ (no musl specs) because
+  # cc-rs only compiles .cpp -> .o (no linking). The musl specs strip C++
+  # stdlib include paths (<vector> etc.), causing compilation failures.
+  # Actual musl linking is handled by cargo via CARGO_TARGET_*_LINKER=musl-gcc.
+  sudo ln -sf "$(command -v g++)" /usr/local/bin/musl-g++
+  echo "Created musl-g++ symlink -> $(command -v g++)"
   ;;
 *) ;;
 esac

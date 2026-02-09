@@ -356,6 +356,9 @@ jobs:
         with:
           ort-version: ${{ env.ORT_VERSION }}
 
+      - name: Setup PaddleOCR Models
+        uses: ./.github/actions/setup-paddle-ocr-models
+
       - name: Download Node bindings
         uses: actions/download-artifact@v4
         with:
