@@ -1125,6 +1125,20 @@ export interface BoundingBox {
 }
 
 /**
+ * A PDF annotation extracted from a document page.
+ */
+export interface PdfAnnotation {
+	/** Type of annotation (e.g., "text", "highlight", "link", "underline") */
+	annotationType: string;
+	/** Text content of the annotation, if available */
+	content?: string | null;
+	/** Page number (1-indexed) where the annotation appears */
+	pageNumber: number;
+	/** Bounding box of the annotation on the page */
+	boundingBox?: BoundingBox | null;
+}
+
+/**
  * Metadata for a semantic element.
  *
  * Contains structural and positioning information about an extracted element.
@@ -1207,6 +1221,9 @@ export interface ExtractionResult {
 
 	/** Structured document tree when include_document_structure is enabled, null otherwise */
 	document?: Record<string, unknown> | null;
+
+	/** PDF annotations when extract_annotations is enabled, null otherwise */
+	annotations?: PdfAnnotation[] | null;
 }
 
 /** Post-processor execution stage in the extraction pipeline. */

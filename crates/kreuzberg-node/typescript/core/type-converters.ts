@@ -330,6 +330,12 @@ function convertResult(rawResult: unknown): ExtractionResult {
 		returnObj.processingWarnings = processingWarningsData as Array<{ source: string; message: string }>;
 	}
 
+	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+	const annotationsData = result["annotations"];
+	if (Array.isArray(annotationsData)) {
+		returnObj.annotations = annotationsData as import("../types.js").PdfAnnotation[];
+	}
+
 	return returnObj;
 }
 
