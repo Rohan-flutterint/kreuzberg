@@ -152,6 +152,10 @@ function normalizePdfConfig(pdf?: PdfConfig): NativeExtractionConfig | undefined
 	setIfDefined(normalized, "extractImages", pdf.extractImages);
 	setIfDefined(normalized, "passwords", pdf.passwords);
 	setIfDefined(normalized, "extractMetadata", pdf.extractMetadata);
+	setIfDefined(normalized, "hierarchy", pdf.hierarchy);
+	setIfDefined(normalized, "extractAnnotations", pdf.extractAnnotations);
+	setIfDefined(normalized, "topMarginFraction", pdf.topMarginFraction);
+	setIfDefined(normalized, "bottomMarginFraction", pdf.bottomMarginFraction);
 	return normalized;
 }
 

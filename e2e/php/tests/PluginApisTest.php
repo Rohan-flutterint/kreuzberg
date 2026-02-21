@@ -168,6 +168,7 @@ class PluginApisTest extends TestCase
     public function test_post_processors_clear(): void
     {
         Kreuzberg::clearPostProcessors();
+        $this->assertTrue(true); // Should not throw
     }
 
     /**

@@ -1559,6 +1559,8 @@ fn generate_clear_registry_test(_fixture: &Fixture, test_spec: &PluginTestSpec, 
         let list_func = func_name.replace("clear", "list");
         writeln!(buf, "        $result = Kreuzberg::{}();", list_func)?;
         writeln!(buf, "        $this->assertEmpty($result);")?;
+    } else {
+        writeln!(buf, "        $this->assertTrue(true); // Should not throw")?;
     }
 
     Ok(())
