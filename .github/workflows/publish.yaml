@@ -2943,41 +2943,19 @@ jobs:
         uses: ./.github/actions/setup-rust
         with:
           cache-key-prefix: publish-wasm
-
-      - name: Add wasm32 target
-        run: rustup target add wasm32-unknown-unknown
+          target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
-        run: cargo install wasm-pack --locked
+        run: scripts/ci/wasm/install-wasm-pack.sh
 
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
       - name: Install Task
         uses: ./.github/actions/install-task
 
-      - name: Build WASM for web target
-        run: task wasm:build:web
-        working-directory: crates/kreuzberg-wasm
-
-      - name: Build WASM for bundler target
-        run: task wasm:build:bundler
-        working-directory: crates/kreuzberg-wasm
-
-      - name: Build WASM for Node.js target
-        run: task wasm:build:nodejs
-        working-directory: crates/kreuzberg-wasm
-
-      - name: Build WASM for Deno target
-        run: task wasm:build:deno
-        working-directory: crates/kreuzberg-wasm
-
-      - name: Build TypeScript wrapper
-        run: pnpm build
-        working-directory: crates/kreuzberg-wasm
+      - name: Build all WASM targets and TypeScript wrapper
+        run: task wasm:build:all
 
       - name: Extract version from package.json
         id: version

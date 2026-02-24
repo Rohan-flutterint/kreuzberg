@@ -1,7 +1,7 @@
 name: Install WASI SDK
 description: |
-  Install WASI SDK v25 for cross-compiling C/C++ libraries (Tesseract, Leptonica) to WebAssembly.
-  Supports Linux (x86_64, arm64), macOS (x86_64, arm64), and Windows (x86_64).
+  Install WASI SDK for cross-compiling C/C++ libraries (Tesseract, Leptonica) to WebAssembly.
+  Thin wrapper around bytecodealliance/setup-wasi-sdk-action.
 
 inputs:
   version:
@@ -12,63 +12,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Cache WASI SDK
-      id: cache-wasi-sdk
-      uses: actions/cache@v5
+    - name: Install WASI SDK
+      uses: bytecodealliance/setup-wasi-sdk-action@dcd040abc428fe35253676ef0e6379fba9bf8f9f # main
       with:
-        path: /opt/wasi-sdk
-        key: wasi-sdk-${{ inputs.version }}-${{ runner.os }}-${{ runner.arch }}
-
-    - name: Install WASI SDK (Linux x86_64)
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true' && runner.os == 'Linux' && runner.arch == 'X64'
-      shell: bash
-      run: |
-        wget -q https://github.com/aspect-build/aspect-wasi-sdk/releases/download/v${{ inputs.version }}/wasi-sdk-${{ inputs.version }}.0-x86_64-linux.tar.gz
-        tar xf wasi-sdk-${{ inputs.version }}.0-x86_64-linux.tar.gz
-        sudo mv wasi-sdk-${{ inputs.version }}.0-x86_64-linux /opt/wasi-sdk
-
-    - name: Install WASI SDK (Linux arm64)
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true' && runner.os == 'Linux' && runner.arch == 'ARM64'
-      shell: bash
-      run: |
-        wget -q https://github.com/aspect-build/aspect-wasi-sdk/releases/download/v${{ inputs.version }}/wasi-sdk-${{ inputs.version }}.0-arm64-linux.tar.gz
-        tar xf wasi-sdk-${{ inputs.version }}.0-arm64-linux.tar.gz
-        sudo mv wasi-sdk-${{ inputs.version }}.0-arm64-linux /opt/wasi-sdk
-
-    - name: Install WASI SDK (macOS x86_64)
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true' && runner.os == 'macOS' && runner.arch == 'X64'
-      shell: bash
-      run: |
-        wget -q https://github.com/aspect-build/aspect-wasi-sdk/releases/download/v${{ inputs.version }}/wasi-sdk-${{ inputs.version }}.0-x86_64-macos.tar.gz
-        tar xf wasi-sdk-${{ inputs.version }}.0-x86_64-macos.tar.gz
-        sudo mv wasi-sdk-${{ inputs.version }}.0-x86_64-macos /opt/wasi-sdk
-
-    - name: Install WASI SDK (macOS arm64)
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true' && runner.os == 'macOS' && runner.arch == 'ARM64'
-      shell: bash
-      run: |
-        wget -q https://github.com/aspect-build/aspect-wasi-sdk/releases/download/v${{ inputs.version }}/wasi-sdk-${{ inputs.version }}.0-arm64-macos.tar.gz
-        tar xf wasi-sdk-${{ inputs.version }}.0-arm64-macos.tar.gz
-        sudo mv wasi-sdk-${{ inputs.version }}.0-arm64-macos /opt/wasi-sdk
-
-    - name: Install WASI SDK (Windows)
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true' && runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/aspect-build/aspect-wasi-sdk/releases/download/v${{ inputs.version }}/wasi-sdk-${{ inputs.version }}.0-x86_64-windows.tar.gz" -OutFile "wasi-sdk.tar.gz"
-        tar xf wasi-sdk.tar.gz
-        New-Item -ItemType Directory -Path "C:\opt" -Force | Out-Null
-        Move-Item -Path "wasi-sdk-${{ inputs.version }}.0-x86_64-windows" -Destination "C:\opt\wasi-sdk"
-
-    - name: Set WASI_SDK_PATH (Unix)
-      if: runner.os != 'Windows'
-      shell: bash
-      run: echo "WASI_SDK_PATH=/opt/wasi-sdk" >> "$GITHUB_ENV"
-
-    - name: Set WASI_SDK_PATH (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: echo "WASI_SDK_PATH=C:\opt\wasi-sdk" >> $env:GITHUB_ENV
+        version: ${{ inputs.version }}
+        github-token: ${{ github.token }}
 
     - name: Verify WASI SDK
       shell: bash
