@@ -106,6 +106,7 @@ Complete architecture coverage across all language bindings:
 |----------|:------------:|:-------------:|:-----------:|:-----------:|
 | Python | ✅ | ✅ | ✅ | ✅ |
 | Node.js | ✅ | ✅ | ✅ | ✅ |
+| WASM | ✅ | ✅ | ✅ | ✅ |
 | Ruby | ✅ | ✅ | ✅ | - |
 | Elixir | ✅ | ✅ | ✅ | ✅ |
 | Go | ✅ | ✅ | ✅ | ✅ |
@@ -116,7 +117,7 @@ Complete architecture coverage across all language bindings:
 | CLI | ✅ | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ | - |
 
-**Note**: ✅ = Precompiled binaries available with instant installation. All platforms are tested in CI. macOS support is Apple Silicon only.
+**Note**: ✅ = Precompiled binaries available with instant installation. WASM runs in any environment with WebAssembly support (browsers, Deno, Bun, Cloudflare Workers). All platforms are tested in CI. macOS support is Apple Silicon only.
 
 ### Embeddings Support (Optional)
 
