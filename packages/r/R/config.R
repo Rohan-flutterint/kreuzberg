@@ -51,3 +51,34 @@ chunking_config <- function(max_characters = 1000L, overlap = 200L, ...) {
   if (length(extras) > 0) config <- c(config, extras)
   config
 }
+
+#' Discover extraction configuration from kreuzberg.toml
+#'
+#' Searches for a kreuzberg.toml file in the current directory and parent
+#' directories. Returns the parsed configuration or NULL if not found.
+#'
+#' @return A named list representing the extraction configuration, or NULL.
+#' @export
+discover <- function() {
+  json <- check_native_result(config_discover_native())
+  if (is.null(json)) {
+    return(NULL)
+  }
+  jsonlite::fromJSON(json, simplifyVector = FALSE)
+}
+
+#' Load extraction configuration from a file
+#'
+#' Reads and parses a configuration file. Supports TOML, YAML, and JSON formats
+#' (auto-detected from file extension).
+#'
+#' @param path Path to the configuration file.
+#' @return A named list representing the extraction configuration.
+#' @export
+from_file <- function(path) {
+  json <- check_native_result(config_from_file_native(path))
+  if (is.null(json)) {
+    return(NULL)
+  }
+  jsonlite::fromJSON(json, simplifyVector = FALSE)
+}

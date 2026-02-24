@@ -4,7 +4,32 @@
 
 library(kreuzberg)
 
-WORKSPACE_ROOT <- normalizePath(file.path(dirname(sys.frame(1)$ofile %||% "."), "..", "..", ".."), mustWork = FALSE)
+find_workspace_root <- function() {
+  # When testthat sources helpers, ofile gives us the file path
+  ofile <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+  if (!is.null(ofile)) {
+    # From tests/testthat/helper-kreuzberg.R, go up 4 levels to repo root
+    candidate <- normalizePath(file.path(dirname(ofile), "..", "..", "..", ".."), mustWork = FALSE)
+    if (dir.exists(file.path(candidate, "test_documents"))) {
+      return(candidate)
+    }
+  }
+  # Fallback: testthat sets working dir to package root (e2e/r/)
+  candidate <- normalizePath(file.path(getwd(), "..", ".."), mustWork = FALSE)
+  if (dir.exists(file.path(candidate, "test_documents"))) {
+    return(candidate)
+  }
+  # Last resort: walk up from current dir
+  d <- getwd()
+  for (i in seq_len(10)) {
+    if (dir.exists(file.path(d, "test_documents"))) {
+      return(d)
+    }
+    d <- dirname(d)
+  }
+  stop("Could not find workspace root (test_documents directory)")
+}
+WORKSPACE_ROOT <- find_workspace_root()
 TEST_DOCUMENTS <- file.path(WORKSPACE_ROOT, "test_documents")
 
 resolve_document <- function(relative) {

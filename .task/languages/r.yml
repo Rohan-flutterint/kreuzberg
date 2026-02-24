@@ -121,7 +121,7 @@ tasks:
     desc: Run R E2E tests
     dir: e2e/r
     cmds:
-      - Rscript -e "testthat::test_local()"
+      - Rscript -e "testthat::test_dir('tests/testthat')"
 
   e2e:lint:
     desc: Lint R E2E code

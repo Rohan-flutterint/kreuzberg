@@ -6,6 +6,8 @@ useDynLib(kreuzberg, .registration = TRUE)
 export(extraction_config)
 export(ocr_config)
 export(chunking_config)
+export(discover)
+export(from_file)
 
 # Extraction functions
 export(extract_file)

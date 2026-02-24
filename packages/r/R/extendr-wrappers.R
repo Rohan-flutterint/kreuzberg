@@ -74,6 +74,11 @@ unregister_document_extractor_native <- function(name) invisible(.Call(wrap__unr
 
 clear_document_extractors_native <- function() invisible(.Call(wrap__clear_document_extractors_native))
 
+# Config loading functions
+config_from_file_native <- function(path) .Call(wrap__config_from_file_native, path)
+
+config_discover_native <- function() .Call(wrap__config_discover_native)
+
 # Validation functions
 validate_ocr_backend_name_native <- function(backend) .Call(wrap__validate_ocr_backend_name_native, backend)
 

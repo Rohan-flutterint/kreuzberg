@@ -7,7 +7,7 @@
 #' @export
 extract_file_sync <- function(path, mime_type = NULL, config = NULL) {
   config_json <- if (!is.null(config)) jsonlite::toJSON(config, auto_unbox = TRUE) else NULL
-  result <- extract_file_sync_native(path, mime_type, config_json)
+  result <- check_native_result(extract_file_sync_native(path, mime_type, config_json))
   as_kreuzberg_result(result)
 }
 
@@ -20,7 +20,7 @@ extract_file_sync <- function(path, mime_type = NULL, config = NULL) {
 #' @export
 extract_file <- function(path, mime_type = NULL, config = NULL) {
   config_json <- if (!is.null(config)) jsonlite::toJSON(config, auto_unbox = TRUE) else NULL
-  result <- extract_file_native(path, mime_type, config_json)
+  result <- check_native_result(extract_file_native(path, mime_type, config_json))
   as_kreuzberg_result(result)
 }
 
@@ -33,7 +33,7 @@ extract_file <- function(path, mime_type = NULL, config = NULL) {
 #' @export
 extract_bytes_sync <- function(data, mime_type, config = NULL) {
   config_json <- if (!is.null(config)) jsonlite::toJSON(config, auto_unbox = TRUE) else NULL
-  result <- extract_bytes_sync_native(data, mime_type, config_json)
+  result <- check_native_result(extract_bytes_sync_native(data, mime_type, config_json))
   as_kreuzberg_result(result)
 }
 
@@ -46,6 +46,6 @@ extract_bytes_sync <- function(data, mime_type, config = NULL) {
 #' @export
 extract_bytes <- function(data, mime_type, config = NULL) {
   config_json <- if (!is.null(config)) jsonlite::toJSON(config, auto_unbox = TRUE) else NULL
-  result <- extract_bytes_native(data, mime_type, config_json)
+  result <- check_native_result(extract_bytes_native(data, mime_type, config_json))
   as_kreuzberg_result(result)
 }

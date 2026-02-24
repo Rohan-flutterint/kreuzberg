@@ -171,6 +171,17 @@ fn clear_document_extractors_native() -> extendr_api::Result<()> {
     plugins::clear_document_extractors_impl()
 }
 
+// Config loading functions
+#[extendr]
+fn config_from_file_native(path: &str) -> extendr_api::Result<Nullable<String>> {
+    config::from_file_impl(path)
+}
+
+#[extendr]
+fn config_discover_native() -> extendr_api::Result<Nullable<String>> {
+    config::discover_impl()
+}
+
 // Validation functions
 #[extendr]
 fn validate_ocr_backend_name_native(backend: &str) -> extendr_api::Result<bool> {
@@ -223,6 +234,9 @@ extendr_module! {
     fn list_document_extractors_native;
     fn unregister_document_extractor_native;
     fn clear_document_extractors_native;
+
+    fn config_from_file_native;
+    fn config_discover_native;
 
     fn validate_ocr_backend_name_native;
     fn validate_language_code_native;

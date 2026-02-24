@@ -14,3 +14,21 @@ pub fn parse_config(config_json: Nullable<&str>) -> extendr_api::Result<kreuzber
         Nullable::Null => Ok(kreuzberg::ExtractionConfig::default()),
     }
 }
+
+/// Load an ExtractionConfig from a file (TOML, YAML, or JSON)
+pub fn from_file_impl(path: &str) -> extendr_api::Result<Nullable<String>> {
+    let config = kreuzberg::ExtractionConfig::from_file(path).map_err(to_r_error)?;
+    let json = serde_json::to_string(&config).map_err(to_r_error)?;
+    Ok(Nullable::NotNull(json))
+}
+
+/// Discover an ExtractionConfig from kreuzberg.toml in current or parent directories
+pub fn discover_impl() -> extendr_api::Result<Nullable<String>> {
+    match kreuzberg::ExtractionConfig::discover().map_err(to_r_error)? {
+        Some(config) => {
+            let json = serde_json::to_string(&config).map_err(to_r_error)?;
+            Ok(Nullable::NotNull(json))
+        }
+        None => Ok(Nullable::Null),
+    }
+}

@@ -63,7 +63,7 @@ kreuzberg = { path = "../../vendor/kreuzberg", default-features = false, feature
     "bundled-pdfium",
     "tokio-runtime",
 ] }
-extendr-api = "0.8"
+extendr-api = { version = "0.8", features = ["result_condition"] }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 
