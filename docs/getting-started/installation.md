@@ -13,6 +13,7 @@ Kreuzberg is available in multiple formats optimized for different runtimes: nat
 | **Cloudflare Workers** | `@kreuzberg/wasm`         | Good (WASM)      | Serverless functions, edge computing              |
 | **Python**             | `kreuzberg`               | Fastest (native) | Server-side Python, native performance            |
 | **Ruby**               | `kreuzberg`               | Fastest (native) | Ruby applications, native performance             |
+| **R**                  | `kreuzberg`               | Fastest (native) | R/RStudio, statistical computing                  |
 | **Elixir**             | `kreuzberg`               | Fastest (native) | Elixir/Phoenix apps, BEAM runtime                 |
 | **Java**               | `dev.kreuzberg:kreuzberg` | Fastest (native) | Server-side Java apps, FFM API                    |
 | **Go**                 | `github.com/.../go/v4`    | Fastest (native) | Server-side Go, cgo bindings                      |
@@ -23,7 +24,7 @@ Kreuzberg is available in multiple formats optimized for different runtimes: nat
 
 ### Performance Notes
 
-- **Native bindings** (@kreuzberg/node, kreuzberg Python/Ruby): ~100% performance, compiled C/C++ speed, full feature access
+- **Native bindings** (@kreuzberg/node, kreuzberg Python/Ruby/R): ~100% performance, compiled C/C++ speed, full feature access
 - **WASM**: ~60-80% performance relative to native, pure JavaScript, zero native dependencies, works anywhere JavaScript runs
 
 Choose **native bindings** for server-side applications requiring maximum performance. Choose **WASM** for browser/edge environments or when avoiding native dependencies is essential.
@@ -245,6 +246,26 @@ gem 'kreuzberg', '~> 4.0'
 Native extension builds require Ruby 3.2.0 or higher (including Ruby 4.x) plus MSYS2 on Windows. Set `RBENV_VERSION`/`chruby` accordingly and ensure `bundle config set build.kreuzberg --with-cflags="-std=c++17"` if your compiler defaults are older.
 
 Next steps: [Ruby Quick Start](../guides/extraction.md#ruby) • [Ruby API Reference](../reference/api-ruby.md)
+
+## R
+
+Install from r-universe:
+
+```r title="R Console"
+install.packages("kreuzberg", repos = "https://kreuzberg-dev.r-universe.dev")
+```
+
+Or install from GitHub source:
+
+```r title="R Console"
+remotes::install_github("kreuzberg-dev/kreuzberg", subdir = "packages/r")
+```
+
+**Requirements:** R >= 4.2, Rust toolchain (cargo, rustc >= 1.91)
+
+The package uses extendr to compile Rust code directly into a native R extension. Building from source requires a working Rust toolchain on your PATH.
+
+Next steps: [R Quick Start](../guides/extraction.md#r) • [R API Reference](../reference/api-r.md)
 
 ## Rust
 

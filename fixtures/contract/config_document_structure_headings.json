@@ -3,7 +3,7 @@
 	"description": "Tests document structure extraction with heading nodes on a DOCX",
 	"tags": ["contract", "document_structure"],
 	"document": {
-		"path": "office/docx/headers.docx"
+		"path": "docx/unit_test_headers.docx"
 	},
 	"extraction": {
 		"method": "sync",

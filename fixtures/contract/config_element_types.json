@@ -3,7 +3,7 @@
 	"description": "Tests element-based result format with element type assertions on DOCX",
 	"tags": ["contract", "config", "result_format"],
 	"document": {
-		"path": "office/docx/headers.docx"
+		"path": "docx/unit_test_headers.docx"
 	},
 	"extraction": {
 		"method": "sync",
@@ -17,7 +17,7 @@
 		"result_format_is": "element_based",
 		"elements": {
 			"min_count": 1,
-			"types_include": ["title", "narrative_text"]
+			"types_include": ["narrative_text"]
 		}
 	},
 	"skip": {

@@ -621,6 +621,97 @@ jobs:
           path: benchmark-results/
           retention-days: 30
 
+  bench-r:
+    name: kreuzberg-r (${{ matrix.mode }})
+    needs: setup
+    runs-on: runner-large
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [single-file, batch]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Free disk space
+        run: scripts/ci/benchmarks/free-disk-space.sh
+
+      - name: Install system dependencies
+        uses: ./.github/actions/install-system-deps
+
+      - name: Setup OpenSSL
+        uses: ./.github/actions/setup-openssl
+
+      - name: Setup Rust toolchain
+        uses: ./.github/actions/setup-rust
+        with:
+          cache-key-prefix: benchmarks-r
+          use-sccache: 'true'
+          report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
+
+      - name: Prepare runner tool cache
+        run: |
+          sudo mkdir -p /opt/hostedtoolcache
+          sudo chmod 777 /opt/hostedtoolcache
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3'
+
+      - name: Install R dependencies
+        run: |
+          Rscript -e "install.packages(c('jsonlite', 'testthat', 'withr'), repos = 'https://cloud.r-project.org')"
+        shell: bash
+
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
+      - name: Install Task
+        uses: ./.github/actions/install-task
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable
+          rustup default stable
+
+      - name: Vendor kreuzberg core for R
+        run: python3 scripts/ci/r/vendor-kreuzberg-core.py
+
+      - name: Build R native package
+        run: task r:build:bindings
+
+      - name: Run benchmark
+        env:
+          FRAMEWORK: kreuzberg-r
+          MODE: ${{ matrix.mode }}
+          ITERATIONS: ${{ env.ITERATIONS }}
+          TIMEOUT: ${{ github.event.inputs.timeout }}
+        run: scripts/benchmarks/run-benchmark.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-kreuzberg-r-${{ matrix.mode }}-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30
+
   bench-go:
     name: kreuzberg-go (${{ matrix.mode }})
     needs: setup
@@ -1760,7 +1851,7 @@ jobs:
 
   aggregate-and-publish:
     name: Aggregate & Release Results
-    needs: [setup, bench-native, bench-native-paddle, bench-python, bench-node, bench-wasm, bench-ruby, bench-go, bench-java, bench-csharp, bench-elixir, bench-php, bench-docling, bench-markitdown, bench-pandoc, bench-unstructured, bench-tika, bench-pymupdf4llm, bench-pdfplumber, bench-mineru, bench-pypdf, bench-pdfminer, bench-pdftotext]
+    needs: [setup, bench-native, bench-native-paddle, bench-python, bench-node, bench-wasm, bench-ruby, bench-r, bench-go, bench-java, bench-csharp, bench-elixir, bench-php, bench-docling, bench-markitdown, bench-pandoc, bench-unstructured, bench-tika, bench-pymupdf4llm, bench-pdfplumber, bench-mineru, bench-pypdf, bench-pdfminer, bench-pdftotext]
     runs-on: runner-small
     if: ${{ always() && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') }}
     permissions:
