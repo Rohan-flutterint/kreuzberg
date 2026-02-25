@@ -216,7 +216,8 @@ extract_server <- function(ocr_enabled) {
   flush(stdout())
 
   # Read from stdin line by line
-  con <- stdin()
+  # Note: file("stdin") is required in Rscript; stdin() reads from the script source
+  con <- file("stdin", open = "r")
   while (TRUE) {
     line <- readLines(con, n = 1)
 
@@ -268,7 +269,9 @@ extract_server <- function(ocr_enabled) {
     })
   }
 
+  close(con)
   debug_log("=== SERVER MODE END ===")
+  invisible(NULL)
 }
 
 main <- function() {
@@ -370,4 +373,4 @@ main <- function() {
   })
 }
 
-main()
+invisible(main())

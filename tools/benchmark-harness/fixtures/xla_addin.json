@@ -1,11 +1,11 @@
 {
-	"document": "../../../test_documents/xlsx/test_xla.xla",
+	"document": "../../../test_documents/xlsx/data-with-macros.xla",
 	"file_type": "xla",
-	"file_size": 309,
+	"file_size": 49664,
 	"expected_frameworks": ["kreuzberg"],
 	"metadata": {
-		"description": "Excel add-in file (XLA extension)",
+		"description": "Excel add-in file with spreadsheet data (XLA extension)",
 		"category": "spreadsheet",
-		"size_class": "tiny"
+		"size_class": "small"
 	}
 }

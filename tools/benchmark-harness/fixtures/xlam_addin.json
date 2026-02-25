@@ -1,11 +1,11 @@
 {
-	"document": "../../../test_documents/xlsx/test_xlam.xlam",
+	"document": "../../../test_documents/xlsx/data-with-macros.xlam",
 	"file_type": "xlam",
-	"file_size": 651,
+	"file_size": 170052,
 	"expected_frameworks": ["kreuzberg"],
 	"metadata": {
-		"description": "Excel macro-enabled add-in file (XLAM extension)",
+		"description": "Excel macro-enabled add-in file with spreadsheet data (XLAM extension)",
 		"category": "spreadsheet",
-		"size_class": "tiny"
+		"size_class": "small"
 	}
 }

@@ -1,7 +1,7 @@
 {
-	"document": "../../../../test_documents/vendored/pdfplumber/pdf/issue-203-decimalize.pdf",
+	"document": "../../../../test_documents/pdf/docling.pdf",
 	"file_type": "pdf",
-	"file_size": 137384,
+	"file_size": 5566575,
 	"expected_frameworks": [
 		"kreuzberg",
 		"docling",
@@ -16,8 +16,8 @@
 		"unstructured"
 	],
 	"metadata": {
-		"description": "Document from pdfplumber test suite",
-		"source": "pdfplumber",
-		"size_category": "small"
+		"description": "Docling technical paper PDF",
+		"source": "kreuzberg",
+		"size_category": "large"
 	}
 }

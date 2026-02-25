@@ -555,6 +555,37 @@ mod tests {
         let result = extractor.extract_text_with_passwords(b"not a pdf", &[]);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_strip_page_rotation_no_rotate() {
+        let pdf = b"%PDF-1.4\n1 0 obj\n<< /Type /Page >>\nendobj";
+        let result = strip_page_rotation(pdf);
+        assert!(matches!(result, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn test_strip_page_rotation_90() {
+        let pdf = b"%PDF-1.4\n1 0 obj\n<< /Type /Page /Rotate 90 >>\nendobj";
+        let result = strip_page_rotation(pdf);
+        assert!(matches!(result, Cow::Owned(_)));
+        assert!(!has_rotate_marker(&result));
+    }
+
+    #[test]
+    fn test_strip_page_rotation_270() {
+        let pdf = b"%PDF-1.4\n1 0 obj\n<< /Type /Page /Rotate 270 >>\nendobj";
+        let result = strip_page_rotation(pdf);
+        assert!(matches!(result, Cow::Owned(_)));
+        assert!(!has_rotate_marker(&result));
+    }
+
+    #[test]
+    fn test_strip_page_rotation_multiple() {
+        let pdf = b"%PDF-1.4\n1 0 obj\n<< /Rotate 90 >>\n2 0 obj\n<< /Rotate 180 >>\nendobj";
+        let result = strip_page_rotation(pdf);
+        assert!(matches!(result, Cow::Owned(_)));
+        assert!(!has_rotate_marker(&result));
+    }
 }
 
 #[cfg(test)]

@@ -370,10 +370,10 @@ fn measure_pip_package(package: &str) -> Result<Option<u64>> {
     }
 
     // Last resort: parse uv pip show -f output
-    let output = Command::new("uv")
-        .args(["pip", "show", "-f", package])
-        .output()
-        .map_err(|e| Error::Benchmark(format!("Failed to run `uv pip show {}`: {}", package, e)))?;
+    let output = match Command::new("uv").args(["pip", "show", "-f", package]).output() {
+        Ok(output) => output,
+        Err(_) => return Ok(None), // uv not installed
+    };
 
     if !output.status.success() {
         return Ok(None);

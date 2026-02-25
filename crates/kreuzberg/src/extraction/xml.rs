@@ -200,11 +200,10 @@ pub fn parse_xml(xml_bytes: &[u8], preserve_whitespace: bool) -> Result<XmlExtra
 
 /// Decode UTF-16 bytes (with BOM) to UTF-8 bytes.
 fn decode_utf16_to_utf8(data: &[u8], big_endian: bool) -> Result<Vec<u8>> {
-    // Skip BOM (first 2 bytes)
+    // Skip BOM (first 2 bytes) and truncate to even length
     let data = &data[2..];
-    if !data.len().is_multiple_of(2) {
-        return Err(KreuzbergError::parsing("Invalid UTF-16: odd byte count".to_string()));
-    }
+    let even_len = data.len() & !1;
+    let data = &data[..even_len];
 
     let u16_iter = data.chunks_exact(2).map(|chunk| {
         if big_endian {
@@ -462,5 +461,55 @@ mod tests {
         let xml = b"<root><item\xFF>Content</item\xFF></root>";
         let result = parse_xml(xml, false);
         let _ = result;
+    }
+
+    #[test]
+    fn test_utf16_le_xml() {
+        // UTF-16 LE BOM + "<r>A</r>" encoded as UTF-16 LE
+        let mut xml = vec![0xFF, 0xFE]; // BOM
+        for c in "<r>A</r>".encode_utf16() {
+            xml.extend_from_slice(&c.to_le_bytes());
+        }
+        let result = parse_xml(&xml, false).unwrap();
+        assert!(result.content.contains("A"));
+    }
+
+    #[test]
+    fn test_utf16_be_xml() {
+        // UTF-16 BE BOM + "<r>B</r>" encoded as UTF-16 BE
+        let mut xml = vec![0xFE, 0xFF]; // BOM
+        for c in "<r>B</r>".encode_utf16() {
+            xml.extend_from_slice(&c.to_be_bytes());
+        }
+        let result = parse_xml(&xml, false).unwrap();
+        assert!(result.content.contains("B"));
+    }
+
+    #[test]
+    fn test_utf16_odd_byte_count_truncates_gracefully() {
+        // UTF-16 LE BOM + "<r>X</r>" + trailing odd byte
+        let mut xml = vec![0xFF, 0xFE]; // BOM
+        for c in "<r>X</r>".encode_utf16() {
+            xml.extend_from_slice(&c.to_le_bytes());
+        }
+        xml.push(0x0A); // trailing odd byte
+        let result = parse_xml(&xml, false).unwrap();
+        assert!(result.content.contains("X"));
+    }
+
+    #[test]
+    fn test_utf16_factbook_file() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../test_documents/vendored/unstructured/xml/factbook-utf-16.xml");
+        if path.exists() {
+            let xml = std::fs::read(&path).unwrap();
+            let result = parse_xml(&xml, false).unwrap();
+            assert!(
+                !result.content.is_empty(),
+                "factbook-utf-16.xml should produce non-empty content"
+            );
+            assert!(result.content.contains("United States"));
+            assert!(result.content.contains("Canada"));
+        }
     }
 }

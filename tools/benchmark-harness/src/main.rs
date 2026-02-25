@@ -289,7 +289,7 @@ async fn main() -> Result<()> {
 
             use benchmark_harness::adapters::{
                 create_csharp_adapter, create_elixir_adapter, create_go_adapter, create_java_adapter,
-                create_node_adapter, create_php_adapter, create_python_adapter, create_ruby_adapter,
+                create_node_adapter, create_php_adapter, create_python_adapter, create_r_adapter, create_ruby_adapter,
                 create_wasm_adapter,
             };
 
@@ -302,8 +302,9 @@ async fn main() -> Result<()> {
             try_register!("kreuzberg-csharp", || create_csharp_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-php", || create_php_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-elixir", || create_elixir_adapter(ocr), kreuzberg_count);
+            try_register!("kreuzberg-r", || create_r_adapter(ocr), kreuzberg_count);
 
-            let total_requested = if frameworks.is_empty() { 11 } else { frameworks.len() };
+            let total_requested = if frameworks.is_empty() { 12 } else { frameworks.len() };
             eprintln!(
                 "[adapter] Kreuzberg bindings: {}/{} available",
                 kreuzberg_count, total_requested
