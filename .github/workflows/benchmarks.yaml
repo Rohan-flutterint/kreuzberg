@@ -478,6 +478,9 @@ jobs:
       - name: Install Task
         uses: ./.github/actions/install-task
 
+      - name: Install WASI SDK
+        uses: ./.github/actions/install-wasi-sdk
+
       - name: Build WASM bindings
         run: task wasm:build:bindings
 

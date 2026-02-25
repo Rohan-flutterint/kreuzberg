@@ -60,7 +60,8 @@ defmodule KreuzbergExtract do
 
     # Strip lone Unicode surrogates (U+D800-U+DFFF) which are invalid in JSON
     # These appear as byte sequences in UTF-8: ED A0 80-ED AF BF (high) and ED B0 80-ED BF BF (low)
-    String.replace(no_control, ~r/[\x{D800}-\x{DFFF}]/u, "")
+    # Note: PCRE in UTF-8 mode rejects surrogate codepoints, so we match the raw bytes instead
+    String.replace(no_control, ~r/\xED[\xA0-\xBF][\x80-\xBF]/, "")
   end
 
   @doc """
