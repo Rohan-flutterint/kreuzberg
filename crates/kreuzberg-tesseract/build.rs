@@ -264,6 +264,7 @@ mod build_tesseract {
     }
 
     /// Find the WASI SDK pthread CMake toolchain file (for C++ code using std::mutex/std::thread).
+    #[allow(dead_code)]
     fn find_wasi_pthread_toolchain(wasi_sdk_dir: &Path) -> PathBuf {
         let candidate = wasi_sdk_dir.join("share/cmake/wasi-sdk-pthread.cmake");
         if candidate.exists() {
@@ -928,11 +929,18 @@ mod build_tesseract {
     /// instructions. These deadlock in single-threaded WASM (no SharedArrayBuffer).
     /// This function writes a header that replaces std::mutex with a no-op stub when
     /// TESSERACT_WASM_NOOP_MUTEX is defined, and patches Tesseract source files to use it.
+    /// Patch Tesseract source for single-threaded WASM builds.
+    ///
+    /// The non-threaded wasm32-wasi sysroot doesn't provide `<mutex>` or `<thread>`.
+    /// This function:
+    /// 1. Writes a no-op header providing stub mutex, lock_guard, thread, and this_thread types
+    /// 2. Patches Tesseract source files to use the stubs instead of std:: types
     fn apply_wasm_noop_mutex_patch(tesseract_dir: &Path) {
-        // Write the no-op mutex header
         let noop_header = tesseract_dir.join("src/wasm_noop_mutex.h");
-        let header_content = r#"// No-op mutex for single-threaded WASM builds.
-// Replaces std::mutex/std::lock_guard to avoid memory.atomic.wait32 deadlocks.
+        let header_content = r#"// No-op threading primitives for single-threaded WASM builds.
+// Replaces std::mutex, std::lock_guard, std::thread, std::this_thread
+// to avoid dependency on <mutex>/<thread> which are unavailable in
+// the non-threaded wasm32-wasi sysroot.
 #ifndef TESSERACT_WASM_NOOP_MUTEX_H_
 #define TESSERACT_WASM_NOOP_MUTEX_H_
 
@@ -954,25 +962,47 @@ struct lock_guard {
     lock_guard& operator=(const lock_guard&) = delete;
 };
 
+// No-op thread: single-threaded WASM never spawns threads.
+// The callable is invoked synchronously in the constructor.
+struct thread {
+    thread() = default;
+    template <typename F, typename... Args>
+    explicit thread(F&& f, Args&&... args) {
+        // Execute synchronously — no real thread in WASM.
+        f(static_cast<Args&&>(args)...);
+    }
+    bool joinable() const { return false; }
+    void join() {}
+    void detach() {}
+};
+
+namespace this_thread {
+    inline void yield() {}
+}  // namespace this_thread
+
 }  // namespace wasm_noop
 
-// Replace std::mutex and std::lock_guard with no-op versions
 #define TESSERACT_MUTEX_TYPE wasm_noop::mutex
 #define TESSERACT_LOCK_GUARD wasm_noop::lock_guard
+#define TESSERACT_THREAD_TYPE wasm_noop::thread
+#define TESSERACT_THIS_THREAD wasm_noop::this_thread
 
 #else
 
 #include <mutex>
+#include <thread>
 #define TESSERACT_MUTEX_TYPE std::mutex
 #define TESSERACT_LOCK_GUARD std::lock_guard
+#define TESSERACT_THREAD_TYPE std::thread
+#define TESSERACT_THIS_THREAD std::this_thread
 
 #endif  // TESSERACT_WASM_NOOP_MUTEX
 #endif  // TESSERACT_WASM_NOOP_MUTEX_H_
 "#;
         fs::write(&noop_header, header_content).expect("Failed to write wasm_noop_mutex.h");
-        println!("cargo:warning=Wrote wasm_noop_mutex.h for WASM no-op mutex support");
+        println!("cargo:warning=Wrote wasm_noop_mutex.h for WASM no-op threading stubs");
 
-        // Patch source files to use the no-op mutex header
+        // Patch source files to use the no-op header
         let files_to_patch = [
             "src/lstm/networkscratch.h",
             "src/ccstruct/imagedata.h",
@@ -990,16 +1020,24 @@ struct lock_guard {
 
             let content = fs::read_to_string(&file_path).unwrap_or_default();
             let patched = content
-                // Replace #include <mutex> with our no-op header
+                // Replace threading headers with our no-op header
                 .replace("#include <mutex>", "#include \"wasm_noop_mutex.h\"")
+                .replace("#include <thread>", "#include \"wasm_noop_mutex.h\"")
                 // Replace std::mutex with TESSERACT_MUTEX_TYPE
                 .replace("std::mutex", "TESSERACT_MUTEX_TYPE")
                 // Replace std::lock_guard<TESSERACT_MUTEX_TYPE> with TESSERACT_LOCK_GUARD<TESSERACT_MUTEX_TYPE>
-                .replace("std::lock_guard<TESSERACT_MUTEX_TYPE>", "TESSERACT_LOCK_GUARD<TESSERACT_MUTEX_TYPE>");
+                .replace("std::lock_guard<TESSERACT_MUTEX_TYPE>", "TESSERACT_LOCK_GUARD<TESSERACT_MUTEX_TYPE>")
+                // Replace std::thread with TESSERACT_THREAD_TYPE
+                .replace("std::thread", "TESSERACT_THREAD_TYPE")
+                // Replace std::this_thread with TESSERACT_THIS_THREAD
+                .replace("std::this_thread", "TESSERACT_THIS_THREAD")
+                // Fix double-replacement: TESSERACT_THIS_THREAD was already transformed
+                // from "std::this_thread" but "std::thread" replacement may have mangled it
+                .replace("TESSERACT_THIS_THREAD_TYPE", "TESSERACT_THIS_THREAD");
 
             if patched != content {
                 fs::write(&file_path, patched).unwrap_or_else(|_| panic!("Failed to patch {}", rel_path));
-                println!("cargo:warning=Patched {} for WASM no-op mutex", rel_path);
+                println!("cargo:warning=Patched {} for WASM no-op threading", rel_path);
             }
         }
     }
@@ -1134,22 +1172,17 @@ Installation instructions:
         println!("cargo:rustc-link-lib=static=leptonica");
 
         // Link WASI SDK sysroot libraries for C/C++ standard library symbols.
-        // Use wasm32-wasi-threads variant for C++ (has std::mutex/std::thread),
-        // and wasm32-wasi for C libs.
-        let sysroot_threads_lib = wasi_sdk_dir.join("share/wasi-sysroot/lib/wasm32-wasi-threads");
+        // Use wasm32-wasi (non-threaded) for both C and C++.
+        // Tesseract's mutex usage is handled by no-op stubs, so we don't need the
+        // threaded libc++ (which generates memory.atomic.wait32 that deadlocks in WASM).
         let sysroot_lib = wasi_sdk_dir.join("share/wasi-sysroot/lib/wasm32-wasi");
-        println!(
-            "cargo:warning=Linking WASI SDK sysroot (threads) from: {}",
-            sysroot_threads_lib.display()
-        );
+        println!("cargo:warning=Linking WASI SDK sysroot from: {}", sysroot_lib.display());
 
-        println!("cargo:rustc-link-search=native={}", sysroot_threads_lib.display());
         println!("cargo:rustc-link-search=native={}", sysroot_lib.display());
-        // C++ libs from threads sysroot (has std::mutex/std::thread support)
+        // C++ libs from non-threaded sysroot (no atomic operations)
         println!("cargo:rustc-link-lib=static=c++");
         println!("cargo:rustc-link-lib=static=c++abi");
         println!("cargo:rustc-link-lib=static=c");
-        println!("cargo:rustc-link-lib=static=pthread");
         // WASI emulation libraries for POSIX functions used by Leptonica/Tesseract
         println!("cargo:rustc-link-lib=static=wasi-emulated-process-clocks");
         println!("cargo:rustc-link-lib=static=wasi-emulated-signal");
@@ -1175,22 +1208,23 @@ Installation instructions:
         wasi_sdk_dir: &Path,
         enable_simd: bool,
     ) {
-        // Use the pthread-enabled WASI toolchain for Tesseract since it uses std::mutex/std::thread.
-        // The wasm32-wasi-threads target provides these via the threads-enabled libc++.
-        let toolchain_file = find_wasi_pthread_toolchain(wasi_sdk_dir);
+        // Use the non-threaded WASI toolchain for Tesseract.
+        // Tesseract's std::mutex usage is replaced by no-op stubs via apply_wasm_noop_mutex_patch(),
+        // so we don't need the threaded libc++ (which generates memory.atomic.wait32 instructions
+        // that deadlock in single-threaded WASM environments without SharedArrayBuffer).
+        let toolchain_file = find_wasi_toolchain(wasi_sdk_dir);
         let sysroot = wasi_sdk_dir.join("share/wasi-sysroot");
         let clang = wasi_sdk_dir.join("bin/clang");
         let clangxx = wasi_sdk_dir.join("bin/clang++");
 
         let mut config = Config::new(src_dir);
 
-        // Use wasm32-wasi-threads for C++ std::mutex/std::thread support
-        config.target("wasm32-wasi-threads");
+        // Use wasm32-wasi (non-threaded) - no atomic operations emitted
+        config.target("wasm32-wasi");
         config.define("CMAKE_TOOLCHAIN_FILE", &toolchain_file);
         config.define("CMAKE_SYSROOT", &sysroot);
         config.define("CMAKE_C_COMPILER", &clang);
         config.define("CMAKE_CXX_COMPILER", &clangxx);
-        // Use the pthread-enabled cmake toolchain
         config.define("WASI_SDK_PREFIX", wasi_sdk_dir);
 
         let leptonica_lib_dir = leptonica_install.join("lib");
@@ -1206,7 +1240,7 @@ Installation instructions:
         // which deadlocks in single-threaded WASM environments (no SharedArrayBuffer).
         let noop_mutex_include = src_dir.join("src");
         let mut cxx_flags = String::from(
-            "-DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_WASM_NOOP_MUTEX -fno-exceptions -pthread -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL ",
+            "-DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_WASM_NOOP_MUTEX -fno-exceptions -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL ",
         );
         if enable_simd {
             cxx_flags.push_str("-msimd128 ");
@@ -1218,7 +1252,7 @@ Installation instructions:
         ));
 
         let c_flags = format!(
-            "-fPIC -Os -fno-lto -fno-exceptions -pthread -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL -I{}",
+            "-fPIC -Os -fno-lto -fno-exceptions -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL -I{}",
             leptonica_include_dir.display()
         );
 

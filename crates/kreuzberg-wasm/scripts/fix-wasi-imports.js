@@ -35,8 +35,10 @@ if (content.includes("__wasi_stubs__")) {
 	process.exit(0);
 }
 
-// Check if there are any env/wasi imports to fix
-if (!content.includes('from "env"') && !content.includes('from "wasi_snapshot_preview1"')) {
+// Check if there are any env/wasi imports to fix (ESM or CJS)
+const hasEsmImports = content.includes('from "env"') || content.includes('from "wasi_snapshot_preview1"');
+const hasCjsImports = content.includes('require("env")') || content.includes('require("wasi_snapshot_preview1")');
+if (!hasEsmImports && !hasCjsImports) {
 	console.log("No env/wasi_snapshot_preview1 imports found, skipping WASI import fix.");
 	process.exit(0);
 }
@@ -44,11 +46,23 @@ if (!content.includes('from "env"') && !content.includes('from "wasi_snapshot_pr
 console.log("Fixing WASI and env imports in kreuzberg_wasm.js...\n");
 
 // Step 1: Collect all importN identifiers and their source modules
-const importPattern = /^import \* as (import\d+) from "(env|wasi_snapshot_preview1)";?$/gm;
+// Support both ESM: import * as importN from "env"
+// and CJS: const importN = require("env")
+const esmPattern = /^import \* as (import\d+) from "(env|wasi_snapshot_preview1)";?$/gm;
+const cjsPattern = /^const (import\d+) = require\("(env|wasi_snapshot_preview1)"\);?$/gm;
 const envImports = [];
 const wasiImports = [];
 
-for (const match of content.matchAll(importPattern)) {
+for (const match of content.matchAll(esmPattern)) {
+	const [, varName, moduleName] = match;
+	if (moduleName === "env") {
+		envImports.push(varName);
+	} else {
+		wasiImports.push(varName);
+	}
+}
+
+for (const match of content.matchAll(cjsPattern)) {
 	const [, varName, moduleName] = match;
 	if (moduleName === "env") {
 		envImports.push(varName);
@@ -60,33 +74,83 @@ for (const match of content.matchAll(importPattern)) {
 console.log(`Found ${envImports.length} env imports: ${envImports.join(", ")}`);
 console.log(`Found ${wasiImports.length} wasi_snapshot_preview1 imports: ${wasiImports.join(", ")}`);
 
-// Step 2: Remove all import statements for env and wasi_snapshot_preview1
+// Step 2: Remove all import/require statements for env and wasi_snapshot_preview1
 content = content.replace(/^import \* as import\d+ from "(env|wasi_snapshot_preview1)";?\n/gm, "");
+content = content.replace(/^const import\d+ = require\("(env|wasi_snapshot_preview1)"\);?\n/gm, "");
 
 // Step 3: Insert stub definitions at the same location (before __wbg_get_imports)
 const stubCode = `// __wasi_stubs__ - WASI and env import stubs for in-memory OCR processing
+// Lazy reference to WASM memory, populated after module instantiation.
+// Stubs that write output values use this to access WASM linear memory.
+let __wasi_mem_ref = { memory: null };
+function __wasi_view() {
+    if (!__wasi_mem_ref.memory) return null;
+    return new DataView(__wasi_mem_ref.memory.buffer);
+}
+
 // env stubs: system() and mkstemp() are never called at runtime in WASM OCR
 const __env_stubs__ = {
     system: () => -1,
     mkstemp: () => -1,
 };
 
-// WASI stubs: minimal implementations for WASI preview1 syscalls
+// WASI stubs: minimal implementations for WASI preview1 syscalls.
+// Functions that take output pointers write proper values to WASM memory.
 const __wasi_stubs__ = {
     fd_close: () => 0,
-    fd_read: (fd, iovs_ptr, iovs_len, nread_ptr) => 0,
-    fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => {
-        // For stdout/stderr (fd 1, 2), return success with 0 bytes written
+    fd_read: (fd, iovs_ptr, iovs_len, nread_ptr) => {
+        const v = __wasi_view();
+        if (v && nread_ptr) v.setUint32(nread_ptr, 0, true);
         return 0;
     },
-    fd_seek: (fd, offset_lo, offset_hi, whence, newoffset_ptr) => 0,
-    fd_fdstat_get: (fd, fdstat_ptr) => 0,
+    fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => {
+        const v = __wasi_view();
+        if (v) {
+            let total = 0;
+            for (let i = 0; i < iovs_len; i++) {
+                total += v.getUint32(iovs_ptr + i * 8 + 4, true);
+            }
+            if (nwritten_ptr) v.setUint32(nwritten_ptr, total, true);
+        }
+        return 0;
+    },
+    fd_seek: (fd, offset_lo, offset_hi, whence, newoffset_ptr) => {
+        const v = __wasi_view();
+        if (v && newoffset_ptr) {
+            v.setUint32(newoffset_ptr, 0, true);
+            v.setUint32(newoffset_ptr + 4, 0, true);
+        }
+        return 0;
+    },
+    fd_fdstat_get: (fd, fdstat_ptr) => {
+        const v = __wasi_view();
+        if (v && fdstat_ptr) {
+            v.setUint8(fdstat_ptr, fd <= 2 ? 2 : 4);
+            v.setUint16(fdstat_ptr + 2, 0, true);
+            v.setBigUint64(fdstat_ptr + 8, 0xffffffffffffffffn, true);
+            v.setBigUint64(fdstat_ptr + 16, 0xffffffffffffffffn, true);
+        }
+        return 0;
+    },
     fd_fdstat_set_flags: (fd, flags) => 0,
     fd_prestat_get: (fd, prestat_ptr) => 8, // EBADF - no preopened dirs
     fd_prestat_dir_name: (fd, path_ptr, path_len) => 8, // EBADF
     environ_get: (environ_ptr, environ_buf_ptr) => 0,
-    environ_sizes_get: (count_ptr, buf_size_ptr) => 0,
-    clock_time_get: (clock_id, precision, time_ptr) => 0,
+    environ_sizes_get: (count_ptr, buf_size_ptr) => {
+        const v = __wasi_view();
+        if (v) {
+            if (count_ptr) v.setUint32(count_ptr, 0, true);
+            if (buf_size_ptr) v.setUint32(buf_size_ptr, 0, true);
+        }
+        return 0;
+    },
+    clock_time_get: (clock_id, precision, time_ptr) => {
+        const v = __wasi_view();
+        if (v && time_ptr) {
+            v.setBigUint64(time_ptr, BigInt(Math.floor(Date.now() * 1e6)), true);
+        }
+        return 0;
+    },
     path_create_directory: (fd, path_ptr, path_len) => 63, // ENOSYS
     path_filestat_get: (fd, flags, path_ptr, path_len, filestat_ptr) => 63,
     path_open: (dirfd, dirflags, path_ptr, path_len, oflags, fs_rights_base_lo, fs_rights_base_hi, fs_rights_inheriting_lo, fs_rights_inheriting_hi, fdflags, fd_ptr) => 63,
@@ -156,6 +220,28 @@ if (returnBlockStart !== -1) {
 	}
 }
 
+// Step 6: Inject WASI memory reference after WASM instantiation
+// The WASI stubs need access to WASM linear memory to write output values.
+// Look for the wasm instantiation pattern and add memory ref after it.
+const instantiatePatterns = [
+	// CJS pattern: let wasm = new WebAssembly.Instance(...).exports;
+	/^(let wasm = new WebAssembly\.Instance\(.*\)\.exports;)$/m,
+	// ESM/async pattern: const instance = await WebAssembly.instantiate(...)
+	/^(const \{ instance \} = await WebAssembly\.instantiate\(.*\);)$/m,
+];
+let memRefInjected = false;
+for (const pattern of instantiatePatterns) {
+	if (pattern.test(content)) {
+		content = content.replace(pattern, "$1\n// Populate WASI memory reference for stubs that write output values\n__wasi_mem_ref.memory = wasm.memory || (typeof instance !== 'undefined' && instance.exports.memory);");
+		memRefInjected = true;
+		break;
+	}
+}
+if (!memRefInjected) {
+	console.log("WARNING: Could not find WASM instantiation to inject memory reference.");
+	console.log("WASI stubs that write to memory output pointers may not work correctly.");
+}
+
 if (content === originalContent) {
 	console.log("No changes needed.");
 } else {
@@ -163,5 +249,6 @@ if (content === originalContent) {
 	const removedImports = envImports.length + wasiImports.length;
 	console.log(`Replaced ${removedImports} external imports with inline stubs.`);
 	console.log("Deduplicated import keys in __wbg_get_imports().");
+	if (memRefInjected) console.log("Injected WASI memory reference after WASM instantiation.");
 	console.log("Done.");
 }
