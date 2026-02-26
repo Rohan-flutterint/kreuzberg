@@ -1,6 +1,9 @@
 name: CI C FFI
 
 on:
+  workflow_run:
+    workflows: ["Publish Release"]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -13,6 +16,7 @@ on:
       - 'crates/kreuzberg/**'
       - 'crates/kreuzberg-ffi/**'
       - 'crates/kreuzberg-tesseract/**'
+      - 'e2e/c/**'
   pull_request:
     branches: [main]
     paths:
@@ -25,6 +29,7 @@ on:
       - 'crates/kreuzberg/**'
       - 'crates/kreuzberg-ffi/**'
       - 'crates/kreuzberg-tesseract/**'
+      - 'e2e/c/**'
   workflow_dispatch:
 
 concurrency:
