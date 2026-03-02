@@ -35,7 +35,6 @@ impl<'a> LatexParser<'a> {
     pub fn parse(&mut self) -> (String, Metadata, Vec<Table>) {
         let lines: Vec<&str> = self.source.lines().collect();
         let mut in_document = false;
-        let mut skip_until_end = None::<String>;
         let mut i = 0;
 
         // Detect plain TeX documents (no \begin{document})
@@ -47,15 +46,6 @@ impl<'a> LatexParser<'a> {
         while i < lines.len() {
             let line = lines[i];
             let trimmed = line.trim();
-
-            // Handle environments we're skipping
-            if let Some(ref env) = skip_until_end {
-                if trimmed.contains(&format!("\\end{{{}}}", env)) {
-                    skip_until_end = None;
-                }
-                i += 1;
-                continue;
-            }
 
             // Handle plain TeX end marker
             if is_plain_tex && trimmed.contains("\\bye") {
@@ -88,7 +78,7 @@ impl<'a> LatexParser<'a> {
 
             // Process document content
             if in_document {
-                if self.process_environments(&lines, trimmed, &mut i, &mut skip_until_end) {
+                if self.process_environments(&lines, trimmed, &mut i) {
                     continue;
                 }
 
@@ -104,38 +94,26 @@ impl<'a> LatexParser<'a> {
 
     /// Processes a single-line document (both \begin and \end on same line).
     fn process_single_line_document(&mut self, trimmed: &str) {
-        let Some(begin_pos) = trimmed.find("\\begin{document}") else {
+        let begin_tag = "\\begin{document}";
+        let end_tag = "\\end{document}";
+        let Some(begin_pos) = trimmed.find(begin_tag) else {
             return;
         };
-        let Some(end_pos) = trimmed.find("\\end{document}") else {
+        let Some(end_pos) = trimmed.find(end_tag) else {
             return;
         };
-        let content_between = trimmed[begin_pos + 16..end_pos].trim();
+        let content_between = trimmed[begin_pos + begin_tag.len()..end_pos].trim();
         if !content_between.is_empty() {
-            if content_between.starts_with("\\section{") {
-                if let Some(title) = extract_braced(content_between, "section") {
-                    self.output.push_str(&format!("\n# {}\n\n", title));
-                }
-            } else {
-                let processed = process_line(content_between);
-                if !processed.is_empty() {
-                    self.output.push_str(&processed);
-                    self.output.push('\n');
-                }
-            }
+            let lines = [content_between];
+            let mut i = 0;
+            self.process_sections_and_content(content_between, &lines, &mut i);
         }
     }
 
     /// Processes LaTeX environments (lists, tables, math).
     ///
     /// Returns true if an environment was processed and the line index was updated.
-    fn process_environments(
-        &mut self,
-        lines: &[&str],
-        trimmed: &str,
-        i: &mut usize,
-        _skip_until_end: &mut Option<String>,
-    ) -> bool {
+    fn process_environments(&mut self, lines: &[&str], trimmed: &str, i: &mut usize) -> bool {
         if !trimmed.contains("\\begin{") && !trimmed.contains("\\begin {") {
             return false;
         }
@@ -189,6 +167,7 @@ impl<'a> LatexParser<'a> {
                     if trimmed_line.contains("\\begin{")
                         || trimmed_line.contains("\\begin {")
                         || trimmed_line.contains("\\end{")
+                        || trimmed_line.contains("\\end {")
                     {
                         continue;
                     }

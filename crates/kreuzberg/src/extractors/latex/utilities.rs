@@ -122,19 +122,24 @@ pub fn collect_environment(lines: &[&str], start_idx: usize, env_name: &str) -> 
         }
     }
 
+    let end_marker_space = format!("\\end {{{}}}", env_name);
+    let begin_marker_space = format!("\\begin {{{}}}", env_name);
+
     let mut content = String::new();
     let mut i = start_idx + 1;
-    let mut depth = 1;
+    let mut depth: isize = 1;
 
     while i < lines.len() {
         let line = lines[i];
         let trimmed = line.trim();
 
-        // Track nesting depth for same-named environments
-        depth += trimmed.matches(&begin_marker).count();
-        depth -= trimmed.matches(&end_marker).count();
+        // Track nesting depth for same-named environments (both space variants)
+        depth += trimmed.matches(&begin_marker).count() as isize;
+        depth += trimmed.matches(&begin_marker_space).count() as isize;
+        depth -= trimmed.matches(&end_marker).count() as isize;
+        depth -= trimmed.matches(&end_marker_space).count() as isize;
 
-        if depth == 0 {
+        if depth <= 0 {
             return (content, i + 1);
         }
 
