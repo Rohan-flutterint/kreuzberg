@@ -22,3 +22,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install
+
+    - name: Add node_modules/.bin to PATH
+      shell: bash
+      run: echo "$(pnpm bin)" >> "$GITHUB_PATH"

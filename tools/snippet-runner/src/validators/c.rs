@@ -110,6 +110,8 @@ impl SnippetValidator for CValidator {
                 || line.contains("expected parameter declarator") // fragment without includes
                 || line.contains("expected ')'") // cascading from unknown types
                 || line.contains("expected '}'") // cascading from incomplete code
+                || line.contains("data definition has no type or storage class") // code fragments without function wrapper
+                || line.contains("type defaults to") // cascading from missing types/includes
         })
     }
 }

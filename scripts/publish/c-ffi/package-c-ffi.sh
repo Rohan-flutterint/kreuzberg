@@ -64,26 +64,40 @@ cargo build -p kreuzberg-ffi --release "${FEATURES_ARGS[@]}"
 # ---------------------------------------------------------------------------
 # Locate build artefacts
 # ---------------------------------------------------------------------------
-target_release="${repo_root}/target/release"
+# When CARGO_BUILD_TARGET is set, cargo outputs to target/<triple>/release/
+# instead of target/release/. Check both locations.
+if [ -n "${CARGO_BUILD_TARGET:-}" ]; then
+  target_release="${repo_root}/target/${CARGO_BUILD_TARGET}/release"
+  target_release_fallback="${repo_root}/target/release"
+else
+  target_release="${repo_root}/target/release"
+  target_release_fallback=""
+fi
 
 find_lib() {
   local name="$1"
-  if [ -f "${target_release}/${name}" ]; then
-    echo "${target_release}/${name}"
-    return
-  fi
-  # GNU toolchain uses lib-prefix; try alternative naming
+  # GNU toolchain uses lib-prefix; determine alternative name
   local alt
   case "$name" in
   kreuzberg_ffi.dll) alt="libkreuzberg_ffi.dll" ;;
   kreuzberg_ffi.lib) alt="libkreuzberg_ffi.a" ;;
   *) alt="" ;;
   esac
-  if [ -n "$alt" ] && [ -f "${target_release}/${alt}" ]; then
-    echo "${target_release}/${alt}"
-    return
-  fi
-  echo "Error: Cannot find ${name} in ${target_release}" >&2
+
+  # Search in primary and fallback directories
+  local dir
+  for dir in "$target_release" ${target_release_fallback:+"$target_release_fallback"}; do
+    if [ -f "${dir}/${name}" ]; then
+      echo "${dir}/${name}"
+      return
+    fi
+    if [ -n "$alt" ] && [ -f "${dir}/${alt}" ]; then
+      echo "${dir}/${alt}"
+      return
+    fi
+  done
+
+  echo "Error: Cannot find ${name} in ${target_release}${target_release_fallback:+ or ${target_release_fallback}}" >&2
   exit 1
 }
 
@@ -126,11 +140,15 @@ cp "$static_lib_path" "${stage_dir}/lib/"
 # On Windows, also copy the import library
 # Handle both MSVC (.dll.lib) and GNU (.dll.a) import lib naming
 if [[ "$platform_label" == windows-* ]]; then
-  if [ -f "${target_release}/kreuzberg_ffi.dll.lib" ]; then
-    cp "${target_release}/kreuzberg_ffi.dll.lib" "${stage_dir}/lib/"
-  elif [ -f "${target_release}/libkreuzberg_ffi.dll.a" ]; then
-    cp "${target_release}/libkreuzberg_ffi.dll.a" "${stage_dir}/lib/kreuzberg_ffi.dll.lib"
-  fi
+  for dir in "$target_release" ${target_release_fallback:+"$target_release_fallback"}; do
+    if [ -f "${dir}/kreuzberg_ffi.dll.lib" ]; then
+      cp "${dir}/kreuzberg_ffi.dll.lib" "${stage_dir}/lib/"
+      break
+    elif [ -f "${dir}/libkreuzberg_ffi.dll.a" ]; then
+      cp "${dir}/libkreuzberg_ffi.dll.a" "${stage_dir}/lib/kreuzberg_ffi.dll.lib"
+      break
+    fi
+  done
 fi
 
 # LICENSE

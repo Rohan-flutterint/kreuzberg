@@ -160,15 +160,16 @@ RSpec.describe 'Batch Operations' do
     end
 
     it 'supports keyword extraction configuration in batch' do
-      paths = []
+      tempfiles = []
 
       2.times do |i|
         file = Tempfile.new(["keywords_batch_#{i}", '.txt'])
         file.write('Machine learning and deep learning enable artificial intelligence.')
         file.close
-        paths << file.path
+        tempfiles << file
       end
 
+      paths = tempfiles.map(&:path)
       algorithms = %w[yake rake]
 
       algorithms.each do |algo|
@@ -183,7 +184,7 @@ RSpec.describe 'Batch Operations' do
         expect(results.length).to eq(2)
       end
 
-      paths.each { |p| FileUtils.rm_f(p) }
+      tempfiles.each(&:unlink)
     end
   end
 

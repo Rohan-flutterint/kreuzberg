@@ -60,7 +60,7 @@ impl SnippetValidator for TypeScriptValidator {
     }
 
     fn is_available(&self) -> bool {
-        which::which("npx").is_ok()
+        which::which("tsc").is_ok()
     }
 
     fn validate(
@@ -104,13 +104,13 @@ impl SnippetValidator for TypeScriptValidator {
 
         let mut cmd = match level {
             ValidationLevel::Syntax | ValidationLevel::Compile => {
-                let mut c = std::process::Command::new("npx");
-                c.args(["tsc", "--noEmit", "--pretty", "false"]).current_dir(dir.path());
+                let mut c = std::process::Command::new("tsc");
+                c.args(["--noEmit", "--pretty", "false"]).current_dir(dir.path());
                 c
             }
             ValidationLevel::Run => {
-                let mut c = std::process::Command::new("npx");
-                c.args(["tsx", file_path.to_string_lossy().as_ref()]);
+                let mut c = std::process::Command::new("tsx");
+                c.args([file_path.to_string_lossy().as_ref()]);
                 c
             }
         };

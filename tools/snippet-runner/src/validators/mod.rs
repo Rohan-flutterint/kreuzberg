@@ -90,6 +90,29 @@ impl Default for ValidatorRegistry {
     }
 }
 
+/// Strip ANSI escape codes from a string.
+/// Removes CSI color/style sequences matching \x1b[...m
+fn strip_ansi_codes(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            // Skip ESC[...m sequences
+            if let Some('[') = chars.next() {
+                // Consume until 'm' or end
+                for c2 in chars.by_ref() {
+                    if c2 == 'm' {
+                        break;
+                    }
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 /// Run a command with timeout. Returns (success, stdout+stderr).
 pub fn run_command(cmd: &mut std::process::Command, timeout_secs: u64) -> Result<(bool, String)> {
     use std::io::Read;
@@ -112,7 +135,9 @@ pub fn run_command(cmd: &mut std::process::Command, timeout_secs: u64) -> Result
             if let Some(mut stderr) = child.stderr.take() {
                 let _ = stderr.read_to_string(&mut output);
             }
-            Ok((status.success(), output))
+            // Strip ANSI codes to ensure clean output for validators
+            let clean_output = strip_ansi_codes(&output);
+            Ok((status.success(), clean_output))
         }
         Ok(None) => {
             let _ = child.kill();
@@ -147,5 +172,58 @@ impl WaitTimeout for std::process::Child {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_ansi_codes_color_sequences() {
+        // Test basic color code stripping
+        let input = "\x1b[1m\x1b[91merror\x1b[0m: something went wrong";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "error: something went wrong");
+    }
+
+    #[test]
+    fn test_strip_ansi_codes_multiple_sequences() {
+        // Test multiple color sequences in one string
+        let input = "\x1b[1mBold\x1b[0m \x1b[32mGreen\x1b[0m text";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "Bold Green text");
+    }
+
+    #[test]
+    fn test_strip_ansi_codes_no_codes() {
+        // Test string with no ANSI codes
+        let input = "plain text without codes";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "plain text without codes");
+    }
+
+    #[test]
+    fn test_strip_ansi_codes_empty_string() {
+        // Test empty string
+        let input = "";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    fn test_strip_ansi_codes_only_codes() {
+        // Test string with only ANSI codes
+        let input = "\x1b[1m\x1b[91m\x1b[0m";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    fn test_strip_ansi_codes_rust_error_pattern() {
+        // Test the specific pattern from Rust compiler error output
+        let input = "\x1b[1m\x1b[91merror\x1b[0m[E0432]: unresolved import `foo`";
+        let output = strip_ansi_codes(input);
+        assert_eq!(output, "error[E0432]: unresolved import `foo`");
     }
 }

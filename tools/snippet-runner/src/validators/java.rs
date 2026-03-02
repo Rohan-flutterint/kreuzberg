@@ -245,6 +245,8 @@ impl SnippetValidator for JavaValidator {
                 || line.contains("<identifier> expected") // cascading from type wrapping
                 || line.contains("= expected") // cascading from interface wrapping
                 || line.trim().ends_with("errors") // "N errors" summary line
+                || line.contains("implicitly declared classes") // preview feature error (Java 21+)
+                || line.contains("preview feature") // general preview feature errors
         })
     }
 }
