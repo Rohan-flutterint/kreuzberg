@@ -167,15 +167,13 @@ mod tests {
     }
 
     #[test]
-    fn test_plain_text_table_no_pipes() {
+    fn test_plain_text_table_uses_pipes() {
         let rtf_content = r#"{\rtf1 {\trowd Cell1\cell Cell2\cell\row}}"#;
         let (plain, tables) = extract_text_from_rtf(rtf_content, true);
-        assert!(!plain.contains('|'), "Plain text should not contain pipe delimiters");
-        assert!(!tables.is_empty(), "Tables should still be extracted");
-        // Table markdown field should use plain text format
         assert!(
-            !tables[0].markdown.contains('|'),
-            "Table in plain mode should not have pipes"
+            plain.contains('|'),
+            "Plain text should use pipe delimiters for table cells"
         );
+        assert!(!tables.is_empty(), "Tables should still be extracted");
     }
 }

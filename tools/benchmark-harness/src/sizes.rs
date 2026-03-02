@@ -1,7 +1,12 @@
 //! Framework size measurement
 //!
 //! Measures the installation footprint of document extraction frameworks.
-//! All sizes must be exactly measured - no estimates allowed.
+//!
+//! Kreuzberg bindings are measured dynamically from local build artifacts.
+//! Third-party frameworks use hardcoded verified sizes (package + transitive
+//! deps + system deps + auto-downloaded ML models) because dynamic measurement
+//! is unreliable: pip-weigh times out for large packages (torch, transformers),
+//! and dpkg-query returns partial results when package names vary across distros.
 
 use crate::{Error, Result};
 use serde::{Deserialize, Serialize};

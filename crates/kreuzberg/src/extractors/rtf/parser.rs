@@ -349,9 +349,9 @@ fn handle_control_word(
                 state.push_cell();
             }
             if plain {
-                // In plain mode, separate cells with tabs in the result string
-                if !result.ends_with('\t') && !result.ends_with('\n') && !result.is_empty() {
-                    result.push('\t');
+                // In plain mode, separate cells with pipes in the result string
+                if !result.ends_with('|') && !result.ends_with('\n') && !result.is_empty() {
+                    result.push('|');
                 }
             } else {
                 if !result.ends_with('|') {

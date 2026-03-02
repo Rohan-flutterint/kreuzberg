@@ -18,6 +18,64 @@ use async_trait::async_trait;
 use quick_xml::Reader;
 use quick_xml::events::Event;
 
+const HORIZONTAL_RULE: &str = "------------------------------------------------------------------------";
+
+/// Convert a character to its Unicode superscript equivalent, if available.
+fn char_to_superscript(c: char) -> Option<char> {
+    match c {
+        '0' => Some('\u{2070}'),
+        '1' => Some('\u{00B9}'),
+        '2' => Some('\u{00B2}'),
+        '3' => Some('\u{00B3}'),
+        '4' => Some('\u{2074}'),
+        '5' => Some('\u{2075}'),
+        '6' => Some('\u{2076}'),
+        '7' => Some('\u{2077}'),
+        '8' => Some('\u{2078}'),
+        '9' => Some('\u{2079}'),
+        '+' => Some('\u{207A}'),
+        '-' => Some('\u{207B}'),
+        '=' => Some('\u{207C}'),
+        '(' => Some('\u{207D}'),
+        ')' => Some('\u{207E}'),
+        'n' => Some('\u{207F}'),
+        'i' => Some('\u{2071}'),
+        _ => None,
+    }
+}
+
+/// Convert a character to its Unicode subscript equivalent, if available.
+fn char_to_subscript(c: char) -> Option<char> {
+    match c {
+        '0' => Some('\u{2080}'),
+        '1' => Some('\u{2081}'),
+        '2' => Some('\u{2082}'),
+        '3' => Some('\u{2083}'),
+        '4' => Some('\u{2084}'),
+        '5' => Some('\u{2085}'),
+        '6' => Some('\u{2086}'),
+        '7' => Some('\u{2087}'),
+        '8' => Some('\u{2088}'),
+        '9' => Some('\u{2089}'),
+        '+' => Some('\u{208A}'),
+        '-' => Some('\u{208B}'),
+        '=' => Some('\u{208C}'),
+        '(' => Some('\u{208D}'),
+        ')' => Some('\u{208E}'),
+        _ => None,
+    }
+}
+
+/// Convert a string to Unicode superscript characters where possible.
+fn to_superscript(s: &str) -> String {
+    s.chars().map(|c| char_to_superscript(c).unwrap_or(c)).collect()
+}
+
+/// Convert a string to Unicode subscript characters where possible.
+fn to_subscript(s: &str) -> String {
+    s.chars().map(|c| char_to_subscript(c).unwrap_or(c)).collect()
+}
+
 /// FictionBook document extractor.
 ///
 /// Supports FictionBook 2.0 format with proper section hierarchy and inline formatting.
@@ -35,90 +93,85 @@ impl FictionBookExtractor {
     }
 
     /// Extract paragraph content with optional markdown formatting preservation.
-    /// When `plain` is true, skips all inline formatting markers.
+    /// When `plain` is true, skips most inline formatting markers but keeps
+    /// strikethrough and converts sub/superscript to Unicode.
     fn extract_paragraph_content(reader: &mut Reader<&[u8]>, plain: bool) -> Result<String> {
         let mut text = String::new();
-        let mut para_depth = 0;
+        let mut depth = 0;
+        let mut in_sub = false;
+        let mut in_sup = false;
+        let mut sub_buf = String::new();
+        let mut sup_buf = String::new();
 
         loop {
             match reader.read_event() {
                 Ok(Event::Start(e)) => {
                     let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
-                    if !plain {
-                        match tag.as_str() {
-                            "emphasis" => {
-                                text.push('*');
-                            }
-                            "strong" => {
-                                text.push_str("**");
-                            }
-                            "strikethrough" => {
-                                text.push_str("~~");
-                            }
-                            "code" => {
-                                text.push('`');
-                            }
-                            "sub" => {
-                                text.push('~');
-                            }
-                            "sup" => {
-                                text.push('^');
-                            }
-                            _ => {}
+                    depth += 1;
+                    match tag.as_str() {
+                        "emphasis" if !plain => text.push('*'),
+                        "strong" if !plain => text.push_str("**"),
+                        "strikethrough" => text.push_str("~~"),
+                        "code" if !plain => text.push('`'),
+                        "sub" if plain => {
+                            in_sub = true;
+                            sub_buf.clear();
                         }
+                        "sup" if plain => {
+                            in_sup = true;
+                            sup_buf.clear();
+                        }
+                        "sub" => text.push('~'),
+                        "sup" => text.push('^'),
+                        _ => {}
                     }
-                    para_depth += 1;
                 }
                 Ok(Event::End(e)) => {
                     let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
-                    match tag.as_str() {
-                        "p" if para_depth == 1 => {
-                            break;
-                        }
-                        _ => {
-                            if !plain {
-                                match tag.as_str() {
-                                    "emphasis" => {
-                                        text.push('*');
-                                    }
-                                    "strong" => {
-                                        text.push_str("**");
-                                    }
-                                    "strikethrough" => {
-                                        text.push_str("~~");
-                                    }
-                                    "code" => {
-                                        text.push('`');
-                                    }
-                                    "sub" => {
-                                        text.push('~');
-                                    }
-                                    "sup" => {
-                                        text.push('^');
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
+                    if tag == "p" && depth <= 1 {
+                        break;
                     }
-                    if para_depth > 0 {
-                        para_depth -= 1;
+                    match tag.as_str() {
+                        "emphasis" if !plain => text.push('*'),
+                        "strong" if !plain => text.push_str("**"),
+                        "strikethrough" => text.push_str("~~"),
+                        "code" if !plain => text.push('`'),
+                        "sub" if plain => {
+                            in_sub = false;
+                            text.push_str(&to_subscript(&sub_buf));
+                        }
+                        "sup" if plain => {
+                            in_sup = false;
+                            text.push_str(&to_superscript(&sup_buf));
+                        }
+                        "sub" => text.push('~'),
+                        "sup" => text.push('^'),
+                        _ => {}
+                    }
+                    if depth > 0 {
+                        depth -= 1;
                     }
                 }
                 Ok(Event::Text(t)) => {
                     let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
                     let trimmed = decoded.trim();
                     if !trimmed.is_empty() {
-                        if !text.is_empty()
-                            && !text.ends_with(' ')
-                            && !text.ends_with('*')
-                            && !text.ends_with('`')
-                            && !text.ends_with('~')
-                            && !text.ends_with('^')
-                        {
-                            text.push(' ');
+                        if in_sub {
+                            sub_buf.push_str(trimmed);
+                        } else if in_sup {
+                            sup_buf.push_str(trimmed);
+                        } else {
+                            if !text.is_empty()
+                                && !text.ends_with(' ')
+                                && !text.ends_with('*')
+                                && !text.ends_with('`')
+                                && !text.ends_with('~')
+                                && !text.ends_with('^')
+                            {
+                                text.push(' ');
+                            }
+                            text.push_str(trimmed);
                         }
-                        text.push_str(trimmed);
                     }
                 }
                 Ok(Event::Eof) => break,
@@ -273,7 +326,8 @@ impl FictionBookExtractor {
         let mut reader = Reader::from_reader(data);
         let mut content = String::new();
         let mut in_body = false;
-        let mut skip_notes_body = false;
+        let mut is_notes_body = false;
+        let mut footnotes = Vec::new();
 
         loop {
             match reader.read_event() {
@@ -281,33 +335,45 @@ impl FictionBookExtractor {
                     let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
 
                     if tag == "body" {
+                        let mut is_notes = false;
                         for a in e.attributes().flatten() {
                             let attr_name = String::from_utf8_lossy(a.key.as_ref()).to_string();
                             if attr_name == "name" {
                                 let val = String::from_utf8_lossy(a.value.as_ref());
                                 if val == "notes" {
-                                    skip_notes_body = true;
+                                    is_notes = true;
                                     break;
                                 }
                             }
                         }
-
-                        if !skip_notes_body {
+                        if is_notes {
+                            is_notes_body = true;
+                        } else {
                             in_body = true;
+                        }
+                    } else if tag == "section" && is_notes_body {
+                        // Extract footnote from notes body
+                        if let Ok(note) = Self::extract_footnote_section(&mut reader, plain)
+                            && !note.is_empty()
+                        {
+                            footnotes.push(note);
                         }
                     } else if tag == "section" && in_body {
                         match Self::extract_section_content(&mut reader, plain) {
                             Ok(section_content) if !section_content.is_empty() => {
+                                if !content.is_empty() && !content.ends_with("\n\n") {
+                                    content.push('\n');
+                                }
                                 content.push_str(&section_content);
                                 content.push('\n');
                             }
                             _ => {}
                         }
-                    } else if tag == "p" && in_body && !skip_notes_body {
+                    } else if tag == "p" && in_body {
                         match Self::extract_paragraph_content(&mut reader, plain) {
                             Ok(para) if !para.is_empty() => {
                                 content.push_str(&para);
-                                content.push('\n');
+                                content.push_str("\n\n");
                             }
                             _ => {}
                         }
@@ -315,20 +381,27 @@ impl FictionBookExtractor {
                         match Self::extract_text_content(&mut reader) {
                             Ok(title_content) if !title_content.is_empty() => {
                                 if plain {
-                                    content.push_str(&format!("{}\n", title_content));
+                                    content.push_str(&format!("{}\n\n", title_content));
                                 } else {
-                                    content.push_str(&format!("# {}\n", title_content));
+                                    content.push_str(&format!("# {}\n\n", title_content));
                                 }
                             }
                             _ => {}
                         }
                     }
                 }
+                Ok(Event::Empty(e)) => {
+                    let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    if tag == "empty-line" && in_body {
+                        content.push_str(HORIZONTAL_RULE);
+                        content.push_str("\n\n");
+                    }
+                }
                 Ok(Event::End(e)) => {
                     let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     if tag == "body" {
-                        if skip_notes_body {
-                            skip_notes_body = false;
+                        if is_notes_body {
+                            is_notes_body = false;
                         } else {
                             in_body = false;
                         }
@@ -340,7 +413,79 @@ impl FictionBookExtractor {
             }
         }
 
+        // Append footnotes at the end
+        if !footnotes.is_empty() {
+            if !content.ends_with('\n') {
+                content.push('\n');
+            }
+            for note in &footnotes {
+                content.push_str(note);
+                content.push('\n');
+            }
+        }
+
         Ok(content.trim().to_string())
+    }
+
+    /// Extract a footnote section from the notes body.
+    fn extract_footnote_section(reader: &mut Reader<&[u8]>, plain: bool) -> Result<String> {
+        let mut text = String::new();
+        let mut section_depth = 1;
+        let mut note_id = String::new();
+
+        // Try to get the note ID from the section attributes (already consumed by caller)
+        // We'll just extract the content
+
+        loop {
+            match reader.read_event() {
+                Ok(Event::Start(e)) => {
+                    let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    match tag.as_str() {
+                        "section" => section_depth += 1,
+                        "title" => {
+                            if let Ok(title) = Self::extract_text_content(reader)
+                                && !title.is_empty()
+                            {
+                                note_id = title;
+                            }
+                        }
+                        "p" => {
+                            if let Ok(para) = Self::extract_paragraph_content(reader, plain)
+                                && !para.is_empty()
+                            {
+                                if !text.is_empty() {
+                                    text.push(' ');
+                                }
+                                text.push_str(&para);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                Ok(Event::End(e)) => {
+                    let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    if tag == "section" {
+                        section_depth -= 1;
+                        if section_depth == 0 {
+                            break;
+                        }
+                    }
+                }
+                Ok(Event::Eof) => break,
+                Err(_) => break,
+                _ => {}
+            }
+        }
+
+        if text.is_empty() {
+            return Ok(String::new());
+        }
+
+        if !note_id.is_empty() {
+            Ok(format!("[{}] {}", note_id, text))
+        } else {
+            Ok(text)
+        }
     }
 
     /// Extract content from a section with proper hierarchy.
@@ -360,11 +505,11 @@ impl FictionBookExtractor {
                         "title" => match Self::extract_text_content(reader) {
                             Ok(title_text) if !title_text.is_empty() => {
                                 if plain {
-                                    content.push_str(&format!("{}\n", title_text));
+                                    content.push_str(&format!("{}\n\n", title_text));
                                 } else {
                                     let heading_level = std::cmp::min(section_depth + 1, 6);
                                     let heading = "#".repeat(heading_level);
-                                    content.push_str(&format!("{} {}\n", heading, title_text));
+                                    content.push_str(&format!("{} {}\n\n", heading, title_text));
                                 }
                             }
                             _ => {}
@@ -372,7 +517,7 @@ impl FictionBookExtractor {
                         "p" => match Self::extract_paragraph_content(reader, plain) {
                             Ok(para) if !para.is_empty() => {
                                 content.push_str(&para);
-                                content.push('\n');
+                                content.push_str("\n\n");
                             }
                             _ => {}
                         },
@@ -380,16 +525,26 @@ impl FictionBookExtractor {
                             Ok(cite_content) if !cite_content.is_empty() => {
                                 if !plain {
                                     content.push_str("> ");
+                                } else {
+                                    content.push_str("  ");
                                 }
                                 content.push_str(&cite_content);
-                                content.push('\n');
+                                content.push_str("\n\n");
                             }
                             _ => {}
                         },
                         "empty-line" => {
-                            content.push('\n');
+                            content.push_str(HORIZONTAL_RULE);
+                            content.push_str("\n\n");
                         }
                         _ => {}
+                    }
+                }
+                Ok(Event::Empty(e)) => {
+                    let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    if tag == "empty-line" {
+                        content.push_str(HORIZONTAL_RULE);
+                        content.push_str("\n\n");
                     }
                 }
                 Ok(Event::End(e)) => {

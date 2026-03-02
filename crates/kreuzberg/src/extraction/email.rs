@@ -185,9 +185,39 @@ pub fn parse_eml_content(data: &[u8]) -> Result<EmailExtractionResult> {
 
     let message_id = message.message_id().map(|id| id.to_string());
 
-    let plain_text = message.body_text(0).map(|s| s.to_string());
+    // Iterate over all body parts to capture content from multipart messages.
+    // Also recurse into nested message/rfc822 parts (multipart/digest emails).
+    let plain_text = {
+        let mut all_text = Vec::new();
+        let mut i = 0;
+        while let Some(text) = message.body_text(i) {
+            all_text.push(text.to_string());
+            i += 1;
+        }
+        // Extract text from nested message/rfc822 sub-messages (e.g. multipart/digest).
+        collect_nested_message_text(&message, &mut all_text);
+        if all_text.is_empty() {
+            None
+        } else {
+            Some(all_text.join("\n\n"))
+        }
+    };
 
-    let html_content = message.body_html(0).map(|s| s.to_string());
+    let html_content = {
+        let mut all_html = Vec::new();
+        let mut i = 0;
+        while let Some(html) = message.body_html(i) {
+            all_html.push(html.to_string());
+            i += 1;
+        }
+        // Extract HTML from nested message/rfc822 sub-messages.
+        collect_nested_message_html(&message, &mut all_html);
+        if all_html.is_empty() {
+            None
+        } else {
+            Some(all_html.join("\n\n"))
+        }
+    };
 
     let cleaned_text = if let Some(ref plain) = plain_text {
         plain.clone()
@@ -249,6 +279,42 @@ pub fn parse_eml_content(data: &[u8]) -> Result<EmailExtractionResult> {
         attachments,
         metadata,
     })
+}
+
+/// Recursively collect plain text from nested `message/rfc822` sub-messages.
+///
+/// In `multipart/digest` emails, each part is itself an RFC822 message stored as
+/// `PartType::Message`. The top-level `body_text()` won't return these; we must
+/// recurse into the nested `Message` to extract their text bodies.
+fn collect_nested_message_text(message: &mail_parser::Message<'_>, out: &mut Vec<String>) {
+    use mail_parser::PartType;
+    for part in &message.parts {
+        if let PartType::Message(sub_msg) = &part.body {
+            // Collect direct text bodies from the sub-message.
+            let mut i = 0;
+            while let Some(text) = sub_msg.body_text(i) {
+                out.push(text.to_string());
+                i += 1;
+            }
+            // Recurse further in case of deeply nested messages.
+            collect_nested_message_text(sub_msg, out);
+        }
+    }
+}
+
+/// Recursively collect HTML from nested `message/rfc822` sub-messages.
+fn collect_nested_message_html(message: &mail_parser::Message<'_>, out: &mut Vec<String>) {
+    use mail_parser::PartType;
+    for part in &message.parts {
+        if let PartType::Message(sub_msg) = &part.body {
+            let mut i = 0;
+            while let Some(html) = sub_msg.body_html(i) {
+                out.push(html.to_string());
+                i += 1;
+            }
+            collect_nested_message_html(sub_msg, out);
+        }
+    }
 }
 
 /// Parse .msg file content (Outlook format).

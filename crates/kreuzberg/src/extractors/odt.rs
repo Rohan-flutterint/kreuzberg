@@ -64,6 +64,207 @@ impl Plugin for OdtExtractor {
     }
 }
 
+/// Replace a word in a string only if it appears as a whole word
+/// (not as a substring of a larger word).
+fn replace_whole_word(input: &str, word: &str, replacement: &str) -> String {
+    let mut result = String::new();
+    let mut remaining = input;
+
+    while let Some(pos) = remaining.find(word) {
+        // Check character before the match
+        let before_ok = if pos == 0 {
+            true
+        } else {
+            let prev_char = remaining[..pos].chars().next_back().unwrap();
+            !prev_char.is_alphanumeric()
+        };
+
+        // Check character after the match
+        let after_pos = pos + word.len();
+        let after_ok = if after_pos >= remaining.len() {
+            true
+        } else {
+            let next_char = remaining[after_pos..].chars().next().unwrap();
+            !next_char.is_alphanumeric()
+        };
+
+        if before_ok && after_ok {
+            result.push_str(&remaining[..pos]);
+            result.push_str(replacement);
+            remaining = &remaining[after_pos..];
+        } else {
+            result.push_str(&remaining[..after_pos]);
+            remaining = &remaining[after_pos..];
+        }
+    }
+
+    result.push_str(remaining);
+    result
+}
+
+/// Convert StarMath notation to Unicode text.
+///
+/// Handles common StarMath operators and superscript/subscript notation,
+/// converting them to their Unicode equivalents.
+fn starmath_to_unicode(formula: &str) -> String {
+    let mut result = formula.to_string();
+
+    // Replace StarMath operators with Unicode equivalents
+    let replacements = [
+        ("cdot", "\u{22C5}"),    // ⋅
+        ("times", "\u{00D7}"),   // ×
+        ("div", "\u{00F7}"),     // ÷
+        ("pm", "\u{00B1}"),      // ±
+        ("mp", "\u{2213}"),      // ∓
+        ("le", "\u{2264}"),      // ≤
+        ("ge", "\u{2265}"),      // ≥
+        ("ne", "\u{2260}"),      // ≠
+        ("approx", "\u{2248}"),  // ≈
+        ("equiv", "\u{2261}"),   // ≡
+        ("inf", "\u{221E}"),     // ∞
+        ("partial", "\u{2202}"), // ∂
+        ("nabla", "\u{2207}"),   // ∇
+        ("sum", "\u{2211}"),     // ∑
+        ("prod", "\u{220F}"),    // ∏
+        ("int", "\u{222B}"),     // ∫
+        ("sqrt", "\u{221A}"),    // √
+        ("alpha", "\u{03B1}"),   // α
+        ("beta", "\u{03B2}"),    // β
+        ("gamma", "\u{03B3}"),   // γ
+        ("delta", "\u{03B4}"),   // δ
+        ("pi", "\u{03C0}"),      // π
+        ("sigma", "\u{03C3}"),   // σ
+        ("theta", "\u{03B8}"),   // θ
+        ("lambda", "\u{03BB}"),  // λ
+        ("mu", "\u{03BC}"),      // μ
+        ("omega", "\u{03C9}"),   // ω
+    ];
+
+    for (from, to) in &replacements {
+        // Replace only whole words (not substrings within words)
+        result = replace_whole_word(&result, from, to);
+    }
+
+    // Handle superscripts: ^{...} or ^N (single digit)
+    result = convert_superscripts(&result);
+    // Handle subscripts: _{...} or _N (single digit)
+    result = convert_subscripts(&result);
+
+    result
+}
+
+/// Convert superscript notation (^2, ^{10}, etc.) to Unicode superscript characters.
+fn convert_superscripts(input: &str) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '^' {
+            if chars.peek() == Some(&'{') {
+                chars.next(); // consume '{'
+                let mut content = String::new();
+                for c in chars.by_ref() {
+                    if c == '}' {
+                        break;
+                    }
+                    content.push(c);
+                }
+                for c in content.chars() {
+                    result.push(char_to_superscript(c));
+                }
+            } else if let Some(&next) = chars.peek() {
+                chars.next();
+                result.push(char_to_superscript(next));
+            } else {
+                result.push(ch);
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
+}
+
+/// Convert subscript notation (_2, _{10}, etc.) to Unicode subscript characters.
+fn convert_subscripts(input: &str) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '_' {
+            if chars.peek() == Some(&'{') {
+                chars.next(); // consume '{'
+                let mut content = String::new();
+                for c in chars.by_ref() {
+                    if c == '}' {
+                        break;
+                    }
+                    content.push(c);
+                }
+                for c in content.chars() {
+                    result.push(char_to_subscript(c));
+                }
+            } else if let Some(&next) = chars.peek() {
+                chars.next();
+                result.push(char_to_subscript(next));
+            } else {
+                result.push(ch);
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
+}
+
+/// Convert a single character to its Unicode superscript equivalent.
+fn char_to_superscript(c: char) -> char {
+    match c {
+        '0' => '\u{2070}',
+        '1' => '\u{00B9}',
+        '2' => '\u{00B2}',
+        '3' => '\u{00B3}',
+        '4' => '\u{2074}',
+        '5' => '\u{2075}',
+        '6' => '\u{2076}',
+        '7' => '\u{2077}',
+        '8' => '\u{2078}',
+        '9' => '\u{2079}',
+        '+' => '\u{207A}',
+        '-' => '\u{207B}',
+        '=' => '\u{207C}',
+        '(' => '\u{207D}',
+        ')' => '\u{207E}',
+        'n' => '\u{207F}',
+        'i' => '\u{2071}',
+        _ => c,
+    }
+}
+
+/// Convert a single character to its Unicode subscript equivalent.
+fn char_to_subscript(c: char) -> char {
+    match c {
+        '0' => '\u{2080}',
+        '1' => '\u{2081}',
+        '2' => '\u{2082}',
+        '3' => '\u{2083}',
+        '4' => '\u{2084}',
+        '5' => '\u{2085}',
+        '6' => '\u{2086}',
+        '7' => '\u{2087}',
+        '8' => '\u{2088}',
+        '9' => '\u{2089}',
+        '+' => '\u{208A}',
+        '-' => '\u{208B}',
+        '=' => '\u{208C}',
+        '(' => '\u{208D}',
+        ')' => '\u{208E}',
+        _ => c,
+    }
+}
+
 /// Extract text from MathML formula element
 ///
 /// # Arguments
@@ -78,7 +279,7 @@ fn extract_mathml_text(math_node: roxmltree::Node) -> Option<String> {
             && encoding.contains("StarMath")
             && let Some(text) = node.text()
         {
-            return Some(text.to_string());
+            return Some(starmath_to_unicode(text));
         }
     }
 

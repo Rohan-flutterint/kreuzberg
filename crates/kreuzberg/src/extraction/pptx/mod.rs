@@ -29,7 +29,7 @@
 //! use kreuzberg::extraction::pptx::extract_pptx_from_path;
 //!
 //! # fn example() -> kreuzberg::Result<()> {
-//! let result = extract_pptx_from_path("presentation.pptx", true, None)?;
+//! let result = extract_pptx_from_path("presentation.pptx", true, None, false)?;
 //!
 //! println!("Slide count: {}", result.slide_count);
 //! println!("Image count: {}", result.image_count);
@@ -52,9 +52,28 @@ use crate::types::{ExtractedImage, PptxExtractionResult};
 
 use container::{PptxContainer, SlideIterator};
 use content_builder::ContentBuilder;
-use elements::{ParserConfig, SlideElement};
+use elements::{ParserConfig, Run, SlideElement};
 use image_handling::detect_image_format;
 use metadata::{extract_all_notes, extract_metadata};
+
+/// Join text runs with smart spacing: inserts a space between adjacent runs
+/// only when the previous run doesn't end with whitespace and the next run
+/// doesn't start with whitespace.
+fn join_runs_with_spacing(runs: &[Run], extract: impl Fn(&Run) -> String) -> String {
+    let mut result = String::new();
+    for run in runs {
+        let text = extract(run);
+        if !result.is_empty() && !text.is_empty() {
+            let ends_ws = result.ends_with(|c: char| c.is_whitespace());
+            let starts_ws = text.starts_with(|c: char| c.is_whitespace());
+            if !ends_ws && !starts_ws {
+                result.push(' ');
+            }
+        }
+        result.push_str(&text);
+    }
+    result
+}
 
 /// Extract PPTX content from a file path.
 ///
@@ -251,9 +270,9 @@ impl elements::Slide {
             match &self.elements[idx] {
                 SlideElement::Text(text, _) => {
                     let text_content: String = if config.plain {
-                        text.runs.iter().map(|run| run.extract()).collect()
+                        join_runs_with_spacing(&text.runs, Run::extract)
                     } else {
-                        text.runs.iter().map(|run| run.render_as_md()).collect()
+                        join_runs_with_spacing(&text.runs, Run::render_as_md)
                     };
 
                     let normalized = text_content.replace('\n', " ");
@@ -272,7 +291,7 @@ impl elements::Slide {
                         .map(|row| {
                             row.cells
                                 .iter()
-                                .map(|cell| cell.runs.iter().map(|run| run.extract()).collect::<String>())
+                                .map(|cell| join_runs_with_spacing(&cell.runs, Run::extract))
                                 .collect()
                         })
                         .collect();
@@ -280,7 +299,7 @@ impl elements::Slide {
                 }
                 SlideElement::List(list, _) => {
                     for item in &list.items {
-                        let item_text: String = item.runs.iter().map(|run| run.extract()).collect();
+                        let item_text = join_runs_with_spacing(&item.runs, Run::extract);
                         builder.add_list_item(item.level, item.is_ordered, &item_text);
                     }
                 }

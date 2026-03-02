@@ -62,7 +62,7 @@ impl DocumentExtractor for CsvExtractor {
         mime_type: &str,
         _config: &ExtractionConfig,
     ) -> Result<ExtractionResult> {
-        let text = String::from_utf8_lossy(content);
+        let text = decode_csv_bytes(content);
         let delimiter = if mime_type == "text/tab-separated-values" {
             '\t'
         } else {
@@ -239,6 +239,30 @@ fn parse_csv(text: &str, delimiter: char) -> Vec<Vec<String>> {
     }
 
     rows
+}
+
+/// Decode raw CSV bytes with encoding detection.
+///
+/// Tries UTF-8 first (zero-copy fast path). When the bytes are not valid UTF-8
+/// and the `quality` feature is enabled, falls back to `safe_decode` which uses
+/// `chardetng` + `encoding_rs` to detect Shift-JIS, cp932, windows-1252, etc.
+/// Without the `quality` feature, falls back to lossy UTF-8 conversion.
+fn decode_csv_bytes(content: &[u8]) -> String {
+    // Fast path: valid UTF-8.
+    if let Ok(s) = std::str::from_utf8(content) {
+        return s.to_string();
+    }
+
+    // Non-UTF-8 content: use encoding detection when available.
+    #[cfg(feature = "quality")]
+    {
+        crate::text::safe_decode(content, None)
+    }
+
+    #[cfg(not(feature = "quality"))]
+    {
+        String::from_utf8_lossy(content).into_owned()
+    }
 }
 
 /// Build a Markdown table from parsed rows.

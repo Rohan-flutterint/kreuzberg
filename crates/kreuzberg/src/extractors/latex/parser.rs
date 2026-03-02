@@ -270,6 +270,8 @@ impl<'a> LatexParser<'a> {
     }
 
     /// Processes display math mode \[...\].
+    ///
+    /// Converts `\[...\]` into `$$...$$` format for consistent output.
     fn process_display_math(&mut self, trimmed: &str, lines: &[&str], i: &mut usize) {
         let mut math_content = trimmed.to_string();
         if !trimmed.contains("\\]") {
@@ -285,7 +287,10 @@ impl<'a> LatexParser<'a> {
                 *i += 1;
             }
         }
-        self.output.push_str(&math_content);
-        self.output.push('\n');
+        // Convert \[...\] to $$...$$ format
+        let converted = math_content.trim_start_matches("\\[").trim_end_matches("\\]").trim();
+        self.output.push_str("$$");
+        self.output.push_str(converted);
+        self.output.push_str("$$\n");
     }
 }
