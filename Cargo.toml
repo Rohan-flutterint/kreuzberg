@@ -39,10 +39,6 @@ license = "MIT"
 repository = "https://github.com/kreuzberg-dev/kreuzberg"
 homepage = "https://kreuzberg.dev"
 
-[workspace.lints.clippy]
-collapsible_if = "allow"
-collapsible_match = "allow"
-
 [workspace.dependencies]
 kreuzberg = { path = "./crates/kreuzberg", version = "4.4.6", default-features = false }
 kreuzberg-ffi = { path = "./crates/kreuzberg-ffi", version = "4.4.6" }

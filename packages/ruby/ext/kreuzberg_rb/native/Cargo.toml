@@ -13,9 +13,6 @@ description = "Ruby bindings (Magnus) for Kreuzberg - high-performance document 
 keywords = ["ruby", "magnus", "document", "extraction", "bindings"]
 categories = ["api-bindings", "text-processing"]
 
-[lints.clippy]
-collapsible_if = "allow"
-
 [lib]
 name = "kreuzberg_rb"
 crate-type = ["cdylib", "rlib"]
