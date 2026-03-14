@@ -4,6 +4,7 @@
 //! to override or augment the font-size-based paragraph classification
 //! from the standard markdown pipeline.
 
+use super::geometry::Rect;
 use super::types::{LayoutHint, LayoutHintClass, PdfParagraph};
 
 /// Apply layout detection overrides to classified paragraphs.
@@ -63,8 +64,7 @@ fn apply_spatial_overrides(
             None => continue,
         };
 
-        let para_height = para_bbox.top - para_bbox.bottom;
-        if para_height <= 0.0 {
+        if para_bbox.height() <= 0.0 {
             continue;
         }
 
@@ -72,7 +72,8 @@ fn apply_spatial_overrides(
         let best_2d = confident_hints
             .iter()
             .filter_map(|hint| {
-                let containment = hint_containment(hint, &para_bbox);
+                let hint_rect = Rect::from_lbrt(hint.left, hint.bottom, hint.right, hint.top);
+                let containment = para_bbox.intersection_over_self(&hint_rect);
                 if containment >= min_containment {
                     Some((*hint, containment))
                 } else {
@@ -319,13 +320,7 @@ pub(super) fn apply_hint_to_paragraph(para: &mut PdfParagraph, hint: &LayoutHint
     }
 }
 
-/// Simple bounding box for a paragraph in PDF coordinate space.
-struct ParaBBox {
-    left: f32,
-    bottom: f32,
-    right: f32,
-    top: f32,
-}
+// ParaBBox replaced by geometry::Rect.
 
 /// Compute a paragraph's bounding box from its line segments' positional data.
 ///
@@ -339,18 +334,13 @@ struct ParaBBox {
 /// For layout detection matching, we approximate the visual text extent as:
 /// - top = baseline + height (covers ascenders)
 /// - bottom = baseline (descent is small and usually within the layout hint's margin)
-fn compute_paragraph_bbox(para: &PdfParagraph) -> Option<ParaBBox> {
+fn compute_paragraph_bbox(para: &PdfParagraph) -> Option<Rect> {
     // Prefer block-level bbox from structure tree (accurate block bounds).
     if let Some((left, bottom, right, top)) = para.block_bbox
         && right > left
         && top > bottom
     {
-        return Some(ParaBBox {
-            left,
-            bottom,
-            right,
-            top,
-        });
+        return Some(Rect::from_lbrt(left, bottom, right, top));
     }
 
     // Fall back to computing bbox from segment positions (heuristic path).
@@ -376,35 +366,13 @@ fn compute_paragraph_bbox(para: &PdfParagraph) -> Option<ParaBBox> {
     }
 
     if has_data {
-        Some(ParaBBox {
-            left,
-            bottom,
-            right,
-            top,
-        })
+        Some(Rect::from_lbrt(left, bottom, right, top))
     } else {
         None
     }
 }
 
-/// Compute what fraction of the paragraph bbox is contained within the hint bbox.
-///
-/// Both are in PDF coordinate space (points, y=0 at bottom).
-fn hint_containment(hint: &LayoutHint, para: &ParaBBox) -> f32 {
-    let para_area = (para.right - para.left) * (para.top - para.bottom);
-    if para_area <= 0.0 {
-        return 0.0;
-    }
-
-    // Intersection
-    let ix1 = hint.left.max(para.left);
-    let iy1 = hint.bottom.max(para.bottom);
-    let ix2 = hint.right.min(para.right);
-    let iy2 = hint.top.min(para.top);
-
-    let inter_area = (ix2 - ix1).max(0.0) * (iy2 - iy1).max(0.0);
-    inter_area / para_area
-}
+// hint_containment removed — replaced by Rect::intersection_over_self().
 
 #[cfg(test)]
 mod tests {
@@ -545,15 +513,10 @@ mod tests {
     }
 
     #[test]
-    fn test_hint_containment_full() {
-        let hint = make_hint(LayoutHintClass::Text, 0.9, 0.0, 0.0, 612.0, 792.0);
-        let para = ParaBBox {
-            left: 50.0,
-            bottom: 100.0,
-            right: 550.0,
-            top: 200.0,
-        };
-        let containment = hint_containment(&hint, &para);
+    fn test_intersection_over_self_full() {
+        let hint = Rect::from_lbrt(0.0, 0.0, 612.0, 792.0);
+        let para = Rect::from_lbrt(50.0, 100.0, 550.0, 200.0);
+        let containment = para.intersection_over_self(&hint);
         assert!(
             (containment - 1.0).abs() < 0.01,
             "Full containment expected: {}",
@@ -562,15 +525,10 @@ mod tests {
     }
 
     #[test]
-    fn test_hint_containment_none() {
-        let hint = make_hint(LayoutHintClass::Text, 0.9, 0.0, 500.0, 100.0, 600.0);
-        let para = ParaBBox {
-            left: 200.0,
-            bottom: 100.0,
-            right: 500.0,
-            top: 200.0,
-        };
-        let containment = hint_containment(&hint, &para);
+    fn test_intersection_over_self_none() {
+        let hint = Rect::from_lbrt(0.0, 500.0, 100.0, 600.0);
+        let para = Rect::from_lbrt(200.0, 100.0, 500.0, 200.0);
+        let containment = para.intersection_over_self(&hint);
         assert!(
             (containment - 0.0).abs() < 0.01,
             "No containment expected: {}",

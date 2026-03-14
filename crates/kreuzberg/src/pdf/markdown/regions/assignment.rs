@@ -2,6 +2,7 @@
 
 use crate::pdf::hierarchy::SegmentData;
 
+use super::super::geometry::Rect;
 use super::LayoutRegion;
 use crate::pdf::markdown::types::{LayoutHint, LayoutHintClass};
 
@@ -85,23 +86,14 @@ pub(in crate::pdf::markdown) fn assign_segments_to_regions<'a>(
         let seg_right = seg.x + seg.width;
         let seg_bottom = seg.y;
         let seg_top = seg.y + seg.height;
-        let seg_area = seg.width * seg.height;
 
         // Check if this segment overlaps a successfully extracted table.
         // Use IoS (intersection-over-self) instead of center-point to catch
         // segments that straddle the table boundary.
+        let seg_rect = Rect::from_lbrt(seg_left, seg_bottom, seg_right, seg_top);
         let in_extracted_table = suppress_bboxes.iter().any(|bb| {
-            intersection_over_self(
-                seg_left,
-                seg_bottom,
-                seg_right,
-                seg_top,
-                seg_area,
-                bb.x0 as f32,
-                bb.y0 as f32,
-                bb.x1 as f32,
-                bb.y1 as f32,
-            ) >= 0.5
+            let hint_rect = Rect::from_lbrt(bb.x0 as f32, bb.y0 as f32, bb.x1 as f32, bb.y1 as f32);
+            seg_rect.intersection_over_self(&hint_rect) >= 0.5
         });
         if in_extracted_table {
             suppressed_count += 1;
@@ -113,9 +105,8 @@ pub(in crate::pdf::markdown) fn assign_segments_to_regions<'a>(
         // Substantive text (lyrics, captions, embedded prose) is preserved
         // as unassigned so it still appears in the output.
         let in_picture = picture_hints.iter().any(|ph| {
-            intersection_over_self(
-                seg_left, seg_bottom, seg_right, seg_top, seg_area, ph.left, ph.bottom, ph.right, ph.top,
-            ) >= 0.5
+            let hint_rect = Rect::from_lbrt(ph.left, ph.bottom, ph.right, ph.top);
+            seg_rect.intersection_over_self(&hint_rect) >= 0.5
         });
         if in_picture {
             let trimmed = seg.text.trim();
@@ -133,17 +124,8 @@ pub(in crate::pdf::markdown) fn assign_segments_to_regions<'a>(
         let mut best_area = f32::MAX;
 
         for (hi, hint) in confident_hints.iter().enumerate() {
-            let ios = intersection_over_self(
-                seg_left,
-                seg_bottom,
-                seg_right,
-                seg_top,
-                seg_area,
-                hint.left,
-                hint.bottom,
-                hint.right,
-                hint.top,
-            );
+            let hint_rect = Rect::from_lbrt(hint.left, hint.bottom, hint.right, hint.top);
+            let ios = seg_rect.intersection_over_self(&hint_rect);
 
             if ios >= MIN_IOS_THRESHOLD {
                 // Prefer higher IoS; break ties by smallest area
@@ -327,37 +309,6 @@ fn compute_refined_hints(
     }
 
     refined
-}
-
-/// Compute intersection-over-self: the fraction of the segment's area that
-/// overlaps with the region's bounding box.
-#[allow(clippy::too_many_arguments)]
-fn intersection_over_self(
-    seg_left: f32,
-    seg_bottom: f32,
-    seg_right: f32,
-    seg_top: f32,
-    seg_area: f32,
-    hint_left: f32,
-    hint_bottom: f32,
-    hint_right: f32,
-    hint_top: f32,
-) -> f32 {
-    if seg_area <= 0.0 {
-        return 0.0;
-    }
-
-    let inter_left = seg_left.max(hint_left);
-    let inter_right = seg_right.min(hint_right);
-    let inter_bottom = seg_bottom.max(hint_bottom);
-    let inter_top = seg_top.min(hint_top);
-
-    if inter_left >= inter_right || inter_bottom >= inter_top {
-        return 0.0;
-    }
-
-    let inter_area = (inter_right - inter_left) * (inter_top - inter_bottom);
-    inter_area / seg_area
 }
 
 /// Minimum alphanumeric character count for text inside a Picture region

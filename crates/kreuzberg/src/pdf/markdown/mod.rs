@@ -9,6 +9,7 @@ mod bridge;
 mod classify;
 mod columns;
 mod constants;
+pub(crate) mod geometry;
 pub(crate) mod layout_classify;
 mod lines;
 mod paragraphs;

@@ -1,5 +1,7 @@
 //! SLANet-based table recognition for native PDF pages.
 
+use super::super::geometry::Rect;
+
 #[cfg(feature = "layout-detection")]
 use crate::pdf::markdown::render::escape_html_entities;
 #[cfg(feature = "layout-detection")]
@@ -17,27 +19,17 @@ pub(in crate::pdf::markdown) fn word_hint_iow(
     region_right: f32,
     region_bottom: f32,
 ) -> f32 {
-    let w_left = w.left as f32;
-    let w_top = w.top as f32;
-    let w_right = w_left + w.width as f32;
-    let w_bottom = w_top + w.height as f32;
-    let word_area = w.width as f32 * w.height as f32;
-    if word_area <= 0.0 {
+    let word_rect = Rect::from_xywh(w.left as f32, w.top as f32, w.width as f32, w.height as f32);
+    let region_rect = Rect::from_ltrb(region_left, region_top, region_right, region_bottom);
+    if word_rect.area() <= 0.0 {
         // Zero-area word: fall back to center-point containment (0 or 1)
-        let cx = w_left + w.width as f32 / 2.0;
-        let cy = w_top + w.height as f32 / 2.0;
-        return if cx >= region_left && cx <= region_right && cy >= region_top && cy <= region_bottom {
+        return if region_rect.contains_point(word_rect.center_x(), word_rect.center_y()) {
             1.0
         } else {
             0.0
         };
     }
-    let inter_left = w_left.max(region_left);
-    let inter_top = w_top.max(region_top);
-    let inter_right = w_right.min(region_right);
-    let inter_bottom = w_bottom.min(region_bottom);
-    let inter_area = (inter_right - inter_left).max(0.0) * (inter_bottom - inter_top).max(0.0);
-    inter_area / word_area
+    word_rect.intersection_over_self(&region_rect)
 }
 
 /// Recognize tables on a native PDF page using SLANet structure prediction.
