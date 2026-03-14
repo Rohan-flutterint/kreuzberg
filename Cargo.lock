@@ -4526,6 +4526,7 @@ dependencies = [
  "ort-sys",
  "smallvec",
  "tracing",
+ "ureq 3.2.0",
 ]
 
 [[package]]

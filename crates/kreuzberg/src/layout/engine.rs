@@ -257,6 +257,70 @@ impl LayoutEngine {
         Ok((DetectionResult::new(page_width, page_height, detections), timings))
     }
 
+    /// Run layout detection on a batch of images in a single model call.
+    ///
+    /// Returns one `(DetectionResult, DetectTimings)` tuple per input image.
+    /// Postprocessing heuristics are applied per image when enabled in config.
+    ///
+    /// Timing note: `preprocess_ms` and `onnx_ms` in each `DetectTimings` are the
+    /// amortized per-image share of the batch operation (total / N), not independent
+    /// per-image measurements.
+    pub fn detect_batch(
+        &mut self,
+        images: &[&RgbImage],
+    ) -> Result<Vec<(DetectionResult, DetectTimings)>, LayoutError> {
+        if images.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let model_start = Instant::now();
+        let per_image_detections = self
+            .model
+            .detect_batch(images, self.config.confidence_threshold)?;
+        let model_total_ms = model_start.elapsed().as_secs_f64() * 1000.0;
+
+        // Retrieve amortized timings written by the batch implementation.
+        let (preprocess_ms, onnx_ms) = crate::layout::inference_timings::take();
+
+        let postprocess_start = Instant::now();
+        let mut results = Vec::with_capacity(images.len());
+
+        for (img, mut detections) in images.iter().zip(per_image_detections.into_iter()) {
+            let page_width = img.width();
+            let page_height = img.height();
+
+            if self.config.apply_heuristics {
+                heuristics::apply_heuristics(&mut detections, page_width as f32, page_height as f32);
+            }
+
+            results.push((DetectionResult::new(page_width, page_height, detections), DetectTimings {
+                preprocess_ms,
+                onnx_ms,
+                model_total_ms,
+                postprocess_ms: 0.0, // filled in after the loop
+            }));
+        }
+
+        let postprocess_ms = postprocess_start.elapsed().as_secs_f64() * 1000.0;
+        // Distribute postprocess time across all results (amortized per image).
+        let postprocess_ms_per = postprocess_ms / images.len() as f64;
+        for (_, timings) in &mut results {
+            timings.postprocess_ms = postprocess_ms_per;
+        }
+
+        tracing::info!(
+            preprocess_ms,
+            onnx_ms,
+            model_total_ms,
+            postprocess_ms,
+            batch_size = images.len(),
+            total_detections = results.iter().map(|(r, _)| r.detections.len()).sum::<usize>(),
+            "Layout engine detect_batch() breakdown"
+        );
+
+        Ok(results)
+    }
+
     /// Get the model name.
     pub fn model_name(&self) -> &str {
         self.model.name()
