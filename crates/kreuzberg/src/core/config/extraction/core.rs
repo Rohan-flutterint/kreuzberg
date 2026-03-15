@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::super::acceleration::AccelerationConfig;
 use super::super::formats::OutputFormat;
 use super::super::ocr::OcrConfig;
 use super::super::page::PageConfig;
@@ -146,6 +147,14 @@ pub struct ExtractionConfig {
     /// Independent of `result_format` — can be combined with Unified or ElementBased.
     #[serde(default)]
     pub include_document_structure: bool,
+
+    /// Hardware acceleration configuration for ONNX Runtime models.
+    ///
+    /// Controls execution provider selection for layout detection and embedding
+    /// models. When `None`, uses platform defaults (CoreML on macOS, CUDA on
+    /// Linux, CPU on Windows).
+    #[serde(default)]
+    pub acceleration: Option<AccelerationConfig>,
 }
 
 impl Default for ExtractionConfig {
@@ -175,6 +184,7 @@ impl Default for ExtractionConfig {
             result_format: crate::types::OutputFormat::Unified,
             output_format: OutputFormat::Plain,
             include_document_structure: false,
+            acceleration: None,
         }
     }
 }

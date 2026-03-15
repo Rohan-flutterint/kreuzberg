@@ -37,6 +37,7 @@ defmodule Kreuzberg.ExtractionConfig do
     * `:pdf_options` - PDF-specific options (requires pdf feature to be enabled)
     * `:html_options` - HTML to Markdown conversion options (quality, format, preprocessing options)
     * `:layout` - Layout detection configuration (preset, confidence_threshold, apply_heuristics)
+    * `:acceleration` - GPU acceleration configuration (provider, device_id)
     * `:max_concurrent_extractions` - Maximum concurrent extractions in batch operations (positive integer or nil)
 
   ## Default Values
@@ -148,6 +149,7 @@ defmodule Kreuzberg.ExtractionConfig do
           max_concurrent_extractions: non_neg_integer() | nil,
           html_options: config_map | nil,
           layout: layout_config,
+          acceleration: nested_config,
           security_limits: nested_config,
           use_cache: boolean(),
           enable_quality_processing: boolean(),
@@ -171,6 +173,7 @@ defmodule Kreuzberg.ExtractionConfig do
     :max_concurrent_extractions,
     :html_options,
     :layout,
+    :acceleration,
     :security_limits,
     use_cache: true,
     enable_quality_processing: true,
@@ -347,6 +350,7 @@ defmodule Kreuzberg.ExtractionConfig do
       "max_concurrent_extractions" => config.max_concurrent_extractions,
       "html_options" => normalize_nested_config(config.html_options),
       "layout" => normalize_layout_config(config.layout),
+      "acceleration" => normalize_acceleration_config(config.acceleration),
       "use_cache" => config.use_cache,
       "enable_quality_processing" => config.enable_quality_processing,
       "force_ocr" => config.force_ocr,
@@ -475,6 +479,35 @@ defmodule Kreuzberg.ExtractionConfig do
   defp normalize_layout_config(other), do: other
 
   @doc false
+  defp normalize_acceleration_config(nil), do: nil
+
+  @doc false
+  defp normalize_acceleration_config(accel_config) when is_map(accel_config) do
+    normalized = normalize_map_keys(accel_config)
+
+    # Add default provider if not present ("auto" is the default)
+    normalized =
+      if Map.has_key?(normalized, "provider") do
+        normalized
+      else
+        Map.put(normalized, "provider", "auto")
+      end
+
+    # Add default device_id if not present (0 is the default)
+    normalized =
+      if Map.has_key?(normalized, "device_id") do
+        normalized
+      else
+        Map.put(normalized, "device_id", 0)
+      end
+
+    normalized
+  end
+
+  @doc false
+  defp normalize_acceleration_config(other), do: other
+
+  @doc false
   defp normalize_format_value(value) when is_binary(value) do
     String.downcase(value)
   end
@@ -555,7 +588,9 @@ defmodule Kreuzberg.ExtractionConfig do
          :ok <- validate_max_concurrent_extractions(config.max_concurrent_extractions),
          :ok <- validate_nested_field(config.html_options, "html_options"),
          :ok <- validate_nested_field(config.layout, "layout"),
-         :ok <- validate_layout_config(config.layout) do
+         :ok <- validate_layout_config(config.layout),
+         :ok <- validate_nested_field(config.acceleration, "acceleration"),
+         :ok <- validate_acceleration_config(config.acceleration) do
       {:ok, config}
     end
   end
@@ -681,6 +716,7 @@ defmodule Kreuzberg.ExtractionConfig do
       max_concurrent_extractions: Map.get(map, "max_concurrent_extractions"),
       html_options: Map.get(map, "html_options"),
       layout: Map.get(map, "layout"),
+      acceleration: Map.get(map, "acceleration"),
       use_cache: Map.get(map, "use_cache", true),
       enable_quality_processing: Map.get(map, "enable_quality_processing", true),
       force_ocr: Map.get(map, "force_ocr", false),
@@ -973,6 +1009,61 @@ defmodule Kreuzberg.ExtractionConfig do
 
       value ->
         {:error, "Field 'layout.apply_heuristics' must be a boolean, got: #{type_name(value)}"}
+    end
+  end
+
+  @doc false
+  defp validate_acceleration_config(nil), do: :ok
+
+  @doc false
+  defp validate_acceleration_config(config) when is_map(config) do
+    with :ok <- validate_acceleration_provider(config),
+         :ok <- validate_acceleration_device_id(config) do
+      :ok
+    end
+  end
+
+  @doc false
+  defp validate_acceleration_provider(config) do
+    provider = Map.get(config, "provider") || Map.get(config, :provider)
+
+    case provider do
+      nil ->
+        :ok
+
+      value when is_binary(value) ->
+        case String.downcase(value) do
+          "auto" -> :ok
+          "cpu" -> :ok
+          "coreml" -> :ok
+          "cuda" -> :ok
+          "tensorrt" -> :ok
+          _invalid ->
+            {:error,
+             "Field 'acceleration.provider' must be one of: auto, cpu, coreml, cuda, tensorrt, got: #{value}"}
+        end
+
+      value ->
+        {:error, "Field 'acceleration.provider' must be a string, got: #{type_name(value)}"}
+    end
+  end
+
+  @doc false
+  defp validate_acceleration_device_id(config) do
+    device_id = Map.get(config, "device_id") || Map.get(config, :device_id)
+
+    case device_id do
+      nil ->
+        :ok
+
+      value when is_integer(value) and value >= 0 ->
+        :ok
+
+      value when is_integer(value) and value < 0 ->
+        {:error, "Field 'acceleration.device_id' must be a non-negative integer, got: #{value}"}
+
+      value ->
+        {:error, "Field 'acceleration.device_id' must be a non-negative integer, got: #{type_name(value)}"}
     end
   end
 end

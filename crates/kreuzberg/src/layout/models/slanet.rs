@@ -113,7 +113,7 @@ impl SlaNetModel {
     pub fn from_file(path: &str) -> Result<Self, LayoutError> {
         // Try standard session first; fall back to CPU-only if platform EP fails
         // (SLANet uses ops that CoreML sometimes can't handle).
-        let session = match build_session(path) {
+        let session = match build_session(path, None) {
             Ok(s) => s,
             Err(first_err) => {
                 tracing::warn!("SLANet: platform EP failed ({first_err}), retrying with CPU-only");

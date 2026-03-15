@@ -143,6 +143,17 @@ Layout detection uses ONNX Runtime (ORT) for inference. ORT supports multiple ex
 
 ORT automatically selects the best available execution provider at runtime. No configuration is needed -- if CUDA libraries are present, GPU inference is used automatically.
 
+To explicitly control the execution provider, use `AccelerationConfig`:
+
+```python
+config = ExtractionConfig(
+    layout=LayoutDetectionConfig(preset="accurate"),
+    acceleration=AccelerationConfig(provider="cuda", device_id=0)
+)
+```
+
+Set `provider` to `"cpu"` to disable GPU acceleration entirely. See [AccelerationConfig](../reference/configuration.md#accelerationconfig) for full details.
+
 ## Layout Classes Reference
 
 All model backends map their native class IDs to a shared set of 17 canonical classes:

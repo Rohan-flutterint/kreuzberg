@@ -8,7 +8,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::layout::{DetectionResult, LayoutClass, LayoutEngine, LayoutEngineConfig};
+use crate::layout::{DetectionResult, LayoutClass, LayoutEngine};
 use crate::pdf::error::Result;
 
 /// Bounding box in PDF coordinate space (points, y=0 at bottom of page).
@@ -188,11 +188,11 @@ fn detection_to_page_result(
     }
 }
 
-/// Thread-local layout engine for parallel detection.
-///
-/// Each rayon worker thread creates its own `LayoutEngine` on first use,
-/// amortising the ~1-2 s model-load cost across the pages it processes.
-/// Memory cost is ~250 MB per active rayon worker thread.
+// Thread-local layout engine for parallel detection.
+//
+// Each rayon worker thread creates its own `LayoutEngine` on first use,
+// amortising the ~1-2 s model-load cost across the pages it processes.
+// Memory cost is ~250 MB per active rayon worker thread.
 thread_local! {
     static TL_ENGINE: RefCell<Option<LayoutEngine>> = const { RefCell::new(None) };
 }
@@ -286,63 +286,65 @@ pub fn detect_layout_for_document(
             })
             .collect();
         let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
-        return Ok((results, LayoutTimingReport { total_ms, per_page: timings_vec }, images));
+        return Ok((
+            results,
+            LayoutTimingReport {
+                total_ms,
+                per_page: timings_vec,
+            },
+            images,
+        ));
     }
 
     // Run inference in parallel: each rayon worker owns a thread-local engine.
     //
     // Result type per page: Ok((PageLayoutResult, PageTiming)) or Err(String).
     // We collect into a Vec indexed by page so the final sort is trivial.
-    let mut parallel_results: Vec<std::result::Result<(PageLayoutResult, PageTiming), String>> =
-        rgb_images
-            .par_iter()
-            .enumerate()
-            .map(|(page_idx, rgb)| {
-                TL_ENGINE.with(|cell| {
-                    let mut engine_ref = cell.borrow_mut();
-                    let tl_engine = engine_ref.get_or_insert_with(|| {
-                        LayoutEngine::from_config(engine_config.clone())
-                            .expect("thread-local LayoutEngine init failed")
-                    });
+    let mut parallel_results: Vec<std::result::Result<(PageLayoutResult, PageTiming), String>> = rgb_images
+        .par_iter()
+        .enumerate()
+        .map(|(page_idx, rgb)| {
+            TL_ENGINE.with(|cell| {
+                let mut engine_ref = cell.borrow_mut();
+                let tl_engine = engine_ref.get_or_insert_with(|| {
+                    LayoutEngine::from_config(engine_config.clone()).expect("thread-local LayoutEngine init failed")
+                });
 
-                    let inference_start = Instant::now();
-                    let (detection, detect_timings) =
-                        tl_engine.detect_timed(rgb).map_err(|e| {
-                            format!("Layout detection failed on page {page_idx}: {e}")
-                        })?;
-                    let inference_ms = inference_start.elapsed().as_secs_f64() * 1000.0;
+                let inference_start = Instant::now();
+                let (detection, detect_timings) = tl_engine
+                    .detect_timed(rgb)
+                    .map_err(|e| format!("Layout detection failed on page {page_idx}: {e}"))?;
+                let inference_ms = inference_start.elapsed().as_secs_f64() * 1000.0;
 
-                    let mapping_start = Instant::now();
-                    let (page_w, page_h) =
-                        page_dimensions.get(page_idx).copied().unwrap_or((612.0, 792.0));
-                    let page_result =
-                        detection_to_page_result(page_idx, &detection, page_w, page_h);
-                    let mapping_ms = mapping_start.elapsed().as_secs_f64() * 1000.0;
+                let mapping_start = Instant::now();
+                let (page_w, page_h) = page_dimensions.get(page_idx).copied().unwrap_or((612.0, 792.0));
+                let page_result = detection_to_page_result(page_idx, &detection, page_w, page_h);
+                let mapping_ms = mapping_start.elapsed().as_secs_f64() * 1000.0;
 
-                    tracing::debug!(
-                        page = page_idx,
-                        detections = page_result.regions.len(),
-                        render_ms = render_ms_per_page,
-                        preprocess_ms = detect_timings.preprocess_ms,
-                        onnx_ms = detect_timings.onnx_ms,
-                        inference_ms,
-                        postprocess_ms = detect_timings.postprocess_ms,
-                        "Layout detection complete for page"
-                    );
+                tracing::debug!(
+                    page = page_idx,
+                    detections = page_result.regions.len(),
+                    render_ms = render_ms_per_page,
+                    preprocess_ms = detect_timings.preprocess_ms,
+                    onnx_ms = detect_timings.onnx_ms,
+                    inference_ms,
+                    postprocess_ms = detect_timings.postprocess_ms,
+                    "Layout detection complete for page"
+                );
 
-                    let timing = PageTiming {
-                        render_ms: render_ms_per_page,
-                        preprocess_ms: detect_timings.preprocess_ms,
-                        onnx_ms: detect_timings.onnx_ms,
-                        inference_ms,
-                        postprocess_ms: detect_timings.postprocess_ms,
-                        mapping_ms,
-                    };
+                let timing = PageTiming {
+                    render_ms: render_ms_per_page,
+                    preprocess_ms: detect_timings.preprocess_ms,
+                    onnx_ms: detect_timings.onnx_ms,
+                    inference_ms,
+                    postprocess_ms: detect_timings.postprocess_ms,
+                    mapping_ms,
+                };
 
-                    Ok((page_result, timing))
-                })
+                Ok((page_result, timing))
             })
-            .collect();
+        })
+        .collect();
 
     // rayon preserves input order for par_iter(), but make that explicit by
     // sorting on page_index so the contract is independent of scheduling.

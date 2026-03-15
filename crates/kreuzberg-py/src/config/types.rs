@@ -58,7 +58,8 @@ impl ExtractionConfig {
         result_format=None,
         output_format=None,
         include_document_structure=None,
-        layout=None
+        layout=None,
+        acceleration=None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -80,6 +81,7 @@ impl ExtractionConfig {
         output_format: Option<String>,
         include_document_structure: Option<bool>,
         layout: Option<LayoutDetectionConfig>,
+        acceleration: Option<AccelerationConfig>,
     ) -> PyResult<Self> {
         let (html_options_inner, html_options_dict) = parse_html_options_dict(html_options)?;
         Ok(Self {
@@ -132,6 +134,7 @@ impl ExtractionConfig {
                 },
                 security_limits: None,
                 layout: layout.map(Into::into),
+                acceleration: acceleration.map(Into::into),
             },
             html_options_dict,
         })
@@ -338,6 +341,16 @@ impl ExtractionConfig {
     #[setter]
     fn set_layout(&mut self, value: Option<LayoutDetectionConfig>) {
         self.inner.layout = value.map(Into::into);
+    }
+
+    #[getter]
+    fn acceleration(&self) -> Option<AccelerationConfig> {
+        self.inner.acceleration.clone().map(Into::into)
+    }
+
+    #[setter]
+    fn set_acceleration(&mut self, value: Option<AccelerationConfig>) {
+        self.inner.acceleration = value.map(Into::into);
     }
 
     fn __repr__(&self) -> String {
@@ -1828,6 +1841,106 @@ impl PageConfig {
         format!(
             "PageConfig(extract_pages={}, insert_page_markers={}, marker_format='{}')",
             self.inner.extract_pages, self.inner.insert_page_markers, self.inner.marker_format
+        )
+    }
+}
+
+/// Hardware acceleration configuration for ONNX Runtime.
+///
+/// Controls which execution provider (CPU, CoreML, CUDA, TensorRT) is used
+/// for inference in layout detection and embedding generation.
+///
+/// Attributes:
+///     provider (str): Execution provider ("auto", "cpu", "coreml", "cuda", "tensorrt"). Default: "auto"
+///     device_id (int): GPU device ID for CUDA/TensorRT. Default: 0
+///
+/// Example:
+///     >>> from kreuzberg import AccelerationConfig
+///     >>> # Auto-select provider per platform
+///     >>> config = AccelerationConfig()
+///     >>>
+///     >>> # Force CPU-only
+///     >>> config = AccelerationConfig(provider="cpu")
+///     >>>
+///     >>> # Use CUDA on device 1
+///     >>> config = AccelerationConfig(provider="cuda", device_id=1)
+#[pyclass(name = "AccelerationConfig", module = "kreuzberg")]
+#[derive(Clone)]
+pub struct AccelerationConfig {
+    pub inner: kreuzberg::AccelerationConfig,
+}
+
+#[pymethods]
+impl AccelerationConfig {
+    #[new]
+    #[pyo3(signature = (provider=None, device_id=None))]
+    fn new(provider: Option<String>, device_id: Option<u32>) -> PyResult<Self> {
+        let execution_provider = match provider.as_deref() {
+            Some("auto") | None => kreuzberg::ExecutionProviderType::Auto,
+            Some("cpu") => kreuzberg::ExecutionProviderType::Cpu,
+            Some("coreml") => kreuzberg::ExecutionProviderType::CoreMl,
+            Some("cuda") => kreuzberg::ExecutionProviderType::Cuda,
+            Some("tensorrt") | Some("tensor_rt") => kreuzberg::ExecutionProviderType::TensorRt,
+            Some(other) => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                    "Invalid provider: {}. Must be 'auto', 'cpu', 'coreml', 'cuda', or 'tensorrt'",
+                    other
+                )));
+            }
+        };
+
+        Ok(Self {
+            inner: kreuzberg::AccelerationConfig {
+                provider: execution_provider,
+                device_id: device_id.unwrap_or(0),
+            },
+        })
+    }
+
+    #[getter]
+    fn provider(&self) -> String {
+        match self.inner.provider {
+            kreuzberg::ExecutionProviderType::Auto => "auto".to_string(),
+            kreuzberg::ExecutionProviderType::Cpu => "cpu".to_string(),
+            kreuzberg::ExecutionProviderType::CoreMl => "coreml".to_string(),
+            kreuzberg::ExecutionProviderType::Cuda => "cuda".to_string(),
+            kreuzberg::ExecutionProviderType::TensorRt => "tensorrt".to_string(),
+        }
+    }
+
+    #[setter]
+    fn set_provider(&mut self, value: String) -> PyResult<()> {
+        self.inner.provider = match value.to_lowercase().as_str() {
+            "auto" => kreuzberg::ExecutionProviderType::Auto,
+            "cpu" => kreuzberg::ExecutionProviderType::Cpu,
+            "coreml" => kreuzberg::ExecutionProviderType::CoreMl,
+            "cuda" => kreuzberg::ExecutionProviderType::Cuda,
+            "tensorrt" | "tensor_rt" => kreuzberg::ExecutionProviderType::TensorRt,
+            other => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                    "Invalid provider: {}. Must be 'auto', 'cpu', 'coreml', 'cuda', or 'tensorrt'",
+                    other
+                )));
+            }
+        };
+        Ok(())
+    }
+
+    #[getter]
+    fn device_id(&self) -> u32 {
+        self.inner.device_id
+    }
+
+    #[setter]
+    fn set_device_id(&mut self, value: u32) {
+        self.inner.device_id = value;
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "AccelerationConfig(provider='{}', device_id={})",
+            self.provider(),
+            self.inner.device_id
         )
     }
 }

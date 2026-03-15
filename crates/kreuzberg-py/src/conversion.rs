@@ -203,3 +203,17 @@ impl From<kreuzberg::core::config::HierarchyConfig> for HierarchyConfig {
         Self { inner: config }
     }
 }
+
+/// Convert AccelerationConfig to its inner Rust type
+impl From<AccelerationConfig> for kreuzberg::AccelerationConfig {
+    fn from(config: AccelerationConfig) -> Self {
+        config.inner
+    }
+}
+
+/// Convert Rust AccelerationConfig to Python wrapper
+impl From<kreuzberg::AccelerationConfig> for AccelerationConfig {
+    fn from(config: kreuzberg::AccelerationConfig) -> Self {
+        Self { inner: config }
+    }
+}

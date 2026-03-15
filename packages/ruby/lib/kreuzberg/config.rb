@@ -803,6 +803,36 @@ module Kreuzberg
       end
     end
 
+    # Hardware acceleration configuration for ONNX Runtime
+    #
+    # Controls which execution provider (CPU, CoreML, CUDA, TensorRT) is used
+    # for inference in layout detection and embedding generation.
+    #
+    # @example Auto-select provider (CoreML on macOS, CUDA on Linux, CPU elsewhere)
+    #   acceleration = Acceleration.new
+    #
+    # @example Force CPU only
+    #   acceleration = Acceleration.new(provider: 'cpu')
+    #
+    # @example Use CUDA with specific device
+    #   acceleration = Acceleration.new(provider: 'cuda', device_id: 0)
+    #
+    class Acceleration
+      attr_reader :provider, :device_id
+
+      def initialize(provider: 'auto', device_id: 0)
+        @provider = provider.to_s
+        @device_id = device_id.to_i
+      end
+
+      def to_h
+        {
+          provider: @provider,
+          device_id: @device_id
+        }
+      end
+    end
+
     # Layout detection configuration
     #
     # @example Basic usage with fast preset

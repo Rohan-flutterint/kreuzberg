@@ -250,6 +250,7 @@ Main extraction configuration controlling all aspects of document processing.
 | `html_options`               | `ConversionOptions`        | `None`                 | HTML to Markdown conversion options (heading styles, list formatting, code block styles). Only available with `html` feature.                                                                    |
 | `security_limits`            | `SecurityLimits?`          | `None` (uses defaults) | Archive security thresholds: max archive size (500MB), compression ratio (100:1), file count (10K), nesting depth, content size, XML depth, table cells. Only available with `archives` feature. |
 | `layout`                     | `LayoutDetectionConfig?`   | `None`                 | Layout detection configuration for document structure analysis. Only available with `layout-detection` feature.                                                                                   |
+| `acceleration`               | `AccelerationConfig?`      | `None`                 | Hardware acceleration configuration for ONNX Runtime inference (layout detection and embeddings). See [AccelerationConfig](#accelerationconfig).                                                 |
 | `include_document_structure` | `bool`                     | `false`                | Enable structured document model output. When true, the `document` field on ExtractionResult is populated with a tree-based representation of document content.                                  |
 
 ### Result Format vs Output Format
@@ -3216,6 +3217,83 @@ Configuration for ONNX-based document layout detection. Analyzes PDF pages to id
       preset: accurate
       confidence_threshold: 0.5
       apply_heuristics: true
+    ```
+
+---
+
+## AccelerationConfig
+
+Controls hardware acceleration for ONNX Runtime inference (layout detection and embeddings).
+
+### Fields
+
+| Field       | Type      | Default  | Description                                                            |
+| ----------- | --------- | -------- | ---------------------------------------------------------------------- |
+| `provider`  | `str`     | `"auto"` | Execution provider: `"auto"`, `"cpu"`, `"coreml"`, `"cuda"`, `"tensorrt"` |
+| `device_id` | `int`     | `0`      | GPU device ID (for CUDA/TensorRT)                                      |
+
+### Provider Behavior
+
+- `auto`: CoreML on macOS, CUDA on Linux, CPU elsewhere
+- `cpu`: CPU-only inference (always available)
+- `coreml`: Apple CoreML (macOS Neural Engine / GPU)
+- `cuda`: NVIDIA CUDA GPU acceleration
+- `tensorrt`: NVIDIA TensorRT (optimized CUDA inference)
+
+ORT silently falls back to CPU if the requested provider is unavailable.
+
+### Configuration Examples
+
+=== "Python"
+
+    ```python title="acceleration_config.py"
+    from kreuzberg import ExtractionConfig, AccelerationConfig
+
+    config = ExtractionConfig(
+        acceleration=AccelerationConfig(provider="cuda", device_id=0)
+    )
+    ```
+
+=== "TypeScript"
+
+    ```typescript title="acceleration_config.ts"
+    import { extract } from "kreuzberg";
+
+    const result = await extract("document.pdf", {
+      acceleration: { provider: 'cuda', deviceId: 0 },
+    });
+    ```
+
+=== "Rust"
+
+    ```rust title="acceleration_config.rs"
+    use kreuzberg::core::{ExtractionConfig, AccelerationConfig};
+
+    let config = ExtractionConfig {
+        acceleration: Some(AccelerationConfig {
+            provider: "cuda".to_string(),
+            device_id: 0,
+        }),
+        ..Default::default()
+    };
+    ```
+
+### Configuration File Examples
+
+=== "TOML"
+
+    ```toml title="kreuzberg.toml"
+    [acceleration]
+    provider = "cpu"
+    device_id = 0
+    ```
+
+=== "YAML"
+
+    ```yaml title="kreuzberg.yaml"
+    acceleration:
+      provider: cpu
+      device_id: 0
     ```
 
 ---

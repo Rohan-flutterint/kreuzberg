@@ -338,4 +338,5 @@ Key sections include:
 - [ChunkingConfig](../reference/configuration.md#chunkingconfig) - Text chunking
 - [TokenReductionConfig](../reference/configuration.md#tokenreductionconfig) - Token optimization
 - [PageConfig](../reference/configuration.md#pageconfig) - Page tracking
+- [AccelerationConfig](../reference/configuration.md#accelerationconfig) - Hardware acceleration
 - [All other configs](../reference/configuration.md) - Complete field list

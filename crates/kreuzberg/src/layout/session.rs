@@ -1,20 +1,17 @@
 use ort::session::{Session, builder::GraphOptimizationLevel};
 
+use crate::core::config::acceleration::{AccelerationConfig, ExecutionProviderType};
 use crate::layout::error::LayoutError;
 
 /// Build an optimized ORT session from an ONNX model file.
 ///
-/// Optimizations applied:
-/// - Level3 graph optimization (most aggressive constant folding + operator fusion)
-/// - intra_threads = num logical CPUs (within-operator parallelism for matrix ops)
-/// - inter_threads = 1 (single graph execution — avoids contention)
-/// - CoreML execution provider on macOS (Neural Engine / GPU acceleration)
-/// - CUDA execution provider on Linux (GPU acceleration)
+/// When `accel` is `None` or `Auto`, uses platform defaults:
+/// - macOS: CoreML (Neural Engine / GPU)
+/// - Linux: CUDA (GPU)
+/// - Others: CPU only
 ///
-/// Level3 is used because the aggressive operator fusion significantly speeds up
-/// per-page inference (2x faster than Level1), which amortizes the higher session
-/// creation cost across multi-page documents.
-pub fn build_session(path: &str) -> Result<Session, LayoutError> {
+/// ORT silently falls back to CPU if the requested EP is unavailable.
+pub fn build_session(path: &str, accel: Option<&AccelerationConfig>) -> Result<Session, LayoutError> {
     let num_cores = num_cpus::get();
 
     let builder = Session::builder()?
@@ -22,25 +19,47 @@ pub fn build_session(path: &str) -> Result<Session, LayoutError> {
         .with_intra_threads(num_cores)?
         .with_inter_threads(1)?;
 
-    // Platform-specific execution providers with CPU fallback.
-    // Note: if the EP is not available at runtime, ORT silently falls back to CPU.
-    #[cfg(target_os = "macos")]
-    let builder = builder.with_execution_providers([ort::ep::CoreML::default().build()])?;
+    let provider = accel.map(|a| &a.provider).unwrap_or(&ExecutionProviderType::Auto);
+    let device_id = accel.map(|a| a.device_id).unwrap_or(0);
 
-    #[cfg(target_os = "linux")]
-    let builder = builder.with_execution_providers([ort::ep::CUDA::default().build()])?;
+    let builder = match provider {
+        ExecutionProviderType::Cpu => {
+            tracing::debug!("ORT session: CPU execution provider (explicit)");
+            builder
+        }
+        ExecutionProviderType::CoreMl => {
+            tracing::debug!("ORT session: CoreML execution provider requested");
+            builder.with_execution_providers([ort::ep::CoreML::default().build()])?
+        }
+        ExecutionProviderType::Cuda => {
+            tracing::debug!(device_id, "ORT session: CUDA execution provider requested");
+            builder.with_execution_providers([ort::ep::CUDA::default().with_device_id(device_id as i32).build()])?
+        }
+        ExecutionProviderType::TensorRt => {
+            tracing::debug!(device_id, "ORT session: TensorRT execution provider requested");
+            builder.with_execution_providers([ort::ep::TensorRT::default().with_device_id(device_id as i32).build()])?
+        }
+        ExecutionProviderType::Auto => {
+            // Platform defaults
+            #[cfg(target_os = "macos")]
+            let builder = {
+                tracing::debug!("ORT session: auto-selected CoreML (macOS)");
+                builder.with_execution_providers([ort::ep::CoreML::default().build()])?
+            };
+            #[cfg(target_os = "linux")]
+            let builder = {
+                tracing::debug!("ORT session: auto-selected CUDA (Linux)");
+                builder.with_execution_providers([ort::ep::CUDA::default().build()])?
+            };
+            #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+            let builder = {
+                tracing::debug!("ORT session: auto-selected CPU (no platform EP)");
+                builder
+            };
+            builder
+        }
+    };
 
     let session = builder.commit_from_file(path)?;
-
-    // Log which execution providers were requested so diagnostics are easy to
-    // read in traces.  ORT silently falls back to CPU if a requested EP is
-    // unavailable at runtime, so this reflects intent, not guarantee.
-    #[cfg(target_os = "macos")]
-    tracing::debug!("ORT session built with CoreML EP requested (CPU fallback enabled)");
-    #[cfg(target_os = "linux")]
-    tracing::debug!("ORT session built with CUDA EP requested (CPU fallback enabled)");
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    tracing::debug!("ORT session built with CPU EP");
-
     Ok(session)
 }

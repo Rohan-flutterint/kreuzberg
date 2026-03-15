@@ -218,6 +218,9 @@ enum Commands {
         #[arg(long, default_value = "accurate")]
         model_b: String,
     },
+
+    /// Embedding throughput and batch-size benchmark across all presets
+    EmbedBenchmark,
 }
 
 #[tokio::main]
@@ -773,6 +776,11 @@ async fn main() -> Result<()> {
 
             let results = run_model_benchmark(&config).await?;
             print_model_table(&results, &model_a, &model_b);
+            Ok(())
+        }
+
+        Commands::EmbedBenchmark => {
+            benchmark_harness::embed_benchmark::run_embed_benchmark();
             Ok(())
         }
 

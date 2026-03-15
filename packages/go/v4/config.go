@@ -171,6 +171,9 @@ func ConfigMerge(base, override *ExtractionConfig) error {
 	if override.Pages != nil {
 		base.Pages = override.Pages
 	}
+	if override.Acceleration != nil {
+		base.Acceleration = override.Acceleration
+	}
 	if override.MaxConcurrentExtractions != nil {
 		base.MaxConcurrentExtractions = override.MaxConcurrentExtractions
 	}

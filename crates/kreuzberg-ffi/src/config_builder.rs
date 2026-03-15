@@ -10,8 +10,8 @@ use crate::ffi_panic_guard;
 use crate::ffi_panic_guard_i32;
 use crate::helpers::{clear_last_error, set_last_error};
 use kreuzberg::core::config::{
-    ChunkingConfig, ExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig, LayoutDetectionConfig, OcrConfig,
-    PdfConfig, PostProcessorConfig,
+    AccelerationConfig, ChunkingConfig, ExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig,
+    LayoutDetectionConfig, OcrConfig, PdfConfig, PostProcessorConfig,
 };
 use std::ffi::{CStr, c_char};
 use std::ptr;
@@ -85,6 +85,13 @@ impl ConfigBuilder {
         let layout_config: LayoutDetectionConfig =
             serde_json::from_str(layout_json).map_err(|e| format!("Failed to parse layout config JSON: {}", e))?;
         self.config.layout = Some(layout_config);
+        Ok(())
+    }
+
+    fn set_acceleration_from_json(&mut self, accel_json: &str) -> Result<(), String> {
+        let accel_config: AccelerationConfig =
+            serde_json::from_str(accel_json).map_err(|e| format!("Failed to parse acceleration config JSON: {}", e))?;
+        self.config.acceleration = Some(accel_config);
         Ok(())
     }
 
@@ -539,6 +546,59 @@ pub unsafe extern "C" fn kreuzberg_config_builder_set_layout(
         };
 
         match unsafe { (*builder).set_layout_from_json(json_str) } {
+            Ok(()) => 0,
+            Err(e) => {
+                set_last_error(e);
+                -1
+            }
+        }
+    })
+}
+
+/// Set acceleration configuration from JSON.
+///
+/// # Arguments
+///
+/// * `builder` - Non-null pointer to ConfigBuilder
+/// * `accel_json` - JSON string for acceleration config
+///
+/// # Returns
+///
+/// 0 on success, -1 on error (check kreuzberg_last_error)
+///
+/// # Safety
+///
+/// This function is meant to be called from C/FFI code. The caller must ensure:
+/// - `builder` must be a valid, non-null pointer previously returned by `kreuzberg_config_builder_new`
+/// - The pointer must be properly aligned and point to a valid ConfigBuilder instance
+/// - `accel_json` must be a valid, non-null pointer to a null-terminated UTF-8 string
+/// - The string pointer must remain valid for the duration of the function call
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_config_builder_set_acceleration(
+    builder: *mut ConfigBuilder,
+    accel_json: *const c_char,
+) -> i32 {
+    ffi_panic_guard_i32!("kreuzberg_config_builder_set_acceleration", {
+        if builder.is_null() {
+            set_last_error("ConfigBuilder pointer cannot be NULL".to_string());
+            return -1;
+        }
+        if accel_json.is_null() {
+            set_last_error("Acceleration JSON cannot be NULL".to_string());
+            return -1;
+        }
+
+        clear_last_error();
+
+        let json_str = match unsafe { CStr::from_ptr(accel_json) }.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                set_last_error(format!("Invalid UTF-8 in acceleration JSON: {}", e));
+                return -1;
+            }
+        };
+
+        match unsafe { (*builder).set_acceleration_from_json(json_str) } {
             Ok(()) => 0,
             Err(e) => {
                 set_last_error(e);

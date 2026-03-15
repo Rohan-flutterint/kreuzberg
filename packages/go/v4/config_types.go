@@ -31,6 +31,9 @@ type ImageExtractionOption func(*ImageExtractionConfig)
 // FontConfigOption is a functional option for configuring FontConfig.
 type FontConfigOption func(*FontConfig)
 
+// AccelerationConfigOption is a functional option for configuring AccelerationConfig.
+type AccelerationConfigOption func(*AccelerationConfig)
+
 // PdfOption is a functional option for configuring PdfConfig.
 type PdfOption func(*PdfConfig)
 
@@ -89,6 +92,7 @@ type ExtractionConfig struct {
 	LayoutDetection          *LayoutDetectionConfig   `json:"layout,omitempty"`
 	Pages                    *PageConfig              `json:"pages,omitempty"`
 	SecurityLimits           *SecurityLimitsConfig    `json:"security_limits,omitempty"`
+	Acceleration             *AccelerationConfig      `json:"acceleration,omitempty"`
 	MaxConcurrentExtractions *int                     `json:"max_concurrent_extractions,omitempty"`
 	IncludeDocumentStructure *bool                    `json:"include_document_structure,omitempty"`
 	OutputFormat             string                   `json:"output_format,omitempty"`
@@ -346,6 +350,14 @@ type HTMLConversionOptions struct {
 	StripTags          []string                  `json:"strip_tags,omitempty"`
 	PreserveTags       []string                  `json:"preserve_tags,omitempty"`
 	Preprocessing      *HTMLPreprocessingOptions `json:"preprocessing,omitempty"`
+}
+
+// AccelerationConfig controls ONNX Runtime execution provider selection.
+type AccelerationConfig struct {
+	// Provider selects the execution provider: "auto", "cpu", "coreml", "cuda", "tensorrt".
+	Provider string `json:"provider,omitempty"`
+	// DeviceID is the GPU device ID (for CUDA/TensorRT).
+	DeviceID uint32 `json:"device_id,omitempty"`
 }
 
 // PageConfig configures page tracking and extraction.

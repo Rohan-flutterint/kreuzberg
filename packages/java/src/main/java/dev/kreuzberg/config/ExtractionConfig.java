@@ -43,6 +43,7 @@ public final class ExtractionConfig {
 	private final KeywordConfig keywords;
 	private final PageConfig pages;
 	private final LayoutDetectionConfig layout;
+	private final AccelerationConfig acceleration;
 	private final Integer maxConcurrentExtractions;
 	private final Map<String, Object> securityLimits;
 	private final boolean includeDocumentStructure;
@@ -68,6 +69,7 @@ public final class ExtractionConfig {
 		this.keywords = builder.keywords;
 		this.pages = builder.pages;
 		this.layout = builder.layout;
+		this.acceleration = builder.acceleration;
 		this.maxConcurrentExtractions = builder.maxConcurrentExtractions;
 		this.securityLimits = builder.securityLimits;
 		this.includeDocumentStructure = builder.includeDocumentStructure;
@@ -168,6 +170,16 @@ public final class ExtractionConfig {
 	 */
 	public LayoutDetectionConfig getLayout() {
 		return layout;
+	}
+
+	/**
+	 * Get the acceleration configuration.
+	 *
+	 * @return the acceleration configuration, or null if not set
+	 * @since 4.5.0
+	 */
+	public AccelerationConfig getAcceleration() {
+		return acceleration;
 	}
 
 	public Integer getMaxConcurrentExtractions() {
@@ -473,6 +485,9 @@ public final class ExtractionConfig {
 		if (layout != null) {
 			map.put("layout", layout.toMap());
 		}
+		if (acceleration != null) {
+			map.put("acceleration", acceleration.toMap());
+		}
 		if (maxConcurrentExtractions != null) {
 			map.put("max_concurrent_extractions", maxConcurrentExtractions);
 		}
@@ -551,6 +566,10 @@ public final class ExtractionConfig {
 		if (layoutMap != null) {
 			builder.layout(LayoutDetectionConfig.fromMap(layoutMap));
 		}
+		Map<String, Object> accelerationMap = asMap(raw.get("acceleration"));
+		if (accelerationMap != null) {
+			builder.acceleration(AccelerationConfig.fromMap(accelerationMap));
+		}
 		if (raw.containsKey("max_concurrent_extractions")) {
 			builder.maxConcurrentExtractions(asInteger(raw.get("max_concurrent_extractions")));
 		}
@@ -623,6 +642,7 @@ public final class ExtractionConfig {
 		private KeywordConfig keywords;
 		private PageConfig pages;
 		private LayoutDetectionConfig layout;
+		private AccelerationConfig acceleration;
 		private Integer maxConcurrentExtractions;
 		private Map<String, Object> securityLimits;
 
@@ -770,6 +790,19 @@ public final class ExtractionConfig {
 		 */
 		public Builder layout(LayoutDetectionConfig layout) {
 			this.layout = layout;
+			return this;
+		}
+
+		/**
+		 * Set the acceleration configuration.
+		 *
+		 * @param acceleration
+		 *            the acceleration configuration
+		 * @return this builder for chaining
+		 * @since 4.5.0
+		 */
+		public Builder acceleration(AccelerationConfig acceleration) {
+			this.acceleration = acceleration;
 			return this;
 		}
 

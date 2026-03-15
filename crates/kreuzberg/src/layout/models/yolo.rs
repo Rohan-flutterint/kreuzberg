@@ -50,7 +50,7 @@ impl YoloModel {
         input_height: u32,
         model_name: &str,
     ) -> Result<Self, LayoutError> {
-        let session = crate::layout::session::build_session(path)?;
+        let session = crate::layout::session::build_session(path, None)?;
         let input_name = session.inputs()[0].name().to_string();
         Ok(Self {
             session,

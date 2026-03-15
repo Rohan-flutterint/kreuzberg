@@ -18,8 +18,9 @@ use kreuzberg::keywords::{
 use kreuzberg::pdf::HierarchyConfig;
 use kreuzberg::types::TesseractConfig as RustTesseractConfig;
 use kreuzberg::{
-    ChunkingConfig, EmbeddingConfig, ExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig, OcrConfig,
-    OutputFormat, PdfConfig, PostProcessorConfig, TokenReductionConfig,
+    AccelerationConfig, ChunkingConfig, EmbeddingConfig, ExecutionProviderType, ExtractionConfig,
+    ImageExtractionConfig, LanguageDetectionConfig, OcrConfig, OutputFormat, PdfConfig, PostProcessorConfig,
+    TokenReductionConfig,
 };
 use magnus::value::ReprValue;
 use magnus::{Error, RArray, RHash, Ruby, TryConvert, Value};
@@ -759,6 +760,33 @@ pub fn parse_page_config(ruby: &Ruby, hash: RHash) -> Result<PageConfig, Error> 
     Ok(config)
 }
 
+/// Parse AccelerationConfig from Ruby Hash
+pub fn parse_acceleration_config(ruby: &Ruby, hash: RHash) -> Result<AccelerationConfig, Error> {
+    let provider = if let Some(val) = get_kw(ruby, hash, "provider") {
+        let provider_str = symbol_to_string(val)?;
+        match provider_str.to_lowercase().as_str() {
+            "auto" => ExecutionProviderType::Auto,
+            "cpu" => ExecutionProviderType::Cpu,
+            "coreml" => ExecutionProviderType::CoreMl,
+            "cuda" => ExecutionProviderType::Cuda,
+            "tensorrt" => ExecutionProviderType::TensorRt,
+            other => return Err(runtime_error(format!("Invalid acceleration provider: '{}'", other))),
+        }
+    } else {
+        ExecutionProviderType::Auto
+    };
+
+    let device_id = if let Some(val) = get_kw(ruby, hash, "device_id") {
+        u32::try_convert(val)?
+    } else {
+        0
+    };
+
+    let config = AccelerationConfig { provider, device_id };
+
+    Ok(config)
+}
+
 /// Parse ExtractionConfig from Ruby Hash
 pub fn parse_extraction_config(ruby: &Ruby, opts: Option<RHash>) -> Result<ExtractionConfig, Error> {
     let mut config = ExtractionConfig::default();
@@ -834,6 +862,13 @@ pub fn parse_extraction_config(ruby: &Ruby, opts: Option<RHash>) -> Result<Extra
         {
             let keywords_hash = RHash::try_convert(val)?;
             config.keywords = Some(parse_keyword_config(ruby, keywords_hash)?);
+        }
+
+        if let Some(val) = get_kw(ruby, hash, "acceleration")
+            && !val.is_nil()
+        {
+            let accel_hash = RHash::try_convert(val)?;
+            config.acceleration = Some(parse_acceleration_config(ruby, accel_hash)?);
         }
 
         if let Some(val) = get_kw(ruby, hash, "html_options")

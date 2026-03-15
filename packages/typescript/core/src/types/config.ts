@@ -326,6 +326,31 @@ export interface PageConfig {
 	markerFormat?: string;
 }
 
+/**
+ * Execution provider type for model acceleration.
+ *
+ * Supported providers:
+ * - "auto": Automatically select best available provider (default)
+ * - "cpu": Use CPU for inference
+ * - "coreml": Use CoreML (Apple) acceleration
+ * - "cuda": Use NVIDIA CUDA acceleration
+ * - "tensorrt": Use NVIDIA TensorRT acceleration
+ */
+export type ExecutionProviderType = "auto" | "cpu" | "coreml" | "cuda" | "tensorrt";
+
+/**
+ * Model acceleration configuration.
+ *
+ * Controls hardware acceleration settings for layout inference and other model operations.
+ */
+export interface AccelerationConfig {
+	/** Execution provider type. Default: 'auto' */
+	provider?: ExecutionProviderType;
+
+	/** GPU device ID (for CUDA/TensorRT). Default: 0 */
+	deviceId?: number;
+}
+
 export interface ExtractionConfig {
 	useCache?: boolean;
 	enableQualityProcessing?: boolean;
@@ -340,6 +365,7 @@ export interface ExtractionConfig {
 	htmlOptions?: HtmlConversionOptions;
 	keywords?: KeywordConfig;
 	pages?: PageConfig;
+	acceleration?: AccelerationConfig;
 	securityLimits?: Record<string, number>;
 	maxConcurrentExtractions?: number;
 	/**

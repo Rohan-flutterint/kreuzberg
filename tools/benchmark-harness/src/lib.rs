@@ -11,6 +11,7 @@ pub mod comparison;
 pub mod config;
 pub mod consolidate;
 pub mod corpus;
+pub mod embed_benchmark;
 pub mod error;
 pub mod fixture;
 pub mod groups;

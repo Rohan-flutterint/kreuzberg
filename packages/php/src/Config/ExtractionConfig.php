@@ -227,6 +227,17 @@ readonly class ExtractionConfig
          * @default false
          */
         public bool $includeDocumentStructure = false,
+
+        /**
+         * Hardware acceleration configuration for ONNX Runtime models.
+         *
+         * Configures which execution provider to use for ONNX model inference,
+         * enabling hardware acceleration on GPU devices (CUDA, TensorRT, CoreML).
+         *
+         * @var AccelerationConfig|null
+         * @default null
+         */
+        public ?AccelerationConfig $acceleration = null,
     ) {
     }
 
@@ -368,6 +379,13 @@ readonly class ExtractionConfig
             $includeDocumentStructure = (bool) $includeDocumentStructure;
         }
 
+        $acceleration = null;
+        if (isset($data['acceleration']) && is_array($data['acceleration'])) {
+            /** @var array<string, mixed> $accelerationData */
+            $accelerationData = $data['acceleration'];
+            $acceleration = AccelerationConfig::fromArray($accelerationData);
+        }
+
         return new self(
             useCache: $useCache,
             enableQualityProcessing: $enableQualityProcessing,
@@ -386,6 +404,7 @@ readonly class ExtractionConfig
             resultFormat: $resultFormat,
             outputFormat: $outputFormat,
             includeDocumentStructure: $includeDocumentStructure,
+            acceleration: $acceleration,
         );
     }
 
@@ -552,6 +571,7 @@ readonly class ExtractionConfig
             'html_options' => $this->htmlOptions,
             'postprocessor' => $this->postprocessor?->toArray(),
             'token_reduction' => $this->tokenReduction?->toArray(),
+            'acceleration' => $this->acceleration?->toArray(),
         ];
 
         // Add simple boolean/string fields only if explicitly set to non-default values

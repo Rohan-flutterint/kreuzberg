@@ -3,6 +3,7 @@
 //! This module provides utilities for loading extraction configuration from various
 //! sources (TOML, YAML, JSON) and discovering configuration files in the project hierarchy.
 
+pub mod acceleration;
 pub mod extraction;
 pub mod formats;
 pub mod layout;
@@ -12,6 +13,7 @@ pub mod pdf;
 pub mod processing;
 
 // Re-export main types for backward compatibility
+pub use acceleration::{AccelerationConfig, ExecutionProviderType};
 pub use extraction::{ExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig, TokenReductionConfig};
 pub use formats::OutputFormat;
 #[cfg(feature = "layout-detection")]

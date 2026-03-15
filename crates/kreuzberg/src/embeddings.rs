@@ -491,6 +491,8 @@ pub fn generate_embeddings_for_chunks(
         return Ok(());
     }
 
+    let chunk_count = chunks.len();
+
     let fastembed_model = match &config.model {
         crate::core::config::EmbeddingModelType::Preset { name } => {
             let preset = get_preset(name).ok_or_else(|| crate::KreuzbergError::Plugin {
@@ -522,7 +524,7 @@ pub fn generate_embeddings_for_chunks(
 
     let model = get_or_init_model(fastembed_model, config.cache_dir.clone())?;
 
-    let texts: Vec<String> = chunks.iter().map(|chunk| chunk.content.clone()).collect();
+    let texts: Vec<&str> = chunks.iter().map(|chunk| chunk.content.as_str()).collect();
 
     let embeddings_result = {
         let locked_model = model.lock().map_err(|e| crate::KreuzbergError::Plugin {
@@ -536,19 +538,42 @@ pub fn generate_embeddings_for_chunks(
         model_mut
             .embed(texts, Some(config.batch_size))
             .map_err(|e| crate::KreuzbergError::Plugin {
-                message: format!("Failed to generate embeddings: {}", e),
+                message: format!(
+                    "Failed to generate embeddings for {} chunks (model={:?}, batch_size={}): {}",
+                    chunk_count, config.model, config.batch_size, e
+                ),
                 plugin_name: "embeddings".to_string(),
             })?
     };
 
-    for (chunk, mut embedding) in chunks.iter_mut().zip(embeddings_result) {
-        if config.normalize {
-            let magnitude: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
-            if magnitude > 0.0 {
-                embedding.iter_mut().for_each(|x| *x /= magnitude);
+    let mut embeddings_result = embeddings_result;
+
+    // For large batches, normalize in parallel — this is CPU-bound work that
+    // benefits from SIMD + multi-core parallelism via rayon.
+    if config.normalize {
+        const PARALLEL_THRESHOLD: usize = 64;
+        if embeddings_result.len() >= PARALLEL_THRESHOLD {
+            use rayon::prelude::*;
+            embeddings_result.par_iter_mut().for_each(|embedding| {
+                let magnitude: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+                if magnitude > f32::EPSILON {
+                    let inv_mag = 1.0 / magnitude;
+                    embedding.iter_mut().for_each(|x| *x *= inv_mag);
+                }
+            });
+        } else {
+            for embedding in &mut embeddings_result {
+                let magnitude: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+                if magnitude > f32::EPSILON {
+                    let inv_mag = 1.0 / magnitude;
+                    embedding.iter_mut().for_each(|x| *x *= inv_mag);
+                }
             }
         }
+    }
 
+    // Assign embeddings to chunks — cheap pointer moves, no cloning.
+    for (chunk, embedding) in chunks.iter_mut().zip(embeddings_result) {
         chunk.embedding = Some(embedding);
     }
 

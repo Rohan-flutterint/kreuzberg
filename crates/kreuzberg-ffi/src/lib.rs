@@ -32,9 +32,10 @@ pub use config::{
 };
 pub use config_builder::{
     kreuzberg_config_builder_build, kreuzberg_config_builder_free, kreuzberg_config_builder_new,
-    kreuzberg_config_builder_set_chunking, kreuzberg_config_builder_set_image_extraction,
-    kreuzberg_config_builder_set_language_detection, kreuzberg_config_builder_set_ocr,
-    kreuzberg_config_builder_set_pdf, kreuzberg_config_builder_set_post_processor,
+    kreuzberg_config_builder_set_acceleration, kreuzberg_config_builder_set_chunking,
+    kreuzberg_config_builder_set_image_extraction, kreuzberg_config_builder_set_include_document_structure,
+    kreuzberg_config_builder_set_language_detection, kreuzberg_config_builder_set_layout,
+    kreuzberg_config_builder_set_ocr, kreuzberg_config_builder_set_pdf, kreuzberg_config_builder_set_post_processor,
     kreuzberg_config_builder_set_use_cache,
 };
 pub use error::ErrorCode as KreuzbergErrorCode;

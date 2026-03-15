@@ -19,6 +19,7 @@ from typing import Any
 import pytest
 
 from kreuzberg import (
+    AccelerationConfig,
     ChunkingConfig,
     EmbeddingConfig,
     EmbeddingModelType,
@@ -103,6 +104,8 @@ def _build_config_objects(config: dict[str, Any], kwargs: dict[str, Any]) -> Non
         kwargs["postprocessor"] = PostProcessorConfig(**postprocessor)
     if (pages_data := config.get("pages")) is not None:
         kwargs["pages"] = PageConfig(**pages_data)
+    if (accel_data := config.get("acceleration")) is not None and isinstance(accel_data, dict):
+        kwargs["acceleration"] = AccelerationConfig(**accel_data)
 
 
 def build_config(config: dict[str, Any] | None) -> ExtractionConfig:

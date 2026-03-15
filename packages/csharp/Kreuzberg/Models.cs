@@ -1975,6 +1975,61 @@ public sealed class PageInfo
 }
 
 /// <summary>
+/// Execution provider for ONNX Runtime model inference.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<ExecutionProviderType>))]
+public enum ExecutionProviderType
+{
+    /// <summary>
+    /// Automatic provider selection (default).
+    /// </summary>
+    [JsonStringEnumMemberName("auto")]
+    Auto,
+
+    /// <summary>
+    /// CPU execution provider.
+    /// </summary>
+    [JsonStringEnumMemberName("cpu")]
+    Cpu,
+
+    /// <summary>
+    /// CoreML execution provider (Apple devices).
+    /// </summary>
+    [JsonStringEnumMemberName("coreml")]
+    CoreML,
+
+    /// <summary>
+    /// CUDA execution provider (NVIDIA GPUs).
+    /// </summary>
+    [JsonStringEnumMemberName("cuda")]
+    Cuda,
+
+    /// <summary>
+    /// TensorRT execution provider (NVIDIA GPUs).
+    /// </summary>
+    [JsonStringEnumMemberName("tensorrt")]
+    TensorRT,
+}
+
+/// <summary>
+/// Hardware acceleration configuration for ONNX Runtime models.
+/// </summary>
+public sealed class AccelerationConfig
+{
+    /// <summary>
+    /// Execution provider for model inference (default: auto).
+    /// </summary>
+    [JsonPropertyName("provider")]
+    public string? Provider { get; init; }
+
+    /// <summary>
+    /// GPU device ID for CUDA/TensorRT providers (default: 0).
+    /// </summary>
+    [JsonPropertyName("device_id")]
+    public int? DeviceId { get; init; }
+}
+
+/// <summary>
 /// Configuration for document extraction, controlling extraction behavior and features.
 /// </summary>
 public sealed class ExtractionConfig
@@ -2097,6 +2152,13 @@ public sealed class ExtractionConfig
     /// </summary>
     [JsonPropertyName("layout")]
     public LayoutDetectionConfig? Layout { get; init; }
+
+    /// <summary>
+    /// Hardware acceleration configuration for ONNX Runtime models.
+    /// If null, uses default acceleration settings.
+    /// </summary>
+    [JsonPropertyName("acceleration")]
+    public AccelerationConfig? Acceleration { get; init; }
 
 }
 
