@@ -217,6 +217,10 @@ struct CharInfo {
     /// True if the character is a hyphen as determined by pdfium's `is_hyphen()` API.
     #[allow(dead_code)]
     is_hyphen: bool,
+    /// Identity of the parent PDF text object (pointer-as-usize).
+    /// Characters sharing the same `text_object_id` belong to the same text run
+    /// and should never have word breaks inserted between them.
+    text_object_id: usize,
 }
 
 /// Remove characters from sidebar annotations (e.g., arXiv identifiers along the left margin).
@@ -333,22 +337,27 @@ fn build_line_text(chars: &[CharInfo], repair_map: Option<&[(char, &str)]>) -> S
             continue;
         }
 
-        // Insert space when there is a significant X-position gap between
-        // consecutive non-space characters on the same line.
+        // Insert space at text object boundaries and large positional gaps.
         //
-        // Modeled after docling's merge_horizontal_cells(): merge adjacent
-        // character cells when the gap is within avg_height * factor.
-        // Character height (≈ font_size) is more stable across fonts than
-        // median advance width, making this language-agnostic.
+        // Characters within the same PDF text object (same Tj/TJ operator)
+        // are part of a single text run — never insert spaces between them.
+        // At object boundaries, use positional gap detection to decide
+        // whether a space is needed.
         if idx > 0 && ci.ch != ' ' && chars[idx - 1].ch != ' ' {
             let prev = &chars[idx - 1];
-            let gap = ci.x - prev.right_x;
-            // Use average font size of the pair as a proxy for character height.
-            // Threshold = avg_height * 1.0: gaps within one character height are
-            // intra-word; gaps exceeding it are word boundaries.
-            let avg_height = (ci.font_size + prev.font_size) * 0.5;
-            if gap > avg_height {
-                line_text.push(' ');
+            let same_object = ci.text_object_id != 0
+                && prev.text_object_id != 0
+                && ci.text_object_id == prev.text_object_id;
+
+            if !same_object {
+                // Different text objects — use position-based gap detection.
+                let gap = ci.x - prev.right_x;
+                let avg_height = (ci.font_size + prev.font_size) * 0.5;
+                // Threshold: gaps exceeding one character height are word
+                // boundaries.
+                if gap > avg_height {
+                    line_text.push(' ');
+                }
             }
         }
 
@@ -592,25 +601,10 @@ fn chars_to_segments(page: &PdfPage) -> Option<Vec<SegmentData>> {
     // Build ligature repair map for this page (if needed).
     let repair_map = build_ligature_repair_map(page);
 
-    // First pass: count generated vs real characters to detect broken CMap fonts.
-    // Fonts with broken ToUnicode tables cause pdfium to insert excessive word
-    // boundaries via is_generated(), leading to mid-word spaces.
-    let mut generated_count = 0usize;
-    let mut real_count = 0usize;
-    for i in 0..char_count {
-        if let Ok(ch) = chars.get(i) {
-            if ch.is_generated().unwrap_or(false) {
-                generated_count += 1;
-            } else {
-                real_count += 1;
-            }
-        }
-    }
-    // If >30% of chars are generated, the CMap is likely broken — skip generated
-    // chars and rely on position-based spacing only.
-    let skip_generated = real_count > 0 && generated_count * 100 / (generated_count + real_count) > 30;
-
     // Collect per-character data.
+    // Skip generated chars entirely — word boundaries are determined by
+    // text object identity (chars in the same PDF text object never have
+    // word breaks) and position-based gap detection at object boundaries.
     let mut char_infos: Vec<CharInfo> = Vec::with_capacity(char_count);
     for i in 0..char_count {
         let ch = match chars.get(i) {
@@ -618,31 +612,10 @@ fn chars_to_segments(page: &PdfPage) -> Option<Vec<SegmentData>> {
             Err(_) => continue,
         };
 
-        // Generated chars = word boundaries. Emit as spaces (unless broken CMap detected).
+        // Skip generated chars — pdfium inserts these as synthetic word
+        // boundaries but they're unreliable for fonts with broken CMaps.
+        // We use text object boundaries + position gaps instead.
         if ch.is_generated().unwrap_or(false) {
-            if skip_generated {
-                continue;
-            }
-            // Use the origin of the previous char if available
-            let (x, y) = if let Some(last) = char_infos.last() {
-                (last.x + last.font_size * 0.5, last.y)
-            } else {
-                (0.0, 0.0)
-            };
-            let space_fs = char_infos.last().map_or(12.0, |c| c.font_size);
-            char_infos.push(CharInfo {
-                ch: ' ',
-                x,
-                y,
-                font_size: space_fs,
-                right_x: x + space_fs * 0.6,
-                is_bold: false,
-                is_italic: false,
-                is_monospace: false,
-                has_map_error: false,
-                is_symbolic: false,
-                is_hyphen: false,
-            });
             continue;
         }
 
@@ -674,6 +647,11 @@ fn chars_to_segments(page: &PdfPage) -> Option<Vec<SegmentData>> {
             .map(|b| b.right().value)
             .unwrap_or(origin.0.value + effective_fs * 0.6);
 
+        // Get the parent text object for this character.
+        // Characters sharing the same text object are part of the same
+        // content stream text run and should never have spaces inserted.
+        let text_object_id = text_obj.text_object_for_char_index(i).unwrap_or(0);
+
         char_infos.push(CharInfo {
             ch: uc,
             x: origin.0.value,
@@ -686,6 +664,7 @@ fn chars_to_segments(page: &PdfPage) -> Option<Vec<SegmentData>> {
             has_map_error: ch.has_unicode_map_error().unwrap_or(false),
             is_symbolic: ch.font_is_symbolic(),
             is_hyphen: ch.is_hyphen().unwrap_or(false),
+            text_object_id,
         });
     }
 
