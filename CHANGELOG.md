@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Experimental: pdf_oxide text extraction backend** (`pdf-oxide` feature): Pure Rust PDF text extraction using [pdf_oxide](https://crates.io/crates/pdf_oxide). Parses PDF content streams directly with adaptive TJ-offset thresholds, providing an alternative to pdfium for text extraction. Opt-in only, not included in `full` feature set.
+- **Geometric space veto for broken CMap fonts**: Pdfium-generated word boundaries are now validated against character geometry — spaces are vetoed when the gap between adjacent characters is less than 50% of average character width. Fixes broken word spacing like "co mputer" → "computer" in PDFs with broken font CMaps.
+- **Docling comparison benchmarks**: Fixed vendored docling output path resolution in benchmark harness, enabling proper quality comparison across the full 171-document PDF corpus.
+
 - **ONNX-based layout detection**: New `layout` config field enables document layout analysis using RT-DETR v2 (Docling Heron) with 17 document element classes. Supports `"fast"` and `"accurate"` presets. Models are auto-downloaded from HuggingFace on first use. Available across all language bindings (Python, Node, Ruby, Go, Java, C#, PHP, WASM).
 - **SLANet table structure recognition**: When layout detection is active, detected Table regions are processed by SLANet-plus for neural HTML structure recovery with cell bounding boxes — producing accurate markdown tables with colspan/rowspan support.
 - **Layout-enhanced heading detection**: The layout model's SectionHeader and Title regions guide heading detection in both structure tree and heuristic PDF extraction paths. High-confidence layout hints (≥0.7) can override font-size-based heading classification and demote false headings.

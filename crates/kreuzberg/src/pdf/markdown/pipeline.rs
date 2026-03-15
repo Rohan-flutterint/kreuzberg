@@ -557,9 +557,11 @@ pub fn render_document_as_markdown_with_tables(
         extract_structure_tree_pages(pages, page_count)?;
     has_font_encoding_issues |= struct_tree_font_issues;
 
-    // pdf_oxide text extraction is available but currently disabled while
-    // the spacing threshold is being tuned. Enable by removing the `false &&`.
-    let oxide_segments: Option<Vec<Vec<SegmentData>>> = if false {
+    // Experimental: use pdf_oxide for text extraction when the feature is enabled.
+    // pdf_oxide parses PDF content streams directly with adaptive TJ-offset thresholds,
+    // producing cleaner word spacing for fonts with broken CMaps.
+    #[cfg(feature = "pdf-oxide")]
+    let oxide_segments: Option<Vec<Vec<SegmentData>>> = {
         let t = std::time::Instant::now();
         let result = crate::pdf::oxide_text::extract_segments_with_oxide(page_count as usize);
         if let Some(ref segs) = result {
@@ -571,9 +573,9 @@ pub fn render_document_as_markdown_with_tables(
             );
         }
         result
-    } else {
-        None
     };
+    #[cfg(not(feature = "pdf-oxide"))]
+    let oxide_segments: Option<Vec<Vec<SegmentData>>> = None;
 
     // Stage 1: Extract segments from pages that need heuristic extraction.
     // Use pdf_oxide segments when available, fall back to pdfium.
