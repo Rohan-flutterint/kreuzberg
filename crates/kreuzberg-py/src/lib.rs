@@ -178,7 +178,7 @@ fn _internal_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
 ///     >>> preset = get_embedding_preset("balanced")
 ///     >>> print(f"Model: {preset.model_name}, Dims: {preset.dimensions}")
 ///     Model: BGEBaseENV15, Dims: 768
-#[pyclass(name = "EmbeddingPreset", module = "kreuzberg")]
+#[pyclass(name = "EmbeddingPreset", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct EmbeddingPreset {
     #[pyo3(get)]

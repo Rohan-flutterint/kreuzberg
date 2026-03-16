@@ -20,7 +20,7 @@ use crate::keywords::KeywordConfig;
 ///     ...     ocr=OcrConfig(language="eng"),
 ///     ...     use_cache=True
 ///     ... )
-#[pyclass(name = "ExtractionConfig", module = "kreuzberg")]
+#[pyclass(name = "ExtractionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Default)]
 pub struct ExtractionConfig {
     pub inner: kreuzberg::ExtractionConfig,
@@ -431,7 +431,7 @@ impl ExtractionConfig {
 /// Example:
 ///     >>> from kreuzberg import OcrConfig
 ///     >>> config = OcrConfig(backend="tesseract", language="eng")
-#[pyclass(name = "OcrConfig", module = "kreuzberg")]
+#[pyclass(name = "OcrConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct OcrConfig {
     pub inner: kreuzberg::OcrConfig,
@@ -544,7 +544,7 @@ impl OcrConfig {
 ///     >>> model = EmbeddingModelType.preset("balanced")
 ///     >>> # Use a custom model
 ///     >>> model = EmbeddingModelType.custom("my-model", 512)
-#[pyclass(name = "EmbeddingModelType", module = "kreuzberg")]
+#[pyclass(name = "EmbeddingModelType", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct EmbeddingModelType {
     pub inner: kreuzberg::EmbeddingModelType,
@@ -596,7 +596,7 @@ impl EmbeddingModelType {
 ///     ...     normalize=True,
 ///     ...     batch_size=32
 ///     ... )
-#[pyclass(name = "EmbeddingConfig", module = "kreuzberg")]
+#[pyclass(name = "EmbeddingConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct EmbeddingConfig {
     pub inner: kreuzberg::EmbeddingConfig,
@@ -682,7 +682,7 @@ impl EmbeddingConfig {
 ///     ...     max_overlap=400,
 ///     ...     embedding=embedding
 ///     ... )
-#[pyclass(name = "ChunkingConfig", module = "kreuzberg")]
+#[pyclass(name = "ChunkingConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct ChunkingConfig {
     pub inner: kreuzberg::ChunkingConfig,
@@ -813,7 +813,7 @@ impl ChunkingConfig {
 /// Example:
 ///     >>> from kreuzberg import ImageExtractionConfig
 ///     >>> config = ImageExtractionConfig(target_dpi=300, max_image_dimension=4096)
-#[pyclass(name = "ImageExtractionConfig", module = "kreuzberg")]
+#[pyclass(name = "ImageExtractionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct ImageExtractionConfig {
     pub inner: kreuzberg::ImageExtractionConfig,
@@ -936,7 +936,7 @@ impl ImageExtractionConfig {
 /// Example:
 ///     >>> from kreuzberg import PdfConfig
 ///     >>> config = PdfConfig(extract_images=True, passwords=["pass1", "pass2"])
-#[pyclass(name = "PdfConfig", module = "kreuzberg")]
+#[pyclass(name = "PdfConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct PdfConfig {
     pub inner: kreuzberg::PdfConfig,
@@ -1057,7 +1057,7 @@ impl PdfConfig {
 /// Example:
 ///     >>> from kreuzberg import TokenReductionConfig
 ///     >>> config = TokenReductionConfig(mode="aggressive", preserve_important_words=True)
-#[pyclass(name = "TokenReductionConfig", module = "kreuzberg")]
+#[pyclass(name = "TokenReductionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct TokenReductionConfig {
     pub inner: kreuzberg::TokenReductionConfig,
@@ -1109,7 +1109,7 @@ impl TokenReductionConfig {
 /// Example:
 ///     >>> from kreuzberg import LanguageDetectionConfig
 ///     >>> config = LanguageDetectionConfig(enabled=True, min_confidence=0.9)
-#[pyclass(name = "LanguageDetectionConfig", module = "kreuzberg")]
+#[pyclass(name = "LanguageDetectionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct LanguageDetectionConfig {
     pub inner: kreuzberg::LanguageDetectionConfig,
@@ -1172,7 +1172,7 @@ impl LanguageDetectionConfig {
 /// Example:
 ///     >>> from kreuzberg import PostProcessorConfig
 ///     >>> config = PostProcessorConfig(enabled=True, enabled_processors=["entity_extraction"])
-#[pyclass(name = "PostProcessorConfig", module = "kreuzberg")]
+#[pyclass(name = "PostProcessorConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct PostProcessorConfig {
     pub inner: kreuzberg::PostProcessorConfig,
@@ -1249,7 +1249,7 @@ impl PostProcessorConfig {
 /// Example:
 ///     >>> from kreuzberg import LayoutDetectionConfig
 ///     >>> config = LayoutDetectionConfig(preset="fast", apply_heuristics=True)
-#[pyclass(name = "LayoutDetectionConfig", module = "kreuzberg")]
+#[pyclass(name = "LayoutDetectionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct LayoutDetectionConfig {
     pub inner: kreuzberg::core::config::layout::LayoutDetectionConfig,
@@ -1335,7 +1335,7 @@ impl From<kreuzberg::core::config::layout::LayoutDetectionConfig> for LayoutDete
 ///     ...     denoise=True,
 ///     ...     contrast_enhance=True
 ///     ... )
-#[pyclass(name = "ImagePreprocessingConfig", module = "kreuzberg")]
+#[pyclass(name = "ImagePreprocessingConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct ImagePreprocessingConfig {
     pub inner: kreuzberg::types::ImagePreprocessingConfig,
@@ -1466,7 +1466,7 @@ impl ImagePreprocessingConfig {
 ///     ...     enable_table_detection=True,
 ///     ...     tessedit_char_whitelist="0123456789"
 ///     ... )
-#[pyclass(name = "TesseractConfig", module = "kreuzberg")]
+#[pyclass(name = "TesseractConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct TesseractConfig {
     pub inner: kreuzberg::types::TesseractConfig,
@@ -1774,7 +1774,7 @@ impl TesseractConfig {
 /// Example:
 ///     >>> from kreuzberg import PageConfig
 ///     >>> config = PageConfig(extract_pages=True, insert_page_markers=True)
-#[pyclass(name = "PageConfig", module = "kreuzberg")]
+#[pyclass(name = "PageConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct PageConfig {
     pub inner: kreuzberg::core::config::PageConfig,
@@ -1851,7 +1851,7 @@ impl PageConfig {
 ///     >>>
 ///     >>> # Use CUDA on device 1
 ///     >>> config = AccelerationConfig(provider="cuda", device_id=1)
-#[pyclass(name = "AccelerationConfig", module = "kreuzberg")]
+#[pyclass(name = "AccelerationConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct AccelerationConfig {
     pub inner: kreuzberg::AccelerationConfig,
@@ -1939,7 +1939,7 @@ impl AccelerationConfig {
 /// Example:
 ///     >>> from kreuzberg import HierarchyConfig
 ///     >>> config = HierarchyConfig(enabled=True, k_clusters=6, include_bbox=True)
-#[pyclass(name = "HierarchyConfig", module = "kreuzberg")]
+#[pyclass(name = "HierarchyConfig", module = "kreuzberg", from_py_object)]
 #[derive(Clone)]
 pub struct HierarchyConfig {
     pub inner: kreuzberg::core::config::HierarchyConfig,
@@ -2022,7 +2022,7 @@ impl HierarchyConfig {
 /// Example:
 ///     >>> from kreuzberg import FileExtractionConfig
 ///     >>> config = FileExtractionConfig(force_ocr=True)
-#[pyclass(name = "FileExtractionConfig", module = "kreuzberg")]
+#[pyclass(name = "FileExtractionConfig", module = "kreuzberg", from_py_object)]
 #[derive(Default)]
 pub struct FileExtractionConfig {
     pub inner: kreuzberg::FileExtractionConfig,
