@@ -42,7 +42,7 @@ tasks:
     desc: Build Python extension in CI mode (with debug info)
     dir: packages/python
     env:
-      RUSTFLAGS: '-C debuginfo=2'
+      RUSTFLAGS: '{{.RUSTFLAGS | default ""}} -C debuginfo=2'
     cmds:
       - uv run maturin build --release
 
