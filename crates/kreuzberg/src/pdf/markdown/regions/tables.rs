@@ -18,6 +18,7 @@ pub(in crate::pdf::markdown) fn extract_tables_from_layout_hints(
     page_index: usize,
     page_height: f32,
     min_confidence: f32,
+    allow_single_column: bool,
 ) -> Vec<Table> {
     use crate::pdf::table_reconstruct::HocrWord;
 
@@ -81,7 +82,7 @@ pub(in crate::pdf::markdown) fn extract_tables_from_layout_hints(
         });
 
         // Validate with layout_guided=true (relaxed thresholds)
-        let table_cells = match post_process_table(table_cells, true) {
+        let table_cells = match post_process_table(table_cells, true, allow_single_column) {
             Some(cleaned) => cleaned,
             None => {
                 // Table reconstruction failed — the Table hint was a false positive.

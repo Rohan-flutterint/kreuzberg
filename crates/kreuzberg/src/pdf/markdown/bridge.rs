@@ -18,6 +18,7 @@
 use std::borrow::Cow;
 
 use crate::pdf::hierarchy::SegmentData;
+use crate::pdf::text_data::ExtractedSegment;
 use pdfium_render::prelude::*;
 
 use super::text_repair::{apply_ligature_repairs, build_ligature_repair_map, normalize_text_encoding};
@@ -156,20 +157,26 @@ pub(super) fn objects_to_page_data(
     let page_height = page.height().value;
     let page_width = page.width().value;
 
-    // Primary path: Geometric cell-merging (adapted from the reference cell-merging algorithm).
-    // Builds per-character cells from pdfium's loose_bounds() API,
-    // merges using geometric adjacency. Produces correct word boundaries
-    // without inside_rect(), avoiding \x02 markers and line-break spaces.
-    if let Some(segments) = extract_segments_cell_merge(page, page_width) {
-        return (segments, images);
+    // Primary path: segment-level extraction from DTO.
+    // Uses pdfium's segment API for text (no character-level reconstruction),
+    // groups segments into rows, concatenates with geometric space detection.
+    // Quality gate: validates against full page text to catch missing content.
+    if let Some(data) = extract_page_text_data(page) {
+        if let Some(segments) = extract_segments_from_dto(&data, page_width) {
+            return (segments, images);
+        }
+        // Fallback: char-level with column detection.
+        if let Some(segments) = chars_to_segments_from_data(&data, page_width) {
+            return (segments, images);
+        }
     }
 
-    // Fallback 1: Segment-based extraction with inside_rect().
+    // Fallback: Segment-based extraction with inside_rect() re-extraction.
     if let Some(segments) = extract_segments_merged(page, page_height) {
         return (segments, images);
     }
 
-    // Fallback 2: character-level extraction with column detection.
+    // Last resort: character-level without DTO.
     if let Some(data) = extract_page_text_data(page)
         && let Some(segments) = chars_to_segments_from_data(&data, page_width)
     {
@@ -498,19 +505,151 @@ fn merge_cells_in_row(mut row: TextRow) -> Vec<MergedCellGroup> {
     groups
 }
 
-// ── Geometric cell-merging (adapted from the reference cell-merging algorithm, MIT license) ──
-// See ATTRIBUTIONS.md for license details.
-// Currently only used by tests; gated to avoid dead_code warnings.
+// ── Segment-level extraction from DTO ──
+
+/// A row of extracted segments sharing approximately the same vertical position.
+struct SegmentRow {
+    segments: Vec<ExtractedSegment>,
+    top: f32,
+    bottom: f32,
+}
+
+/// Extract text segments from pre-extracted DTO data.
+///
+/// Uses pdfium's segment-level text (no character-level reconstruction),
+/// groups segments into rows, and concatenates with geometric space detection.
+/// Each segment's text comes directly from pdfium — no `inside_rect()`
+/// re-extraction on merged bboxes, avoiding `\x02` markers and cross-line breaks.
+fn extract_segments_from_dto(data: &PageTextData, page_width: f32) -> Option<Vec<SegmentData>> {
+    if data.segments.is_empty() {
+        return None;
+    }
+
+    // Filter sidebar segments.
+    let sidebar_cutoff = page_width * 0.06;
+    let filtered: Vec<&ExtractedSegment> = data
+        .segments
+        .iter()
+        .filter(|s| (s.left + s.right) * 0.5 > sidebar_cutoff)
+        .filter(|s| !s.text.trim().is_empty())
+        .collect();
+
+    if filtered.is_empty() {
+        return None;
+    }
+
+    // Group segments into rows by vertical proximity.
+    let mut rows: Vec<SegmentRow> = Vec::new();
+    for seg in &filtered {
+        let seg_top = seg.top;
+        let seg_bottom = seg.bottom;
+        let seg_height = (seg_top - seg_bottom).abs().max(1.0);
+        let tolerance = seg_height * 0.5;
+
+        let matching_row = rows
+            .iter()
+            .position(|row| (seg_top - row.top).abs() <= tolerance && (seg_bottom - row.bottom).abs() <= tolerance);
+
+        if let Some(idx) = matching_row {
+            rows[idx].top = rows[idx].top.max(seg_top);
+            rows[idx].bottom = rows[idx].bottom.min(seg_bottom);
+            rows[idx].segments.push((*seg).clone());
+        } else {
+            rows.push(SegmentRow {
+                segments: vec![(*seg).clone()],
+                top: seg_top,
+                bottom: seg_bottom,
+            });
+        }
+    }
+
+    // Sort rows top-to-bottom (descending top in PDF bottom-left coordinates).
+    rows.sort_by(|a, b| b.top.partial_cmp(&a.top).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Build one SegmentData per row by concatenating segment texts.
+    let mut result: Vec<SegmentData> = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let mut sorted_segs = row.segments.clone();
+        sorted_segs.sort_by(|a, b| a.left.partial_cmp(&b.left).unwrap_or(std::cmp::Ordering::Equal));
+
+        let mut row_text = String::new();
+        let mut row_left = f32::MAX;
+        let mut row_right = f32::MIN;
+        let mut row_font_size = 12.0_f32;
+        let mut row_bold = false;
+        let mut row_italic = false;
+        let mut row_mono = false;
+        let mut row_baseline = 0.0_f32;
+        let mut prev_right = f32::MIN;
+
+        for seg in &sorted_segs {
+            if row_text.is_empty() {
+                // First segment in row.
+                row_left = seg.left;
+                row_font_size = seg.font_size;
+                row_bold = seg.is_bold;
+                row_italic = seg.is_italic;
+                row_mono = seg.is_monospace;
+                row_baseline = seg.baseline_y;
+            } else {
+                // Insert space between segments if there's a gap.
+                let gap = seg.left - prev_right;
+                if gap > 0.1 {
+                    row_text.push(' ');
+                }
+            }
+            row_text.push_str(&seg.text);
+            row_right = seg.right;
+            prev_right = seg.right;
+        }
+
+        let trimmed = row_text.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        result.push(SegmentData {
+            text: trimmed.to_string(),
+            x: row_left,
+            y: row_baseline,
+            width: (row_right - row_left).max(row_font_size),
+            height: (row.top - row.bottom).max(row_font_size),
+            font_size: row_font_size,
+            is_bold: row_bold,
+            is_italic: row_italic,
+            is_monospace: row_mono,
+            baseline_y: row_baseline,
+        });
+    }
+
+    if result.is_empty() {
+        return None;
+    }
+
+    // Quality gate: if we extracted far less text than the full page has,
+    // return None to fall through to a more complete extraction path.
+    let extracted_chars: usize = result.iter().map(|s| s.text.len()).sum();
+    let full_text_chars = data.full_text.trim().len();
+    if full_text_chars > 50 && extracted_chars < full_text_chars / 3 {
+        return None;
+    }
+
+    Some(result)
+}
+
+// ── Geometric cell-merging ──
+// NOTE: This code is being actively developed and will be wired as a fallback.
 
 /// Euclidean distance between two 2D points.
+#[allow(dead_code)]
 fn dist(x0: f32, y0: f32, x1: f32, y1: f32) -> f32 {
     ((x1 - x0).powi(2) + (y1 - y0).powi(2)).sqrt()
 }
 
 /// A character cell with axis-aligned bounding box for geometric merging.
 ///
-/// Adapted from the reference cell-merging algorithm's `page_item<PAGE_CELL>`. Uses 4-coordinate
-/// axis-aligned rects (pdfium gives `PdfRect`, not rotated quads).
+/// Uses 4-coordinate axis-aligned rects (pdfium gives `PdfRect`, not rotated quads).
+#[allow(dead_code)]
 struct CharCell {
     text: String,
     /// Left edge (PDF x coordinate).
@@ -535,6 +674,7 @@ struct CharCell {
     active: bool,
 }
 
+#[allow(dead_code)]
 impl CharCell {
     /// Horizontal length of the cell's bounding box.
     fn length(&self) -> f32 {
@@ -586,6 +726,7 @@ impl CharCell {
 /// For each active cell i, try merging with consecutive cell j if adjacent.
 /// If `allow_reverse` is true, also try j merging i (for cells missed in
 /// previous passes).
+#[allow(dead_code)]
 fn contract_left_to_right(cells: &mut [CharCell], merge_factor: f32, space_factor: f32, allow_reverse: bool) {
     let len = cells.len();
     for i in 0..len {
@@ -652,6 +793,7 @@ fn contract_left_to_right(cells: &mut [CharCell], merge_factor: f32, space_facto
 }
 
 /// Right-to-left cell contraction pass (for RTL text support).
+#[allow(dead_code, clippy::never_loop)]
 fn contract_right_to_left(cells: &mut [CharCell], merge_factor: f32, space_factor: f32) {
     let len = cells.len();
     for i in (0..len).rev() {
@@ -704,6 +846,7 @@ fn contract_right_to_left(cells: &mut [CharCell], merge_factor: f32, space_facto
 ///
 /// `merge_factor`: adjacency threshold as multiple of avg char width (1.5)
 /// `space_factor`: space insertion threshold as multiple of avg char width (0.33)
+#[allow(dead_code)]
 fn merge_cells_geometric(cells: &mut Vec<CharCell>, merge_factor: f32, space_factor: f32) {
     contract_left_to_right(cells, merge_factor, space_factor, false);
     contract_right_to_left(cells, merge_factor, space_factor);
@@ -720,6 +863,7 @@ fn merge_cells_geometric(cells: &mut Vec<CharCell>, merge_factor: f32, space_fac
 ///
 /// This produces correct word boundaries without `inside_rect()` re-extraction,
 /// avoiding `\x02` markers and spurious spaces at line breaks.
+#[allow(dead_code)]
 fn extract_segments_cell_merge(page: &PdfPage, page_width: f32) -> Option<Vec<SegmentData>> {
     let text_obj = page.text().ok()?;
     let chars = text_obj.chars();

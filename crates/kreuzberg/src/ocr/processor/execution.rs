@@ -1062,7 +1062,7 @@ pub(super) fn perform_ocr(
                 // Apply full post-processing validation to reject false positives.
                 // post_process_table is only available with the pdf feature; without it, use table as-is.
                 #[cfg(feature = "pdf")]
-                let cleaned = post_process_table(table, false);
+                let cleaned = post_process_table(table, false, false);
                 #[cfg(not(feature = "pdf"))]
                 let cleaned = Some(table);
                 if let Some(cleaned) = cleaned {

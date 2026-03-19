@@ -60,7 +60,11 @@ pub(crate) fn extract_all_from_document(
     let (native_text, boundaries, page_contents, pdf_metadata) =
         crate::pdf::text::extract_text_and_metadata_from_pdf_document(document, Some(config))?;
 
-    let tables = extract_tables_from_document(document, &pdf_metadata)?;
+    let allow_single_column = config
+        .pdf_options
+        .as_ref()
+        .is_some_and(|o| o.allow_single_column_tables);
+    let tables = extract_tables_from_document(document, &pdf_metadata, allow_single_column)?;
 
     let mut has_font_encoding_issues = false;
 
@@ -251,6 +255,7 @@ fn has_column_alignment(words: &[crate::pdf::table_reconstruct::HocrWord]) -> bo
 fn extract_tables_from_document(
     document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
+    allow_single_column: bool,
 ) -> Result<Vec<Table>> {
     use crate::pdf::table::extract_words_from_page;
     use crate::pdf::table_reconstruct::{post_process_table, reconstruct_table, table_to_markdown};
@@ -282,7 +287,7 @@ fn extract_tables_from_document(
 
         // Apply full post-processing validation: empty row removal, long cell rejection,
         // header detection, column merging, dimension checks, and cell normalization.
-        let table_cells = match post_process_table(table_cells, false) {
+        let table_cells = match post_process_table(table_cells, false, allow_single_column) {
             Some(cleaned) => cleaned,
             None => continue,
         };

@@ -4,6 +4,7 @@
 //! sources (TOML, YAML, JSON) and discovering configuration files in the project hierarchy.
 
 pub mod acceleration;
+pub mod concurrency;
 pub mod email;
 pub mod extraction;
 pub mod formats;
@@ -15,6 +16,7 @@ pub mod processing;
 
 // Re-export main types for backward compatibility
 pub use acceleration::{AccelerationConfig, ExecutionProviderType};
+pub use concurrency::ConcurrencyConfig;
 pub use email::EmailConfig;
 pub use extraction::{
     ExtractionConfig, FileExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig, TokenReductionConfig,

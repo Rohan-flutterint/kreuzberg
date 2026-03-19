@@ -30,6 +30,25 @@ pub(crate) struct ExtractedChar {
     pub font_weight: u32,
 }
 
+/// A text segment extracted from pdfium's segment API.
+///
+/// Each segment is a contiguous run of characters with shared text style.
+/// Text comes directly from pdfium (via `segment.text()`) — no character-level
+/// reconstruction needed.
+#[derive(Clone, Debug)]
+pub(crate) struct ExtractedSegment {
+    pub text: String,
+    pub left: f32,
+    pub bottom: f32,
+    pub right: f32,
+    pub top: f32,
+    pub font_size: f32,
+    pub is_bold: bool,
+    pub is_italic: bool,
+    pub is_monospace: bool,
+    pub baseline_y: f32,
+}
+
 /// Pre-extracted text data for a single PDF page.
 ///
 /// Built once via `extract_page_text_data`, then consumed by downstream
@@ -38,6 +57,81 @@ pub(crate) struct ExtractedChar {
 pub(crate) struct PageTextData {
     pub chars: Vec<ExtractedChar>,
     pub ligature_repair_map: Option<Vec<(char, &'static str)>>,
+    /// Full page text from `page.text().all()`. Used as quality gate for
+    /// validating extraction completeness.
+    pub full_text: String,
+    /// Pre-extracted segments from pdfium's segment API. Each segment has
+    /// text assembled by pdfium (no character-level reconstruction).
+    pub segments: Vec<ExtractedSegment>,
+}
+
+/// Extract segment-level data from pdfium's segment API.
+///
+/// Each segment is a contiguous run of text with shared style. The text
+/// comes directly from pdfium's `segment.text()` (which uses `inside_rect()`
+/// on the segment's own bounds) — no character-level reconstruction.
+fn extract_segments_from_api(text_obj: &PdfPageText) -> Vec<ExtractedSegment> {
+    let pdfium_segments = text_obj.segments();
+    let seg_count = pdfium_segments.len();
+    let mut segments = Vec::with_capacity(seg_count);
+
+    for i in 0..seg_count {
+        let seg = match pdfium_segments.get(i) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
+        let text = seg.text();
+        if text.trim().is_empty() {
+            continue;
+        }
+        let bounds = seg.bounds();
+        let left = bounds.left().value;
+        let bottom = bounds.bottom().value;
+        let right = bounds.right().value;
+        let top = bounds.top().value;
+
+        // Sample font properties from first non-whitespace character.
+        let (font_size, is_bold, is_italic, is_monospace, baseline_y) = sample_segment_font(&seg, bottom);
+
+        segments.push(ExtractedSegment {
+            text,
+            left,
+            bottom,
+            right,
+            top,
+            font_size,
+            is_bold,
+            is_italic,
+            is_monospace,
+            baseline_y,
+        });
+    }
+
+    segments
+}
+
+/// Sample font properties from a segment's first non-whitespace character.
+fn sample_segment_font(
+    seg: &pdfium_render::prelude::PdfPageTextSegment<'_>,
+    default_baseline: f32,
+) -> (f32, bool, bool, bool, f32) {
+    if let Ok(seg_chars) = seg.chars() {
+        for ch in seg_chars.iter() {
+            let uv = ch.unicode_value();
+            if let Some(uc) = char::from_u32(uv)
+                && uc.is_whitespace()
+            {
+                continue;
+            }
+            let scaled = ch.scaled_font_size().value;
+            let fs = if scaled > 0.0 { scaled } else { 12.0 };
+            let info = ch.font_info();
+            let mono = ch.font_is_fixed_pitch();
+            let bl_y = ch.origin().map(|o| o.1.value).unwrap_or(default_baseline);
+            return (fs, info.1, info.2, mono, bl_y);
+        }
+    }
+    (12.0, false, false, false, default_baseline)
 }
 
 /// Extract all text data from a PDF page in a single pass.
@@ -190,9 +284,15 @@ pub(crate) fn extract_page_text_data(page: &PdfPage) -> Option<PageTextData> {
 
     let _ = has_any_map_error; // used only to gate repair_map construction above
 
+    // Extract full page text and segment-level data in the same pass.
+    let full_text = text_obj.all();
+    let segments = extract_segments_from_api(&text_obj);
+
     Some(PageTextData {
         chars: extracted,
         ligature_repair_map: if repair_map.is_empty() { None } else { Some(repair_map) },
+        full_text,
+        segments,
     })
 }
 

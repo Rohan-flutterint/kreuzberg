@@ -163,6 +163,14 @@ pub struct ExtractionConfig {
     /// that do not specify one. See [`crate::core::config::EmailConfig`] for details.
     #[serde(default)]
     pub email: Option<super::super::email::EmailConfig>,
+
+    /// Concurrency limits for constrained environments (None = use defaults).
+    ///
+    /// Controls Rayon thread pool size, ONNX Runtime intra-op threads, and
+    /// (when `max_concurrent_extractions` is unset) the batch concurrency
+    /// semaphore. See [`crate::core::config::ConcurrencyConfig`] for details.
+    #[serde(default)]
+    pub concurrency: Option<super::super::concurrency::ConcurrencyConfig>,
 }
 
 impl Default for ExtractionConfig {
@@ -194,6 +202,7 @@ impl Default for ExtractionConfig {
             include_document_structure: false,
             acceleration: None,
             email: None,
+            concurrency: None,
         }
     }
 }

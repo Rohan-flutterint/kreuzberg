@@ -163,10 +163,12 @@ pub async fn extract_file_in_worker(
     let mut rust_config = resolve_config(config)?;
 
     // Spawn the extraction in a blocking thread
-    let result = tokio::task::spawn_blocking(move || kreuzberg::extract_file_sync(&file_path, mime_type.as_deref(), &rust_config))
-        .await
-        .map_err(|e| Error::from_reason(format!("Worker thread error: {}", e)))?
-        .map_err(convert_error)?;
+    let result = tokio::task::spawn_blocking(move || {
+        kreuzberg::extract_file_sync(&file_path, mime_type.as_deref(), &rust_config)
+    })
+    .await
+    .map_err(|e| Error::from_reason(format!("Worker thread error: {}", e)))?
+    .map_err(convert_error)?;
 
     pool_clone.decrement_active();
 

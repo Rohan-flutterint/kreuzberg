@@ -101,8 +101,19 @@ pub fn segments_to_words(segments: &[SegmentData], page_height: f32) -> Vec<Hocr
 /// - Column sparsity: 75% → 90%
 /// - Overall density: 40% → 25%
 /// - Content asymmetry check: skipped
-pub fn post_process_table(table: Vec<Vec<String>>, layout_guided: bool) -> Option<Vec<Vec<String>>> {
-    post_process_table_inner(table, if layout_guided { 2 } else { 3 }, layout_guided)
+pub fn post_process_table(
+    table: Vec<Vec<String>>,
+    layout_guided: bool,
+    allow_single_column: bool,
+) -> Option<Vec<Vec<String>>> {
+    let min_columns = if allow_single_column {
+        1
+    } else if layout_guided {
+        2
+    } else {
+        3
+    };
+    post_process_table_inner(table, min_columns, layout_guided)
 }
 
 fn post_process_table_inner(
