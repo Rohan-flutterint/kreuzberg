@@ -1324,19 +1324,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-docling
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-docling"
 
       - name: Install build tools and system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libgl1 libglib2.0-0 tesseract-ocr tesseract-ocr-eng
-
-      - name: Install docling benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-docling --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1385,19 +1388,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-markitdown
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-markitdown"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config
-
-      - name: Install markitdown benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-markitdown --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1446,11 +1452,17 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pandoc
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev"
 
       - name: Install pandoc and build tools
         run: |
@@ -1505,6 +1517,11 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -1515,9 +1532,7 @@ jobs:
         with:
           python-version: "3.11"
           cache-prefix: benchmark-unstructured
-
-      - name: Install unstructured benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-unstructured --all-extras --all-packages --no-install-project --no-install-workspace
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-unstructured"
 
       - name: Run benchmark
         env:
@@ -1565,6 +1580,11 @@ jobs:
 
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
+
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -1619,6 +1639,11 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -1629,9 +1654,7 @@ jobs:
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pymupdf4llm
-
-      - name: Install pymupdf4llm benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-pymupdf4llm --all-extras --all-packages --no-install-project --no-install-workspace
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-pymupdf4llm"
 
       - name: Run benchmark
         env:
@@ -1680,19 +1703,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pdfplumber
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-pdfplumber"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config
-
-      - name: Install pdfplumber benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-pdfplumber --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1741,19 +1767,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-mineru
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-mineru"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libgl1 libglib2.0-0
-
-      - name: Install mineru benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-mineru --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1801,19 +1830,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pypdf
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-pypdf"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config
-
-      - name: Install pypdf benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-pypdf --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1861,19 +1893,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pdfminer
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-pdfminer"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config
-
-      - name: Install pdfminer benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-pdfminer --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:
@@ -1921,6 +1956,11 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Install poppler and build tools
         run: |
           sudo apt-get update
@@ -1931,9 +1971,7 @@ jobs:
         with:
           python-version: "3.11"
           cache-prefix: benchmark-pdftotext
-
-      - name: Install pdftotext benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-pdftotext --all-extras --all-packages --no-install-project --no-install-workspace
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-pdftotext"
 
       - name: Run benchmark
         env:
@@ -1981,19 +2019,22 @@ jobs:
       - name: Restore benchmark binary permissions
         run: scripts/benchmarks/restore-binary-permissions.sh
 
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
       - name: Setup Python
         uses: kreuzberg-dev/actions/setup-python-env@v1
         with:
           python-version: "3.11"
           cache-prefix: benchmark-playa-pdf
+          install-command: "uv sync --no-install-project --no-install-workspace --group dev --group bench-playa-pdf"
 
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config
-
-      - name: Install playa-pdf benchmark dependencies
-        run: uv sync --no-build-package kreuzberg --group dev --group bench-playa-pdf --all-extras --all-packages --no-install-project --no-install-workspace
 
       - name: Run benchmark
         env:

@@ -315,6 +315,13 @@ pub fn parse_pdf_config(ruby: &Ruby, hash: RHash) -> Result<PdfConfig, Error> {
         None
     };
 
+    let allow_single_column_tables =
+        if let Some(val) = get_kw(ruby, hash, "allow_single_column_tables") {
+            bool::try_convert(val)?
+        } else {
+            false
+        };
+
     let config = PdfConfig {
         extract_images,
         passwords,
@@ -323,6 +330,7 @@ pub fn parse_pdf_config(ruby: &Ruby, hash: RHash) -> Result<PdfConfig, Error> {
         extract_annotations,
         top_margin_fraction,
         bottom_margin_fraction,
+        allow_single_column_tables,
     };
 
     Ok(config)
