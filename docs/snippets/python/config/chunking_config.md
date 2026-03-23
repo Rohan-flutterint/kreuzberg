@@ -42,3 +42,24 @@ async def main() -> None:
 
 asyncio.run(main())
 ```
+
+```python title="Python - Prepend Heading Context"
+import asyncio
+from kreuzberg import ExtractionConfig, ChunkingConfig, extract_file
+
+async def main() -> None:
+    config: ExtractionConfig = ExtractionConfig(
+        chunking=ChunkingConfig(
+            chunker_type="markdown",
+            max_chars=500,
+            max_overlap=50,
+            prepend_heading_context=True,
+        )
+    )
+    result = await extract_file("document.md", config=config)
+    for chunk in result.chunks or []:
+        # Each chunk's content is prefixed with its heading breadcrumb
+        print(f"Content: {chunk.content[:100]}...")
+
+asyncio.run(main())
+```

@@ -92,3 +92,41 @@ class Program
     }
 }
 ```
+
+```csharp title="C# - Prepend Heading Context"
+using Kreuzberg;
+
+class Program
+{
+    static async Task Main()
+    {
+        var config = new ExtractionConfig
+        {
+            Chunking = new ChunkingConfig
+            {
+                MaxChars = 500,
+                MaxOverlap = 50,
+                PrependHeadingContext = true
+            }
+        };
+
+        try
+        {
+            var result = await KreuzbergClient.ExtractFileAsync(
+                "document.md",
+                config
+            ).ConfigureAwait(false);
+
+            foreach (var chunk in result.Chunks)
+            {
+                // Each chunk's content is prefixed with its heading breadcrumb
+                Console.WriteLine(chunk.Content[..Math.Min(100, chunk.Content.Length)]);
+            }
+        }
+        catch (KreuzbergException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}
+```

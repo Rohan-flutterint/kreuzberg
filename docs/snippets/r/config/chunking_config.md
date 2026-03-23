@@ -42,4 +42,21 @@ for (i in seq_len(min(3L, num_chunks2))) {
     }
   }
 }
+
+# Example 3: Prepend heading context to chunk content
+chunking_cfg3 <- chunking_config(
+  chunker_type = "markdown",
+  prepend_heading_context = TRUE
+)
+config3 <- extraction_config(chunking = chunking_cfg3)
+
+result3 <- extract_file_sync("document.md", "text/markdown", config3)
+num_chunks3 <- length(result3$chunks)
+cat(sprintf("\nDocument split into %d chunks with prepended headings\n", num_chunks3))
+
+for (i in seq_len(min(3L, num_chunks3))) {
+  chunk <- result3$chunks[[i]]
+  # Each chunk's content is prefixed with its heading breadcrumb
+  cat(sprintf("Chunk %d: %s...\n", i, substr(chunk$content, 1, 80)))
+}
 ```

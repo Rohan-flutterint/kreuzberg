@@ -123,6 +123,8 @@ export interface ChunkingConfig {
 	sizingModel?: string;
 	/** Optional cache directory for tokenizer files */
 	sizingCacheDir?: string;
+	/** Prepend heading context to each chunk when using markdown chunker. Default: false */
+	prependHeadingContext?: boolean;
 }
 
 export interface LanguageDetectionConfig {

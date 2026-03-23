@@ -15,6 +15,7 @@ public final class ChunkingConfig {
 	private final Map<String, Object> embedding;
 	private final Boolean enabled;
 	private final Map<String, Object> sizing;
+	private final Boolean prependHeadingContext;
 
 	private ChunkingConfig(Builder builder) {
 		this.maxChars = builder.maxChars;
@@ -23,6 +24,7 @@ public final class ChunkingConfig {
 		this.embedding = builder.embedding;
 		this.enabled = builder.enabled;
 		this.sizing = builder.sizing;
+		this.prependHeadingContext = builder.prependHeadingContext;
 	}
 
 	public static Builder builder() {
@@ -53,6 +55,10 @@ public final class ChunkingConfig {
 		return sizing;
 	}
 
+	public Boolean getPrependHeadingContext() {
+		return prependHeadingContext;
+	}
+
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new HashMap<>();
 		map.put("max_chars", maxChars);
@@ -69,6 +75,9 @@ public final class ChunkingConfig {
 		if (sizing != null) {
 			map.put("sizing", sizing);
 		}
+		if (prependHeadingContext != null) {
+			map.put("prepend_heading_context", prependHeadingContext);
+		}
 		return map;
 	}
 
@@ -79,6 +88,7 @@ public final class ChunkingConfig {
 		private Map<String, Object> embedding;
 		private Boolean enabled;
 		private Map<String, Object> sizing;
+		private Boolean prependHeadingContext;
 
 		private Builder() {
 		}
@@ -129,6 +139,14 @@ public final class ChunkingConfig {
 			return this;
 		}
 
+		/**
+		 * Prepend heading context to each chunk for improved retrieval.
+		 */
+		public Builder prependHeadingContext(Boolean prependHeadingContext) {
+			this.prependHeadingContext = prependHeadingContext;
+			return this;
+		}
+
 		public ChunkingConfig build() {
 			return new ChunkingConfig(this);
 		}
@@ -170,6 +188,12 @@ public final class ChunkingConfig {
 				: null;
 		if (sizingMap != null && !sizingMap.isEmpty()) {
 			builder.sizing = new HashMap<>(sizingMap);
+		}
+		if (map.containsKey("prepend_heading_context")) {
+			Object prependHeadingContextValue = map.get("prepend_heading_context");
+			if (prependHeadingContextValue instanceof Boolean) {
+				builder.prependHeadingContext((Boolean) prependHeadingContextValue);
+			}
 		}
 		return builder.build();
 	}

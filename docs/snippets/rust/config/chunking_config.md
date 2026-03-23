@@ -52,3 +52,28 @@ async fn main() -> kreuzberg::Result<()> {
     Ok(())
 }
 ```
+
+```rust title="Rust - Prepend Heading Context"
+use kreuzberg::{extract_file, ExtractionConfig, ChunkingConfig, ChunkerType};
+
+#[tokio::main]
+async fn main() -> kreuzberg::Result<()> {
+    let config = ExtractionConfig {
+        chunking: Some(ChunkingConfig {
+            max_characters: 500,
+            overlap: 50,
+            chunker_type: ChunkerType::Markdown,
+            prepend_heading_context: true,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let result = extract_file("document.md", None::<&str>, &config).await?;
+    for chunk in &result.chunks {
+        // Each chunk's content is prefixed with its heading breadcrumb
+        println!("Content: {}...", &chunk.content[..100.min(chunk.content.len())]);
+    }
+    Ok(())
+}
+```

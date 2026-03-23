@@ -917,7 +917,8 @@ defmodule Kreuzberg.ExtractionConfig do
   @doc false
   defp validate_chunking_config(config) when is_map(config) do
     with :ok <- validate_positive_integer(config, "max_chars"),
-         :ok <- validate_positive_integer(config, "max_overlap") do
+         :ok <- validate_positive_integer(config, "max_overlap"),
+         :ok <- validate_optional_boolean(config, "prepend_heading_context") do
       validate_overlap_not_exceeding_max_chars(config)
     end
   end
@@ -963,6 +964,17 @@ defmodule Kreuzberg.ExtractionConfig do
 
       true ->
         :ok
+    end
+  end
+
+  @doc false
+  defp validate_optional_boolean(config, key) do
+    value = Map.get(config, key) || Map.get(config, String.to_atom(key))
+
+    case value do
+      nil -> :ok
+      v when is_boolean(v) -> :ok
+      v -> {:error, "Field '#{key}' must be a boolean, got: #{type_name(v)}"}
     end
   end
 

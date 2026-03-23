@@ -238,7 +238,7 @@ module E2ERuby
       end
     end
 
-    def self.assert_chunks(result, min_count: nil, max_count: nil, each_has_content: nil, each_has_embedding: nil, each_has_heading_context: nil)
+    def self.assert_chunks(result, min_count: nil, max_count: nil, each_has_content: nil, each_has_embedding: nil, each_has_heading_context: nil, content_starts_with_heading: nil)
       chunks = Array(result.chunks)
       expect(chunks.length).to be >= min_count if min_count
       expect(chunks.length).to be <= max_count if max_count
@@ -248,6 +248,9 @@ module E2ERuby
         chunks.each { |chunk| expect(chunk.metadata&.heading_context).not_to be_nil }
       elsif each_has_heading_context == false
         chunks.each { |chunk| expect(chunk.metadata&.heading_context).to be_nil }
+      end
+      if content_starts_with_heading == true
+        chunks.each { |chunk| expect(chunk.content).to start_with('#') }
       end
     end
 
@@ -834,6 +837,9 @@ fn render_assertions(assertions: &Assertions) -> String {
         }
         if let Some(has_heading_context) = chunks.each_has_heading_context {
             args.push(format!("each_has_heading_context: {}", has_heading_context));
+        }
+        if let Some(starts_with_heading) = chunks.content_starts_with_heading {
+            args.push(format!("content_starts_with_heading: {}", starts_with_heading));
         }
         if !args.is_empty() {
             buffer.push_str(&format!(

@@ -249,7 +249,7 @@ func boolPtr(value bool) *bool {
 	return &value
 }
 
-func assertChunks(t *testing.T, result *kreuzberg.ExtractionResult, minCount, maxCount *int, eachHasContent, eachHasEmbedding, eachHasHeadingContext *bool) {
+func assertChunks(t *testing.T, result *kreuzberg.ExtractionResult, minCount, maxCount *int, eachHasContent, eachHasEmbedding, eachHasHeadingContext, contentStartsWithHeading *bool) {
 	t.Helper()
 	count := len(result.Chunks)
 	if minCount != nil && count < *minCount {
@@ -283,6 +283,13 @@ func assertChunks(t *testing.T, result *kreuzberg.ExtractionResult, minCount, ma
 		for i, chunk := range result.Chunks {
 			if chunk.Metadata.HeadingContext != nil {
 				t.Fatalf("chunk %d should have no heading_context", i)
+			}
+		}
+	}
+	if contentStartsWithHeading != nil && *contentStartsWithHeading {
+		for i, chunk := range result.Chunks {
+			if len(chunk.Content) == 0 || chunk.Content[0] != '#' {
+				t.Fatalf("chunk %d content does not start with a heading (#)", i)
 			}
 		}
 	}
@@ -944,10 +951,15 @@ fn render_assertions(assertions: &Assertions) -> String {
             .each_has_heading_context
             .map(|v| format!("boolPtr({v})"))
             .unwrap_or_else(|| "nil".to_string());
+        let content_starts_with_heading = chunks
+            .content_starts_with_heading
+            .map(|v| format!("boolPtr({v})"))
+            .unwrap_or_else(|| "nil".to_string());
         writeln!(
             buffer,
-            "    assertChunks(t, result, {}, {}, {}, {}, {})",
-            min_count, max_count, each_has_content, each_has_embedding, each_has_heading_context
+            "    assertChunks(t, result, {}, {}, {}, {}, {}, {})",
+            min_count, max_count, each_has_content, each_has_embedding, each_has_heading_context,
+            content_starts_with_heading
         )
         .unwrap();
     }

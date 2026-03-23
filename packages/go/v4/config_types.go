@@ -199,14 +199,15 @@ type ChunkSizingConfig struct {
 
 // ChunkingConfig configures text chunking for downstream RAG/Retrieval workloads.
 type ChunkingConfig struct {
-	MaxChars     *int               `json:"max_chars,omitempty"`
-	MaxOverlap   *int               `json:"max_overlap,omitempty"`
-	ChunkSize    *int               `json:"chunk_size,omitempty"`
-	ChunkOverlap *int               `json:"chunk_overlap,omitempty"`
-	Preset       *string            `json:"preset,omitempty"`
-	Enabled      *bool              `json:"enabled,omitempty"`
-	Embedding    *EmbeddingConfig   `json:"embedding,omitempty"`
-	Sizing       *ChunkSizingConfig `json:"sizing,omitempty"`
+	MaxChars              *int               `json:"max_chars,omitempty"`
+	MaxOverlap            *int               `json:"max_overlap,omitempty"`
+	ChunkSize             *int               `json:"chunk_size,omitempty"`
+	ChunkOverlap          *int               `json:"chunk_overlap,omitempty"`
+	Preset                *string            `json:"preset,omitempty"`
+	Enabled               *bool              `json:"enabled,omitempty"`
+	Embedding             *EmbeddingConfig   `json:"embedding,omitempty"`
+	Sizing                *ChunkSizingConfig `json:"sizing,omitempty"`
+	PrependHeadingContext *bool              `json:"prepend_heading_context,omitempty"`
 }
 
 // ImageExtractionConfig controls inline image extraction from PDFs/Office docs.

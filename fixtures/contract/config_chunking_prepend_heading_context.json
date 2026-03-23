@@ -1,0 +1,32 @@
+{
+	"id": "config_chunking_prepend_heading_context",
+	"description": "Tests markdown chunker prepends heading hierarchy to chunk content",
+	"tags": ["contract", "config", "chunking", "heading-context"],
+	"document": {
+		"path": "markdown/extraction_test.md"
+	},
+	"extraction": {
+		"method": "sync",
+		"input_type": "file",
+		"config": {
+			"chunking": {
+				"chunker_type": "markdown",
+				"max_chars": 300,
+				"max_overlap": 50,
+				"prepend_heading_context": true
+			}
+		}
+	},
+	"assertions": {
+		"min_content_length": 10,
+		"chunks": {
+			"min_count": 2,
+			"each_has_content": true,
+			"each_has_heading_context": true,
+			"content_starts_with_heading": true
+		}
+	},
+	"skip": {
+		"requires_feature": ["chunking"]
+	}
+}

@@ -47,3 +47,25 @@ result.chunks?.forEach((chunk, idx) => {
   }
 });
 ```
+
+```typescript title="WASM - Prepend Heading Context"
+import { initWasm, extractBytes } from '@kreuzberg/wasm';
+
+await initWasm();
+
+const config = {
+  chunking: {
+    chunkerType: 'markdown',
+    maxChars: 2000,
+    prependHeadingContext: true,
+  }
+};
+
+const bytes = new Uint8Array(buffer);
+const result = await extractBytes(bytes, 'text/markdown', config);
+
+result.chunks?.forEach((chunk, idx) => {
+  // Each chunk's content is prefixed with its heading breadcrumb
+  console.log(`Chunk ${idx}: ${chunk.content.substring(0, 80)}...`);
+});
+```

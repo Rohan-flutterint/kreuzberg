@@ -31,3 +31,23 @@ Enum.each(chunks, fn chunk ->
     boundaries_respected: !String.ends_with?(chunk["content"], [" ", "\n"])
   })
 end)
+
+# Prepend heading context to chunk content
+config_with_headings = %ExtractionConfig{
+  chunking: %{
+    "enabled" => true,
+    "chunker_type" => "markdown",
+    "prepend_heading_context" => true
+  }
+}
+
+{:ok, result_headings} = Kreuzberg.extract_file("document.md", nil, config_with_headings)
+
+if result_headings.chunks do
+  IO.puts("Generated #{length(result_headings.chunks)} chunks with prepended headings")
+
+  Enum.each(result_headings.chunks, fn chunk ->
+    # Each chunk's content is prefixed with its heading breadcrumb
+    IO.puts("Chunk preview: #{String.slice(chunk["content"], 0..80)}...")
+  end)
+end

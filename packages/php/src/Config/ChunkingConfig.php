@@ -110,6 +110,18 @@ readonly class ChunkingConfig
          * @default null
          */
         public ?string $sizingCacheDir = null,
+
+        /**
+         * Prepend heading context to each chunk for improved retrieval.
+         *
+         * When enabled, each chunk will be prefixed with the heading hierarchy
+         * context from the source document. This improves retrieval quality
+         * by making each chunk self-contained.
+         *
+         * @var bool
+         * @default false
+         */
+        public bool $prependHeadingContext = false,
     ) {
     }
 
@@ -175,6 +187,13 @@ readonly class ChunkingConfig
             }
         }
 
+        /** @var bool $prependHeadingContext */
+        $prependHeadingContext = $data['prepend_heading_context'] ?? false;
+        if (!is_bool($prependHeadingContext)) {
+            /** @var bool $prependHeadingContext */
+            $prependHeadingContext = (bool) $prependHeadingContext;
+        }
+
         return new self(
             maxChars: $maxChars,
             maxOverlap: $maxOverlap,
@@ -184,6 +203,7 @@ readonly class ChunkingConfig
             sizingType: $sizingType,
             sizingModel: $sizingModel,
             sizingCacheDir: $sizingCacheDir,
+            prependHeadingContext: $prependHeadingContext,
         );
     }
 
@@ -235,7 +255,7 @@ readonly class ChunkingConfig
             ], static fn ($value): bool => $value !== null);
         }
 
-        return array_filter([
+        $result = array_filter([
             'max_chars' => $this->maxChars,
             'max_overlap' => $this->maxOverlap,
             'respect_sentences' => $this->respectSentences,
@@ -243,6 +263,12 @@ readonly class ChunkingConfig
             'embedding' => $embedding,
             'sizing' => $sizing,
         ], static fn ($value): bool => $value !== null);
+
+        if ($this->prependHeadingContext) {
+            $result['prepend_heading_context'] = $this->prependHeadingContext;
+        }
+
+        return $result;
     }
 
     /**

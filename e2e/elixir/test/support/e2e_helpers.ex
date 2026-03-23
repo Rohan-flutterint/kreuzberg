@@ -393,6 +393,12 @@ defmodule E2E.Helpers do
       end
     end
 
+    if opts[:content_starts_with_heading] == true do
+      if !Enum.all?(chunks, fn chunk -> chunk.content && String.starts_with?(chunk.content, "#") end) do
+        flunk("Not all chunks have content starting with '#'")
+      end
+    end
+
     result
   end
 

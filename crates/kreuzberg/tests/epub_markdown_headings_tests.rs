@@ -90,8 +90,10 @@ async fn test_epub_markdown_output_keeps_headings() {
     let bytes = build_minimal_epub_bytes();
     let extractor = EpubExtractor::new();
 
-    let mut config = ExtractionConfig::default();
-    config.output_format = OutputFormat::Markdown;
+    let config = ExtractionConfig {
+        output_format: OutputFormat::Markdown,
+        ..Default::default()
+    };
 
     let result = extractor
         .extract_bytes(&bytes, "application/epub+zip", &config)
@@ -121,8 +123,10 @@ async fn test_epub_djot_output_keeps_headings() {
     let bytes = build_minimal_epub_bytes();
     let extractor = EpubExtractor::new();
 
-    let mut config = ExtractionConfig::default();
-    config.output_format = OutputFormat::Djot;
+    let config = ExtractionConfig {
+        output_format: OutputFormat::Djot,
+        ..Default::default()
+    };
 
     let result = extractor
         .extract_bytes(&bytes, "application/epub+zip", &config)

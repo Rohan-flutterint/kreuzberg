@@ -295,6 +295,7 @@ def assert_chunks(
     each_has_content: bool | None = None,
     each_has_embedding: bool | None = None,
     each_has_heading_context: bool | None = None,
+    content_starts_with_heading: bool | None = None,
 ) -> None:
     chunks = getattr(result, "chunks", None)
     if chunks is None:
@@ -319,6 +320,11 @@ def assert_chunks(
                 pytest.fail(f"Chunk {i} has no heading_context")
             if not each_has_heading_context and hc is not None:
                 pytest.fail(f"Chunk {i} should have no heading_context")
+    if content_starts_with_heading:
+        for i, chunk in enumerate(chunks):
+            content = getattr(chunk, "content", None)
+            if not isinstance(content, str) or content[0:1] != "#":
+                pytest.fail(f"Chunk {i} content does not start with a heading")
 
 
 def assert_images(

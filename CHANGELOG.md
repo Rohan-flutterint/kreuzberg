@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Clippy `too_many_arguments` on `recognize_tables_slanet`**: Added allow attribute for the 8-parameter function in `table_recognition.rs`.
 - **Ruby binding missing `table_model` field**: Added `table_model` parsing to `LayoutDetectionConfig` initializer in Ruby native extension.
 - **WASM module resolution in Supabase/Deno edge functions** (#551): Added explicit `package.json` exports for `pkg/kreuzberg_wasm.js` and WASM binary. Extended `wasm-loader.ts` with Deno detection and clear error messaging for restricted edge runtimes.
+- **`zip` dependency pinned below 7.4**: Avoids let-chain build failures on some stable Rust toolchains (#549).
+
+### Added
+
+- **`prepend_heading_context` chunking option**: When `true` and `chunker_type` is `Markdown`, prepends the heading hierarchy path (e.g. `# Title > ## Section`) to each chunk's content string. Useful for RAG pipelines where chunks need self-contained structural context. Available across all 10 language bindings, CLI, and WASM. Includes fixture-driven e2e tests and documentation for all languages.
 
 ---
 

@@ -16,3 +16,16 @@ config = Kreuzberg::Config::Extraction.new(
   )
 )
 ```
+
+```ruby title="Ruby - Prepend Heading Context"
+require 'kreuzberg'
+
+config = Kreuzberg::Config::Extraction.new(
+  chunking: Kreuzberg::Config::Chunking.new(
+    chunker_type: "markdown",
+    max_characters: 500,
+    overlap: 50,
+    prepend_heading_context: true
+  )
+)
+```

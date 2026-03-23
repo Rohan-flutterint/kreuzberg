@@ -233,6 +233,7 @@ pub mod assertions {
         each_has_content: Option<bool>,
         each_has_embedding: Option<bool>,
         each_has_heading_context: Option<bool>,
+        content_starts_with_heading: Option<bool>,
     ) {
         let chunks = result.chunks.as_ref().expect("Expected chunks in result");
         let count = chunks.len();
@@ -274,6 +275,15 @@ pub mod assertions {
                 assert!(
                     chunk.metadata.heading_context.is_none(),
                     "Expected chunk {i} to have no heading_context"
+                );
+            }
+        }
+
+        if content_starts_with_heading == Some(true) {
+            for (i, chunk) in chunks.iter().enumerate() {
+                assert!(
+                    chunk.content.starts_with('#'),
+                    "Expected chunk {i} content to start with '#'"
                 );
             }
         }

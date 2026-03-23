@@ -386,6 +386,12 @@ defmodule E2E.Helpers do
       end
     end
 
+    if opts[:content_starts_with_heading] == true do
+      if !Enum.all?(chunks, fn chunk -> chunk.content && String.starts_with?(chunk.content, "#") end) do
+        flunk("Not all chunk contents start with a heading (#)")
+      end
+    end
+
     result
   end
 
@@ -1119,6 +1125,9 @@ fn render_assertions(assertions: &Assertions) -> String {
         }
         if let Some(has_heading_context) = chunks.each_has_heading_context {
             args.push(format!("each_has_heading_context: {}", has_heading_context));
+        }
+        if let Some(starts_with_heading) = chunks.content_starts_with_heading {
+            args.push(format!("content_starts_with_heading: {}", starts_with_heading));
         }
         if !args.is_empty() {
             pipes.push(format!("E2E.Helpers.assert_chunks({})", args.join(", ")));

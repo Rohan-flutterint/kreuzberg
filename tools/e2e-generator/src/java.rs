@@ -373,7 +373,8 @@ public final class E2EHelpers {
                 Integer maxCount,
                 Boolean eachHasContent,
                 Boolean eachHasEmbedding,
-                Boolean eachHasHeadingContext
+                Boolean eachHasHeadingContext,
+                Boolean contentStartsWithHeading
         ) {
             var chunks = result.getChunks();
             int count = chunks != null ? chunks.size() : 0;
@@ -408,6 +409,14 @@ public final class E2EHelpers {
                 for (var chunk : chunks) {
                     assertTrue(chunk.getMetadata().getHeadingContext().isEmpty(),
                             "Expected each chunk to have no heading_context");
+                }
+            }
+            if (chunks != null && contentStartsWithHeading != null && contentStartsWithHeading) {
+                String headingPrefix = String.valueOf((char) 35);
+                for (var chunk : chunks) {
+                    String content = chunk.getContent();
+                    assertTrue(content != null && content.startsWith(headingPrefix),
+                            "Expected each chunk content to start with a heading");
                 }
             }
         }
@@ -1601,9 +1610,14 @@ fn render_assertions(assertions: &Assertions) -> String {
             .each_has_heading_context
             .map(|v| v.to_string())
             .unwrap_or_else(|| "null".to_string());
+        let content_starts_with_heading = chunks
+            .content_starts_with_heading
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".to_string());
         buffer.push_str(&format!(
-            "                E2EHelpers.Assertions.assertChunks(result, {}, {}, {}, {}, {});\n",
-            min_literal, max_literal, has_content, has_embedding, has_heading_context
+            "                E2EHelpers.Assertions.assertChunks(result, {}, {}, {}, {}, {}, {});\n",
+            min_literal, max_literal, has_content, has_embedding, has_heading_context,
+            content_starts_with_heading
         ));
     }
 

@@ -493,7 +493,8 @@ public static class TestHelpers
         int? maxCount,
         bool? eachHasContent,
         bool? eachHasEmbedding,
-        bool? eachHasHeadingContext = null)
+        bool? eachHasHeadingContext = null,
+        bool? contentStartsWithHeading = null)
     {
         var chunks = result.Chunks;
         if (chunks is null)
@@ -546,6 +547,17 @@ public static class TestHelpers
                 if (chunks[i].Metadata?.HeadingContext is not null)
                 {
                     throw new XunitException($"Chunk {i} should have no heading_context");
+                }
+            }
+        }
+        if (contentStartsWithHeading == true)
+        {
+            var headingChar = new string(new[] { (char)35 });
+            for (var i = 0; i < chunks.Count; i++)
+            {
+                if (string.IsNullOrEmpty(chunks[i].Content) || !chunks[i].Content!.StartsWith(headingChar))
+                {
+                    throw new XunitException($"Chunk {i} content does not start with a heading");
                 }
             }
         }
@@ -1285,10 +1297,15 @@ fn render_assertions(buffer: &mut String, assertions: &Assertions) -> Result<()>
             .each_has_heading_context
             .map(|v| if v { "true" } else { "false" }.to_string())
             .unwrap_or_else(|| "null".to_string());
+        let content_starts_with_heading = chunks
+            .content_starts_with_heading
+            .map(|v| if v { "true" } else { "false" }.to_string())
+            .unwrap_or_else(|| "null".to_string());
         writeln!(
             buffer,
-            "            TestHelpers.AssertChunks(result, {}, {}, {}, {}, {});",
-            min_count, max_count, each_has_content, each_has_embedding, each_has_heading_context
+            "            TestHelpers.AssertChunks(result, {}, {}, {}, {}, {}, {});",
+            min_count, max_count, each_has_content, each_has_embedding, each_has_heading_context,
+            content_starts_with_heading
         )?;
     }
 

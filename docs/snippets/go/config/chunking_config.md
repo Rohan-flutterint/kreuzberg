@@ -60,3 +60,38 @@ func main() {
 	}
 }
 ```
+
+```go title="Go - Prepend Heading Context"
+package main
+
+import (
+	"fmt"
+
+	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+)
+
+func boolPtr(b bool) *bool { return &b }
+
+func main() {
+	maxChars := 500
+	maxOverlap := 50
+
+	config := &kreuzberg.ExtractionConfig{
+		Chunking: &kreuzberg.ChunkingConfig{
+			MaxChars:              &maxChars,
+			MaxOverlap:            &maxOverlap,
+			PrependHeadingContext: boolPtr(true),
+		},
+	}
+
+	result, err := kreuzberg.ExtractFile("document.md", nil, config)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, chunk := range result.Chunks {
+		// Each chunk's content is prefixed with its heading breadcrumb
+		fmt.Printf("Content: %.100s...\n", chunk.Content)
+	}
+}
+```

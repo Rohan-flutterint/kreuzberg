@@ -2518,6 +2518,13 @@ public sealed class ChunkingConfig
     /// </summary>
     [JsonPropertyName("sizing")]
     public ChunkSizingConfig? Sizing { get; init; }
+
+    /// <summary>
+    /// When true, prepends the heading context to each chunk for improved retrieval.
+    /// Default: false.
+    /// </summary>
+    [JsonPropertyName("prepend_heading_context")]
+    public bool? PrependHeadingContext { get; init; }
 }
 
 /// <summary>

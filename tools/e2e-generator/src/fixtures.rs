@@ -234,6 +234,8 @@ pub struct ChunkAssertion {
     pub each_has_embedding: Option<bool>,
     #[serde(default)]
     pub each_has_heading_context: Option<bool>,
+    #[serde(default)]
+    pub content_starts_with_heading: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

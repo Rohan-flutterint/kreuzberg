@@ -114,7 +114,7 @@ if ($result5->chunks !== null) {
         $chunkData = [
             'document_id' => $documentId,
             'chunk_index' => $i,
-            'text' => $chunk->text,
+            'text' => $chunk->content,
             'char_count' => $chunk->metadata->charCount,
             'byte_start' => $chunk->metadata->byteStart,
             'byte_end' => $chunk->metadata->byteEnd,
@@ -150,7 +150,7 @@ if ($result6->chunks !== null) {
 
     foreach ($result6->chunks as $i => $chunk) {
         echo "\nChunk {$i}:\n";
-        echo "- Text preview: " . substr($chunk->text, 0, 60) . "...\n";
+        echo "- Text preview: " . substr($chunk->content, 0, 60) . "...\n";
 
         if (isset($chunk->metadata->headingContext->headings)) {
             $headings = $chunk->metadata->headingContext->headings;
@@ -172,6 +172,30 @@ echo "- chunkerType: Type of chunker ('simple' or 'markdown')\n";
 echo "- sizing: Sizing strategy configuration\n";
 echo "  - type: 'character' or 'tokenizer'\n";
 echo "  - model: Tokenizer model (e.g., 'Xenova/gpt-4o')\n";
+echo "\n\n";
+
+echo "Example 7: Prepend Heading Context\n";
+echo "====================================\n";
+
+$config7 = new ExtractionConfig(
+    chunking: new ChunkingConfig(
+        chunkerType: 'markdown',
+        prependHeadingContext: true
+    )
+);
+
+$result7 = (new Kreuzberg($config7))->extractFile('document.md');
+
+if ($result7->chunks !== null) {
+    echo "Total chunks: " . count($result7->chunks) . "\n";
+
+    foreach ($result7->chunks as $i => $chunk) {
+        // Each chunk's content is prefixed with its heading breadcrumb,
+        // e.g. "# Section > ## Subsection\n\nActual content..."
+        echo "\nChunk {$i} preview: " . substr($chunk->content, 0, 80) . "...\n";
+    }
+}
+
 echo "\nBest Practices:\n";
 echo "- Use 256-512 chars for fine-grained retrieval\n";
 echo "- Use 1000-2000 chars for more context\n";
@@ -179,4 +203,5 @@ echo "- Set overlap to ~10% of chunk size\n";
 echo "- Enable respectSentences for better coherence\n";
 echo "- Use markdown chunker for structured documents with headings\n";
 echo "- Use token-based sizing for LLM token budgets\n";
+echo "- Enable prependHeadingContext to embed heading breadcrumbs in chunk content\n";
 ```

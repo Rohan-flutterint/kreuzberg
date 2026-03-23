@@ -33,3 +33,23 @@ result.chunks.each do |chunk|
   end
 end
 ```
+
+```ruby title="Ruby - Prepend Heading Context"
+require 'kreuzberg'
+
+config = Kreuzberg::Config::Extraction.new(
+  chunking: Kreuzberg::Config::Chunking.new(
+    chunker_type: "markdown",
+    max_characters: 500,
+    overlap: 50,
+    prepend_heading_context: true
+  )
+)
+
+result = Kreuzberg.extract_file("document.md", config)
+
+result.chunks.each do |chunk|
+  # Each chunk's content is prefixed with its heading breadcrumb
+  puts chunk.content[0, 100]
+end
+```

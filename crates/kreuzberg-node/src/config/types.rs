@@ -259,6 +259,9 @@ pub struct JsChunkingConfig {
     pub sizing_model: Option<String>,
     /// Optional cache directory for tokenizer files
     pub sizing_cache_dir: Option<String>,
+    /// Prepend heading context to each chunk when using markdown chunker
+    #[napi(js_name = "prependHeadingContext")]
+    pub prepend_heading_context: Option<bool>,
 }
 
 impl From<JsChunkingConfig> for RustChunkingConfig {
@@ -276,6 +279,7 @@ impl From<JsChunkingConfig> for RustChunkingConfig {
             embedding: val.embedding.map(Into::into),
             preset: val.preset,
             sizing,
+            prepend_heading_context: val.prepend_heading_context.unwrap_or(false),
         }
     }
 }
@@ -1335,6 +1339,7 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
                     }
                     _ => None,
                 },
+                prepend_heading_context: Some(chunk.prepend_heading_context),
             }),
             images: val.images.map(|img| JsImageExtractionConfig {
                 extract_images: Some(img.extract_images),
@@ -1685,6 +1690,7 @@ impl TryFrom<FileExtractionConfig> for JsFileExtractionConfig {
                     }
                     _ => None,
                 },
+                prepend_heading_context: Some(chunk.prepend_heading_context),
             }),
             images: val.images.map(|img| JsImageExtractionConfig {
                 extract_images: Some(img.extract_images),

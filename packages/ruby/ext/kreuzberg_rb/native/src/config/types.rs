@@ -139,6 +139,12 @@ pub fn parse_chunking_config(ruby: &Ruby, hash: RHash) -> Result<ChunkingConfig,
 
     let sizing = parse_chunk_sizing(ruby, hash)?;
 
+    let prepend_heading_context = if let Some(val) = get_kw(ruby, hash, "prepend_heading_context") {
+        bool::try_convert(val)?
+    } else {
+        false
+    };
+
     let config = ChunkingConfig {
         max_characters: max_chars,
         overlap: max_overlap,
@@ -147,6 +153,7 @@ pub fn parse_chunking_config(ruby: &Ruby, hash: RHash) -> Result<ChunkingConfig,
         embedding,
         preset,
         sizing,
+        prepend_heading_context,
     };
 
     Ok(config)
@@ -315,12 +322,11 @@ pub fn parse_pdf_config(ruby: &Ruby, hash: RHash) -> Result<PdfConfig, Error> {
         None
     };
 
-    let allow_single_column_tables =
-        if let Some(val) = get_kw(ruby, hash, "allow_single_column_tables") {
-            bool::try_convert(val)?
-        } else {
-            false
-        };
+    let allow_single_column_tables = if let Some(val) = get_kw(ruby, hash, "allow_single_column_tables") {
+        bool::try_convert(val)?
+    } else {
+        false
+    };
 
     let config = PdfConfig {
         extract_images,
@@ -961,9 +967,8 @@ pub fn parse_extraction_config(ruby: &Ruby, opts: Option<RHash>) -> Result<Extra
             && val.equal(ruby.qnil()).ok() != Some(true)
         {
             let security_json = ruby_value_to_json(val)?;
-            let parsed: kreuzberg::extractors::security::SecurityLimits =
-                serde_json::from_value(security_json)
-                    .map_err(|e| runtime_error(format!("Invalid security_limits: {}", e)))?;
+            let parsed: kreuzberg::extractors::security::SecurityLimits = serde_json::from_value(security_json)
+                .map_err(|e| runtime_error(format!("Invalid security_limits: {}", e)))?;
             config.security_limits = Some(parsed);
         }
 

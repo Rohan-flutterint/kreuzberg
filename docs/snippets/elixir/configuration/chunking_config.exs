@@ -41,7 +41,7 @@ if result2.chunks do
   IO.puts("Generated #{length(result2.chunks)} markdown chunks")
 
   Enum.each(result2.chunks, fn chunk ->
-    IO.puts("\nChunk preview: #{String.slice(chunk["text"], 0..60)}...")
+    IO.puts("\nChunk preview: #{String.slice(chunk["content"], 0..60)}...")
 
     # Access heading context
     if is_map(chunk["metadata"]) and is_map(chunk["metadata"]["heading_context"]) do
@@ -53,6 +53,26 @@ if result2.chunks do
         end)
       end
     end
+  end)
+end
+
+# Example 3: Prepend heading context to chunk content
+config3 = %ExtractionConfig{
+  chunking: %{
+    "enabled" => true,
+    "chunker_type" => "markdown",
+    "prepend_heading_context" => true
+  }
+}
+
+{:ok, result3} = Kreuzberg.extract_file("document.md", nil, config3)
+
+if result3.chunks do
+  IO.puts("Generated #{length(result3.chunks)} chunks with prepended headings")
+
+  Enum.each(result3.chunks, fn chunk ->
+    # Each chunk's content is prefixed with its heading breadcrumb
+    IO.puts("\nChunk preview: #{String.slice(chunk["content"], 0..80)}...")
   end)
 end
 ```

@@ -107,6 +107,7 @@ function mapChunkingConfig(raw: PlainRecord): ChunkingConfig {
     if (typeof raw.chunker_type === "string") {
         (config as PlainRecord).chunkerType = raw.chunker_type;
     }
+    assignBooleanField(config as PlainRecord, raw, "prepend_heading_context", "prependHeadingContext");
     return config;
 }
 
@@ -373,6 +374,7 @@ export const assertions = {
         eachHasContent: boolean | null,
         eachHasEmbedding: boolean | null,
         eachHasHeadingContext: boolean | null,
+        contentStartsWithHeading: boolean | null,
     ): void {
         const chunks = Array.isArray(result.chunks) ? result.chunks : [];
         if (typeof minCount === "number") {
@@ -399,6 +401,11 @@ export const assertions = {
         if (eachHasHeadingContext === false) {
             for (const chunk of chunks) {
                 expect(chunk.metadata?.headingContext ?? null).toBeNull();
+            }
+        }
+        if (contentStartsWithHeading === true) {
+            for (const chunk of chunks) {
+                expect(typeof chunk.content === "string" && chunk.content.charCodeAt(0) === 35).toBe(true);
             }
         }
     },
@@ -1052,8 +1059,12 @@ fn render_assertions(assertions: &Assertions) -> String {
             .each_has_heading_context
             .map(|v| v.to_string())
             .unwrap_or_else(|| "null".into());
+        let content_starts_with_heading = chunks
+            .content_starts_with_heading
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".into());
         buffer.push_str(&format!(
-            "        assertions.assertChunks(result, {min_count}, {max_count}, {each_has_content}, {each_has_embedding}, {each_has_heading_context});\n"
+            "        assertions.assertChunks(result, {min_count}, {max_count}, {each_has_content}, {each_has_embedding}, {each_has_heading_context}, {content_starts_with_heading});\n"
         ));
     }
 

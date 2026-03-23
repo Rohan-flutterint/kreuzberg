@@ -37,3 +37,24 @@ result.getChunks().forEach(chunk -> {
     }
 });
 ```
+
+```java title="Java - Prepend Heading Context"
+import dev.kreuzberg.config.ExtractionConfig;
+import dev.kreuzberg.config.ChunkingConfig;
+
+ExtractionConfig config = ExtractionConfig.builder()
+    .chunking(ChunkingConfig.builder()
+        .chunkerType("markdown")
+        .maxChars(500)
+        .maxOverlap(50)
+        .prependHeadingContext(true)
+        .build())
+    .build();
+
+ExtractionResult result = KreuzbergClient.extractFile("document.md", config);
+
+result.getChunks().forEach(chunk -> {
+    // Each chunk's content is prefixed with its heading breadcrumb
+    System.out.println(chunk.getContent().substring(0, Math.min(100, chunk.getContent().length())));
+});
+```

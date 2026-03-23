@@ -28,4 +28,30 @@ async function extractWithChunking() {
 	}
 }
 
+async function extractWithPrependHeadingContext() {
+	await initWasm();
+
+	const bytes = new Uint8Array(await fetch("document.md").then((r) => r.arrayBuffer()));
+
+	const config: ExtractionConfig = {
+		chunking: {
+			chunkerType: "markdown",
+			maxChars: 800,
+			prependHeadingContext: true,
+		},
+	};
+
+	const result = await extractBytes(bytes, "text/markdown", config);
+
+	if (result.chunks) {
+		console.log(`Total chunks: ${result.chunks.length}`);
+
+		result.chunks.slice(0, 3).forEach((chunk, i) => {
+			// Each chunk's content is prefixed with its heading breadcrumb
+			console.log(`\nChunk ${i}: ${chunk.content.substring(0, 100)}...`);
+		});
+	}
+}
+
 extractWithChunking().catch(console.error);
+extractWithPrependHeadingContext().catch(console.error);

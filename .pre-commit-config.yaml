@@ -132,7 +132,13 @@ repos:
         args: [--style=file]
         files: (^crates/kreuzberg-ffi/tests/c/|^tools/benchmark-harness/scripts/.*\.c$)
       - id: cppcheck
-        args: ["--std=c11", "--enable=warning,style,performance", "--suppress=missingIncludeSystem", "--suppress=unusedStructMember"]
+        args:
+          [
+            "--std=c11",
+            "--enable=warning,style,performance",
+            "--suppress=missingIncludeSystem",
+            "--suppress=unusedStructMember",
+          ]
         files: (^crates/kreuzberg-ffi/tests/c/|^tools/benchmark-harness/scripts/.*\.c$)
 
   - repo: https://github.com/checkmake/checkmake
@@ -175,7 +181,13 @@ repos:
       - id: cpd
         exclude: ^(\.mvn/wrapper/|e2e/|tests/test_apps/|tools/e2e-generator/e2e/|crates/kreuzberg-wasm/e2e/)
       - id: checkstyle
-        args: ["-c", "packages/java/checkstyle.xml", "-p", "packages/java/checkstyle.properties"]
+        args:
+          [
+            "-c",
+            "packages/java/checkstyle.xml",
+            "-p",
+            "packages/java/checkstyle.properties",
+          ]
         exclude: ^(\.mvn/wrapper/|e2e/|tests/test_apps/|tools/e2e-generator/e2e/|crates/kreuzberg-wasm/e2e/)
 
   # Local hooks for unsupported languages (Ruby, Java, C#, PHP, Elixir, R) and custom configurations
