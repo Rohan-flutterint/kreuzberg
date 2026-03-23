@@ -78,6 +78,7 @@ pub enum OcrBackendType {
 ///             quality_score: None,
 ///             processing_warnings: vec![],
 ///             annotations: None,
+///             children: None,
 ///         })
 ///     }
 ///
@@ -167,6 +168,7 @@ pub trait OcrBackend: Plugin {
     ///         quality_score: None,
     ///         processing_warnings: vec![],
     ///         annotations: None,
+    ///         children: None,
     ///     })
     /// }
     /// # }
@@ -369,6 +371,7 @@ pub trait OcrBackend: Plugin {
 ///             quality_score: None,
 ///             processing_warnings: vec![],
 ///             annotations: None,
+///             children: None,
 ///         })
 ///     }
 ///     fn supports_language(&self, _: &str) -> bool { true }
@@ -528,6 +531,7 @@ mod tests {
                 quality_score: None,
                 processing_warnings: Vec::new(),
                 annotations: None,
+                children: None,
             })
         }
 

@@ -3817,7 +3817,7 @@ async fn test_epub_dublin_core() {
 #[cfg(feature = "archives")]
 mod archive_recursive {
     use kreuzberg::core::config::ExtractionConfig;
-    use kreuzberg::core::extractor::extract_bytes_sync;
+    use kreuzberg::core::extractor::{extract_bytes, extract_bytes_sync};
     use std::io::Write;
 
     fn create_test_zip(files: &[(&str, &[u8])]) -> Vec<u8> {
@@ -3835,15 +3835,15 @@ mod archive_recursive {
         zip_buf
     }
 
-    #[test]
-    fn test_zip_recursive_extraction() {
+    #[tokio::test]
+    async fn test_zip_recursive_extraction() {
         let zip_bytes = create_test_zip(&[
             ("hello.txt", b"Hello World"),
             ("data.csv", b"name,age\nAlice,30\nBob,25"),
         ]);
 
         let config = ExtractionConfig::default();
-        let result = extract_bytes_sync(&zip_bytes, "application/zip", &config).expect("ZIP extraction should succeed");
+        let result = extract_bytes(&zip_bytes, "application/zip", &config).await.expect("ZIP extraction should succeed");
 
         let children = result.children.expect("children should be populated");
         assert_eq!(children.len(), 2, "should have 2 child entries");
@@ -3885,28 +3885,27 @@ mod archive_recursive {
         );
     }
 
-    #[test]
-    fn test_archive_children_have_content() {
-        let html_content = b"<html><body><h1>Title</h1><p>Paragraph text.</p></body></html>";
-        let zip_bytes = create_test_zip(&[("page.html", html_content)]);
+    #[tokio::test]
+    async fn test_archive_children_have_content() {
+        let markdown_content = b"# Title\n\nParagraph text with **bold** and *italic*.";
+        let zip_bytes = create_test_zip(&[("readme.md", markdown_content)]);
 
         let config = ExtractionConfig::default();
-        let result = extract_bytes_sync(&zip_bytes, "application/zip", &config).expect("ZIP extraction should succeed");
+        let result = extract_bytes(&zip_bytes, "application/zip", &config).await.expect("ZIP extraction should succeed");
 
         let children = result.children.expect("children should be populated");
         assert_eq!(children.len(), 1, "should have 1 child entry");
 
-        let html_child = &children[0];
-        assert_eq!(html_child.path, "page.html");
+        let md_child = &children[0];
+        assert_eq!(md_child.path, "readme.md");
         assert!(
-            !html_child.result.content.is_empty(),
-            "HTML child should have non-empty content"
+            !md_child.result.content.is_empty(),
+            "Markdown child should have non-empty content"
         );
-        // HTML should contain extracted text (not raw HTML tags)
         assert!(
-            html_child.result.content.contains("Title") || html_child.result.content.contains("Paragraph"),
-            "HTML child content should contain extracted text, got: {}",
-            html_child.result.content
+            md_child.result.content.contains("Title") || md_child.result.content.contains("Paragraph"),
+            "Markdown child content should contain extracted text, got: {}",
+            md_child.result.content
         );
     }
 }

@@ -33,6 +33,7 @@ async fn test_run_pipeline_basic() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -72,6 +73,7 @@ async fn test_pipeline_with_quality_processing() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: true,
@@ -103,6 +105,7 @@ async fn test_pipeline_without_quality_processing() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: false,
@@ -139,6 +142,7 @@ async fn test_pipeline_with_chunking() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         chunking: Some(crate::ChunkingConfig {
@@ -178,6 +182,7 @@ async fn test_pipeline_without_chunking() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         chunking: None,
@@ -221,6 +226,7 @@ async fn test_pipeline_preserves_metadata() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         postprocessor: Some(crate::core::config::PostProcessorConfig {
@@ -271,6 +277,7 @@ async fn test_pipeline_preserves_tables() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         postprocessor: Some(crate::core::config::PostProcessorConfig {
@@ -315,6 +322,7 @@ async fn test_pipeline_empty_content() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig::default();
 
@@ -344,6 +352,7 @@ async fn test_pipeline_with_all_features() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: true,
@@ -405,6 +414,7 @@ Natural language processing enables computers to understand human language.
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
 
     #[cfg(feature = "keywords-yake")]
@@ -457,6 +467,7 @@ async fn test_pipeline_without_keyword_config() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
 
     let config = ExtractionConfig {
@@ -502,6 +513,7 @@ async fn test_pipeline_keyword_extraction_short_content() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
 
     #[cfg(feature = "keywords-yake")]
@@ -643,6 +655,7 @@ async fn test_postprocessor_runs_before_validator() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -746,6 +759,7 @@ async fn test_quality_processing_runs_before_validator() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -949,6 +963,7 @@ async fn test_multiple_postprocessors_run_before_validator() {
         quality_score: None,
         processing_warnings: Vec::new(),
         annotations: None,
+        children: None,
     };
 
     let config = ExtractionConfig::default();
