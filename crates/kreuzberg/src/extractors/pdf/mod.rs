@@ -150,9 +150,10 @@ async fn run_ocr_with_layout(
     config: &ExtractionConfig,
     path: Option<&std::path::Path>,
 ) -> crate::Result<String> {
-    let ocr_config = config.ocr.as_ref().ok_or_else(|| {
-        crate::error::KreuzbergError::parsing("OCR configuration missing")
-    })?;
+    let ocr_config = config
+        .ocr
+        .as_ref()
+        .ok_or_else(|| crate::error::KreuzbergError::parsing("OCR configuration missing"))?;
 
     // Check for pipeline configuration
     if let Some(pipeline) = ocr_config.effective_pipeline() {
@@ -752,9 +753,6 @@ impl PdfExtractor {
         })
     }
 
-    fn priority(&self) -> i32 {
-        50
-    }
 }
 
 /// Loads a PDF from a byte slice, using the config's passwords if needed,
@@ -810,12 +808,6 @@ mod tests {
         let mime_types = extractor.supported_mime_types();
         assert_eq!(mime_types.len(), 1);
         assert!(mime_types.contains(&"application/pdf"));
-    }
-
-    #[test]
-    fn test_pdf_extractor_priority() {
-        let extractor = PdfExtractor::new();
-        assert_eq!(extractor.priority(), 50);
     }
 
     #[cfg(feature = "ocr")]

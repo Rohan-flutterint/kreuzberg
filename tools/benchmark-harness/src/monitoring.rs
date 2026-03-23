@@ -482,11 +482,19 @@ impl ResourceMonitor {
     /// pre-loaded models and runtimes from per-extraction measurements.
     ///
     /// Pass `baseline_bytes = 0` to get absolute RSS (legacy behavior).
-    pub fn calculate_stats(samples: &[ResourceSample], snapshots: &[MemorySnapshot], baseline_bytes: u64) -> ResourceStats {
+    pub fn calculate_stats(
+        samples: &[ResourceSample],
+        snapshots: &[MemorySnapshot],
+        baseline_bytes: u64,
+    ) -> ResourceStats {
         if samples.is_empty() {
             // If no background samples but snapshots are available, use snapshot RSS as fallback
             if !snapshots.is_empty() {
-                let peak_rss = snapshots.iter().map(|s| s.rss_bytes.saturating_sub(baseline_bytes)).max().unwrap_or(0);
+                let peak_rss = snapshots
+                    .iter()
+                    .map(|s| s.rss_bytes.saturating_sub(baseline_bytes))
+                    .max()
+                    .unwrap_or(0);
                 let peak_vm = snapshots.iter().map(|s| s.vm_bytes).max().unwrap_or(0);
                 return ResourceStats {
                     peak_memory_bytes: peak_rss,

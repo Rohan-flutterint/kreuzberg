@@ -120,7 +120,7 @@ impl PaddleOcrBackend {
         let cls_model_path = Self::find_onnx_model(&shared.cls_model)?;
         let rec_model_path = Self::find_onnx_model(&resolved.model_dir)?;
 
-        let num_threads = num_cpus::get().min(4);
+        let num_threads = crate::core::config::concurrency::resolve_thread_budget(None).min(4);
 
         let dict_path = resolved.dict_file.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
             message: "Invalid dictionary file path".to_string(),
