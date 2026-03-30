@@ -1339,10 +1339,6 @@ module Kreuzberg
   def self.list_post_processors: () -> Array[String]
   def self.list_validators: () -> Array[String]
 
-  # Serialization
-  def self.serialize_to_toon: (Result result) -> String
-  def self.serialize_to_json: (Result result) -> String
-
   interface _PostProcessor
     def call: (extraction_result_hash result) -> extraction_result_hash
   end
