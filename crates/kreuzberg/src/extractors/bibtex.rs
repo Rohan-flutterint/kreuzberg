@@ -13,7 +13,7 @@ use crate::types::uri::Uri;
 use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use ahash::AHashSet;
 
 #[cfg(feature = "office")]
 use crate::types::document_structure::{AnnotationKind, TextAnnotation};
@@ -85,8 +85,8 @@ impl DocumentExtractor for BibtexExtractor {
         let bibtex_str = String::from_utf8_lossy(content);
 
         let mut entries_vec = Vec::new();
-        let mut authors_set = HashSet::new();
-        let mut years_set = HashSet::new();
+        let mut authors_set = AHashSet::new();
+        let mut years_set = AHashSet::new();
         let mut entry_types_map: AHashMap<String, i32> = AHashMap::new();
         let mut formatted_entries = String::new();
 

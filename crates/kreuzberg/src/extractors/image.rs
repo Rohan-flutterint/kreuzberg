@@ -54,17 +54,16 @@ impl ImageExtractor {
         // Full OCR with TIFF multi-frame support (requires tiff crate)
         #[cfg(feature = "ocr")]
         {
-            let ocr_text = ocr_result.content.clone();
             let ocr_extraction_result = crate::extraction::image::extract_text_from_image_with_ocr(
                 content,
                 mime_type,
-                ocr_text,
+                ocr_result.content,
                 config.pages.as_ref(),
             )?;
 
             // Build InternalDocument from OCR text
             let mut doc = build_image_internal_document(Some(&ocr_extraction_result.content), None);
-            doc.metadata = ocr_result.metadata.clone();
+            doc.metadata = ocr_result.metadata;
             Ok(doc)
         }
 
@@ -73,7 +72,7 @@ impl ImageExtractor {
         {
             let _ = mime_type;
             let mut doc = build_image_internal_document(Some(&ocr_result.content), None);
-            doc.metadata = ocr_result.metadata.clone();
+            doc.metadata = ocr_result.metadata;
             Ok(doc)
         }
     }
@@ -132,7 +131,7 @@ impl ImageExtractor {
         }
 
         // 3. Sort detections by reading order (top-to-bottom, left-to-right)
-        let mut detections = detection.detections.clone();
+        let mut detections = detection.detections;
         // Quantize y-centers into discrete rows to ensure transitive ordering.
         let row_threshold = (rgb.height() as f32 * 0.05).max(1.0);
         detections.sort_by(|a, b| {
@@ -338,17 +337,18 @@ impl DocumentExtractor for ImageExtractor {
     ) -> Result<InternalDocument> {
         let extraction_metadata = extract_image_metadata(content)?;
 
+        let format_str = extraction_metadata.format;
         let image_metadata = crate::types::ImageMetadata {
             width: extraction_metadata.width,
             height: extraction_metadata.height,
-            format: extraction_metadata.format.clone(),
+            format: format_str.clone(),
             exif: extraction_metadata.exif_data,
         };
 
         // Build an ExtractedImage from the raw content so it is stored in doc.images
         let extracted_image = crate::types::ExtractedImage {
             data: bytes::Bytes::copy_from_slice(content),
-            format: std::borrow::Cow::Owned(extraction_metadata.format.clone()),
+            format: std::borrow::Cow::Owned(format_str),
             image_index: 0,
             page_number: None,
             width: Some(extraction_metadata.width),

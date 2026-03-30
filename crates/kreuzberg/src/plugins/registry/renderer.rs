@@ -3,7 +3,7 @@
 use crate::plugins::Renderer;
 use crate::types::internal::InternalDocument;
 use crate::{KreuzbergError, Result};
-use std::collections::HashMap;
+use ahash::AHashMap;
 use std::sync::Arc;
 
 /// Built-in Markdown renderer.
@@ -77,7 +77,7 @@ impl Renderer for PlainRenderer {
 /// // Built-in renderers: "markdown", "html", "djot", "plain"
 /// ```
 pub struct RendererRegistry {
-    renderers: HashMap<String, Arc<dyn Renderer>>,
+    renderers: AHashMap<String, Arc<dyn Renderer>>,
 }
 
 impl RendererRegistry {
@@ -90,7 +90,7 @@ impl RendererRegistry {
     /// - `plain` — Plain text (no formatting)
     pub fn new() -> Self {
         let mut registry = Self {
-            renderers: HashMap::new(),
+            renderers: AHashMap::new(),
         };
 
         registry.register_builtins();
@@ -102,7 +102,7 @@ impl RendererRegistry {
     /// Useful for testing or when you want full control over renderer registration.
     pub fn new_empty() -> Self {
         Self {
-            renderers: HashMap::new(),
+            renderers: AHashMap::new(),
         }
     }
 

@@ -13,7 +13,7 @@ use crate::types::uri::Uri;
 use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use ahash::AHashSet;
 
 #[cfg(feature = "office")]
 use biblib::{CitationParser, EndNoteXmlParser, PubMedParser, RisParser};
@@ -83,10 +83,10 @@ impl DocumentExtractor for CitationExtractor {
         let citation_str = String::from_utf8_lossy(content);
 
         let mut citations_vec = Vec::new();
-        let mut authors_set = HashSet::new();
-        let mut years_set = HashSet::new();
+        let mut authors_set = AHashSet::new();
+        let mut years_set = AHashSet::new();
         let mut dois_vec = Vec::new();
-        let mut keywords_set = HashSet::new();
+        let mut keywords_set = AHashSet::new();
         let mut formatted_content = String::new();
 
         // Parse based on MIME type

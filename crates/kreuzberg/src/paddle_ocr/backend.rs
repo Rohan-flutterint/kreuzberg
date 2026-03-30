@@ -10,7 +10,6 @@
 use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::panic::catch_unwind;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -46,7 +45,7 @@ pub struct PaddleOcrBackend {
     /// Per-model OCR engines, lazily initialized. Keyed by "{tier}/{model_key}".
     /// Multiple script families may share the same engine (e.g. chinese+japanese use unified_server).
     /// OcrLite inference methods take `&self`, enabling lock-free concurrent page OCR.
-    engine_pool: Mutex<HashMap<String, Arc<OcrLite>>>,
+    engine_pool: Mutex<AHashMap<String, Arc<OcrLite>>>,
     /// Document orientation detector, lazily initialized.
     doc_ori_detector: once_cell::sync::OnceCell<crate::doc_orientation::DocOrientationDetector>,
 }
@@ -64,7 +63,7 @@ impl PaddleOcrBackend {
             config: Arc::new(config),
             model_manager: ModelManager::new(cache_dir),
             shared_paths: Mutex::new(None),
-            engine_pool: Mutex::new(HashMap::new()),
+            engine_pool: Mutex::new(AHashMap::new()),
             doc_ori_detector: once_cell::sync::OnceCell::new(),
         })
     }

@@ -15,7 +15,6 @@ use crate::types::{ArchiveMetadata, Metadata, ProcessingWarning};
 use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::io::Cursor;
 
 /// Build an `InternalDocument` from archive metadata and text contents.
@@ -23,7 +22,7 @@ use std::io::Cursor;
 /// Shared inner function — takes pre-computed children and warnings.
 fn build_archive_doc_inner(
     extraction_metadata: ExtractedMetadata,
-    text_contents: HashMap<String, String>,
+    text_contents: AHashMap<String, String>,
     format_name: &'static str,
     mime_type: &str,
     children: Vec<crate::types::ArchiveEntry>,
@@ -102,7 +101,7 @@ fn build_archive_doc_inner(
 /// Sync version — no recursive child extraction.
 fn build_archive_doc_sync(
     extraction_metadata: ExtractedMetadata,
-    text_contents: HashMap<String, String>,
+    text_contents: AHashMap<String, String>,
     format_name: &'static str,
     mime_type: &str,
 ) -> InternalDocument {
@@ -122,8 +121,8 @@ fn build_archive_doc_sync(
 /// by detecting its MIME type and dispatching to the appropriate extractor.
 async fn build_archive_doc(
     extraction_metadata: ExtractedMetadata,
-    text_contents: HashMap<String, String>,
-    file_bytes: HashMap<String, Vec<u8>>,
+    text_contents: AHashMap<String, String>,
+    file_bytes: AHashMap<String, Vec<u8>>,
     format_name: &'static str,
     mime_type: &str,
     config: &ExtractionConfig,

@@ -10,7 +10,6 @@
 //! - Added markdown rendering and formatting support (fixes #376)
 
 use ahash::AHashMap;
-use std::collections::HashMap;
 use std::io::{Cursor, Read, Seek};
 
 use quick_xml::Reader;
@@ -34,7 +33,7 @@ pub struct Document {
     pub footers: Vec<HeaderFooter>,
     pub footnotes: Vec<Note>,
     pub endnotes: Vec<Note>,
-    pub numbering_defs: HashMap<(i64, i64), ListType>,
+    pub numbering_defs: AHashMap<(i64, i64), ListType>,
     /// Document elements in their original order.
     pub elements: Vec<DocumentElement>,
     /// Parsed style catalog from `word/styles.xml`, if available.
@@ -277,7 +276,7 @@ impl Document {
         use std::fmt::Write;
 
         let mut output = String::new();
-        let mut list_counters: HashMap<(i64, i64), usize> = HashMap::new();
+        let mut list_counters: AHashMap<(i64, i64), usize> = AHashMap::new();
         let mut prev_was_list = false;
 
         // Use elements ordering if populated, otherwise fall back to paragraphs-only
@@ -476,7 +475,7 @@ impl Document {
         &self,
         paragraph: &Paragraph,
         output: &mut String,
-        list_counters: &mut HashMap<(i64, i64), usize>,
+        list_counters: &mut AHashMap<(i64, i64), usize>,
         prev_was_list: &mut bool,
     ) {
         let is_list = paragraph.numbering_id.is_some();
@@ -659,8 +658,8 @@ impl Paragraph {
     /// it takes precedence over style name matching.
     pub fn to_markdown(
         &self,
-        numbering_defs: &HashMap<(i64, i64), ListType>,
-        list_counters: &mut HashMap<(i64, i64), usize>,
+        numbering_defs: &AHashMap<(i64, i64), ListType>,
+        list_counters: &mut AHashMap<(i64, i64), usize>,
         heading_level: Option<u8>,
     ) -> String {
         let inline = self.runs_to_markdown();
@@ -1097,7 +1096,7 @@ fn validate_archive_security(archive: &mut zip::ZipArchive<impl Read + Seek>) ->
 #[derive(Debug)]
 struct DocxParser<R: Read + Seek> {
     archive: zip::ZipArchive<R>,
-    relationships: HashMap<String, String>,
+    relationships: AHashMap<String, String>,
     styles: Option<super::styles::StyleCatalog>,
     theme: Option<super::theme::Theme>,
 }
@@ -1141,7 +1140,7 @@ impl<R: Read + Seek> DocxParser<R> {
 
         Ok(Self {
             archive,
-            relationships: HashMap::new(),
+            relationships: AHashMap::new(),
             styles,
             theme,
         })
@@ -1190,8 +1189,8 @@ impl<R: Read + Seek> DocxParser<R> {
     }
 
     /// Parse relationship file to get rId → target mappings for hyperlinks and images.
-    fn parse_relationships_xml(xml: &str) -> HashMap<String, String> {
-        let mut rels = HashMap::new();
+    fn parse_relationships_xml(xml: &str) -> AHashMap<String, String> {
+        let mut rels = AHashMap::new();
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(true);
         let mut buf = Vec::new();
@@ -1573,8 +1572,8 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(())
     }
 
-    fn parse_numbering(&self, xml: &str) -> Result<HashMap<(i64, i64), ListType>, DocxParseError> {
-        let mut numbering_defs: HashMap<(i64, i64), ListType> = HashMap::new();
+    fn parse_numbering(&self, xml: &str) -> Result<AHashMap<(i64, i64), ListType>, DocxParseError> {
+        let mut numbering_defs: AHashMap<(i64, i64), ListType> = AHashMap::new();
         let mut abstract_num_formats: AHashMap<i64, AHashMap<i64, ListType>> = AHashMap::new();
         let mut num_to_abstract: AHashMap<i64, i64> = AHashMap::new();
 
@@ -2083,8 +2082,8 @@ mod tests {
         let mut para = Paragraph::new();
         para.style = Some("Title".to_string());
         para.add_run(Run::new("My Title".to_string()));
-        let defs = HashMap::new();
-        let mut counters = HashMap::new();
+        let defs = AHashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, Some(1)), "# My Title");
     }
 
@@ -2093,8 +2092,8 @@ mod tests {
         let mut para = Paragraph::new();
         para.style = Some("Heading1".to_string());
         para.add_run(Run::new("Section".to_string()));
-        let defs = HashMap::new();
-        let mut counters = HashMap::new();
+        let defs = AHashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, Some(2)), "## Section");
     }
 
@@ -2103,8 +2102,8 @@ mod tests {
         let mut para = Paragraph::new();
         para.style = Some("Heading2".to_string());
         para.add_run(Run::new("Subsection".to_string()));
-        let defs = HashMap::new();
-        let mut counters = HashMap::new();
+        let defs = AHashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, Some(3)), "### Subsection");
     }
 
@@ -2114,9 +2113,9 @@ mod tests {
         para.numbering_id = Some(1);
         para.numbering_level = Some(0);
         para.add_run(Run::new("Item".to_string()));
-        let mut defs = HashMap::new();
+        let mut defs = AHashMap::new();
         defs.insert((1, 0), ListType::Bullet);
-        let mut counters = HashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, None), "- Item");
     }
 
@@ -2126,9 +2125,9 @@ mod tests {
         para.numbering_id = Some(2);
         para.numbering_level = Some(0);
         para.add_run(Run::new("Item".to_string()));
-        let mut defs = HashMap::new();
+        let mut defs = AHashMap::new();
         defs.insert((2, 0), ListType::Numbered);
-        let mut counters = HashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, None), "1. Item");
     }
 
@@ -2138,9 +2137,9 @@ mod tests {
         para.numbering_id = Some(1);
         para.numbering_level = Some(1);
         para.add_run(Run::new("Nested".to_string()));
-        let mut defs = HashMap::new();
+        let mut defs = AHashMap::new();
         defs.insert((1, 1), ListType::Bullet);
-        let mut counters = HashMap::new();
+        let mut counters = AHashMap::new();
         assert_eq!(para.to_markdown(&defs, &mut counters, None), "  - Nested");
     }
 
@@ -2315,7 +2314,7 @@ mod tests {
 
         let parser_struct = DocxParser {
             archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
-            relationships: HashMap::new(),
+            relationships: AHashMap::new(),
             styles: None,
             theme: None,
         };
@@ -2349,7 +2348,7 @@ mod tests {
 
         let parser_struct = DocxParser {
             archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
-            relationships: HashMap::new(),
+            relationships: AHashMap::new(),
             styles: None,
             theme: None,
         };
@@ -2853,7 +2852,7 @@ mod tests {
     fn parse_xml(xml: &str) -> Document {
         let parser_struct = DocxParser {
             archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
-            relationships: HashMap::new(),
+            relationships: AHashMap::new(),
             styles: None,
             theme: None,
         };
@@ -2863,7 +2862,7 @@ mod tests {
     }
 
     /// Helper: parse document XML with custom relationships.
-    fn parse_xml_with_rels(xml: &str, rels: HashMap<String, String>) -> Document {
+    fn parse_xml_with_rels(xml: &str, rels: AHashMap<String, String>) -> Document {
         let parser_struct = DocxParser {
             archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
             relationships: rels,
@@ -3014,7 +3013,7 @@ mod tests {
 
     #[test]
     fn test_external_hyperlink() {
-        let mut rels = HashMap::new();
+        let mut rels = AHashMap::new();
         rels.insert("rId1".to_string(), "https://example.com".to_string());
 
         let xml = wrap_body(r#"<w:p><w:hyperlink r:id="rId1"><w:r><w:t>Click here</w:t></w:r></w:hyperlink></w:p>"#);
@@ -3040,7 +3039,7 @@ mod tests {
 
     #[test]
     fn test_multiple_hyperlinks() {
-        let mut rels = HashMap::new();
+        let mut rels = AHashMap::new();
         rels.insert("rId1".to_string(), "https://one.com".to_string());
         rels.insert("rId2".to_string(), "https://two.com".to_string());
 

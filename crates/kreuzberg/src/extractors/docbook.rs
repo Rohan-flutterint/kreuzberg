@@ -1013,12 +1013,7 @@ impl DocumentExtractor for DocbookExtractor {
         )
     )]
     async fn extract_file(&self, path: &Path, mime_type: &str, config: &ExtractionConfig) -> Result<InternalDocument> {
-        let bytes = crate::core::io::open_file_bytes(path)?;
-        let mut doc = self.extract_bytes(&bytes, mime_type, config).await?;
-        if let Some(base_dir) = path.parent() {
-            crate::core::path_resolver::resolve_image_uris(&mut doc, base_dir, config);
-        }
-        Ok(doc)
+        crate::core::path_resolver::extract_file_with_image_resolution(self, path, mime_type, config).await
     }
 
     fn supported_mime_types(&self) -> &[&str] {
