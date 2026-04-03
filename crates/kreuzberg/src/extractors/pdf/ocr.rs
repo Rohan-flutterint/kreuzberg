@@ -377,12 +377,7 @@ pub(crate) async fn extract_mixed_ocr_native(
         registry.get(&ocr_config.backend)?
     };
 
-    let batch_size = config
-        .concurrency
-        .as_ref()
-        .and_then(|c| c.max_threads)
-        .unwrap_or_else(|| num_cpus::get().min(4))
-        .max(1);
+    let batch_size = crate::core::config::concurrency::resolve_thread_budget(config.concurrency.as_ref());
 
     let ocr_config_owned = ocr_config.clone();
     let total = page_images.len();
@@ -568,12 +563,7 @@ pub(crate) async fn extract_with_ocr(
     use std::sync::Arc;
     use tokio::task::JoinSet;
 
-    let configured_batch_size = config
-        .concurrency
-        .as_ref()
-        .and_then(|c| c.max_threads)
-        .unwrap_or_else(|| num_cpus::get().min(4))
-        .max(1);
+    let configured_batch_size = crate::core::config::concurrency::resolve_thread_budget(config.concurrency.as_ref());
 
     // Estimate per-page memory cost and adapt batch size to available system memory.
     // A rendered page at 300 DPI (A4) is ~26MB RGB + ~5MB PNG + ~100MB OCR working set.
