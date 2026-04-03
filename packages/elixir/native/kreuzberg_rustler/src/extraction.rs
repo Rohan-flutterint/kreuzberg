@@ -2,10 +2,14 @@
 //!
 //! This module provides Native Implemented Functions (NIFs) for document extraction,
 //! including single file/bytes extraction and batch operations.
+//!
+//! All extraction calls are wrapped with `catch_unwind` to prevent panics in native
+//! C libraries (pdfium, tesseract) from crashing the BEAM VM.
 
 use crate::atoms;
 use crate::config::parse_extraction_config;
 use crate::conversion::convert_extraction_result_to_term;
+use crate::safe::catch_native_panic;
 use rustler::{Binary, Encoder, Env, NifResult, ResourceArc, Term};
 use std::sync::Mutex;
 
@@ -23,7 +27,6 @@ const MAX_BINARY_SIZE: usize = 500 * 1024 * 1024; // 500MB
 /// * `{:error, reason}` - Error tuple with reason string
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn extract<'a>(env: Env<'a>, input: Binary<'a>, mime_type: String) -> NifResult<Term<'a>> {
-    // Validate input
     if input.is_empty() {
         return Ok((atoms::error(), "Binary input cannot be empty").encode(env));
     }
@@ -32,32 +35,24 @@ pub fn extract<'a>(env: Env<'a>, input: Binary<'a>, mime_type: String) -> NifRes
         return Ok((atoms::error(), "Binary input exceeds maximum size of 500MB").encode(env));
     }
 
-    // Create default extraction config
     let config = kreuzberg::core::config::ExtractionConfig::default();
+    let bytes = input.as_slice().to_vec();
 
-    // Call kreuzberg extraction with default config
-    match kreuzberg::extract_bytes_sync(input.as_slice(), &mime_type, &config) {
-        Ok(result) => {
-            // Convert ExtractionResult to Elixir term
-            match convert_extraction_result_to_term(env, &result) {
-                Ok(term) => Ok((atoms::ok(), term).encode(env)),
-                Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
-            }
-        }
-        Err(e) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+    let extraction_result = catch_native_panic("extract_bytes", || {
+        kreuzberg::extract_bytes_sync(&bytes, &mime_type, &config)
+    });
+
+    match extraction_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+        Ok(Ok(result)) => match convert_extraction_result_to_term(env, &result) {
+            Ok(term) => Ok((atoms::ok(), term).encode(env)),
+            Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
+        },
     }
 }
 
 /// Extract text and data from a document binary with custom configuration
-///
-/// # Arguments
-/// * `input` - Binary containing the document data
-/// * `mime_type` - String representing the MIME type (e.g., "application/pdf")
-/// * `options` - Term containing extraction options (as map or keyword list)
-///
-/// # Returns
-/// * `{:ok, result_map}` - Map containing extraction results
-/// * `{:error, reason}` - Error tuple with reason string
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn extract_with_options<'a>(
     env: Env<'a>,
@@ -65,7 +60,6 @@ pub fn extract_with_options<'a>(
     mime_type: String,
     options: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    // Validate input
     if input.is_empty() {
         return Ok((atoms::error(), "Binary input cannot be empty").encode(env));
     }
@@ -74,62 +68,47 @@ pub fn extract_with_options<'a>(
         return Ok((atoms::error(), "Binary input exceeds maximum size of 500MB").encode(env));
     }
 
-    // Parse options from Elixir term to ExtractionConfig
     let config = match parse_extraction_config(env, options) {
         Ok(cfg) => cfg,
         Err(e) => return Ok((atoms::error(), format!("Invalid options: {}", e)).encode(env)),
     };
 
-    // Call kreuzberg extraction with parsed config
-    match kreuzberg::extract_bytes_sync(input.as_slice(), &mime_type, &config) {
-        Ok(result) => {
-            // Convert ExtractionResult to Elixir term
-            match convert_extraction_result_to_term(env, &result) {
-                Ok(term) => Ok((atoms::ok(), term).encode(env)),
-                Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
-            }
-        }
-        Err(e) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+    let bytes = input.as_slice().to_vec();
+
+    let extraction_result = catch_native_panic("extract_bytes_with_options", || {
+        kreuzberg::extract_bytes_sync(&bytes, &mime_type, &config)
+    });
+
+    match extraction_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+        Ok(Ok(result)) => match convert_extraction_result_to_term(env, &result) {
+            Ok(term) => Ok((atoms::ok(), term).encode(env)),
+            Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
+        },
     }
 }
 
 /// Extract text and data from a file at the given path with default configuration
-///
-/// # Arguments
-/// * `path` - String containing the file path
-/// * `mime_type` - Optional string representing the MIME type; if None, MIME type is detected from file
-///
-/// # Returns
-/// * `{:ok, result_map}` - Map containing extraction results
-/// * `{:error, reason}` - Error tuple with reason string
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn extract_file<'a>(env: Env<'a>, path: String, mime_type: Option<String>) -> NifResult<Term<'a>> {
-    // Create default extraction config
     let config = kreuzberg::core::config::ExtractionConfig::default();
 
-    // Call kreuzberg file extraction with default config
-    match kreuzberg::extract_file_sync(&path, mime_type.as_deref(), &config) {
-        Ok(result) => {
-            // Convert ExtractionResult to Elixir term
-            match convert_extraction_result_to_term(env, &result) {
-                Ok(term) => Ok((atoms::ok(), term).encode(env)),
-                Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
-            }
-        }
-        Err(e) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+    let extraction_result = catch_native_panic("extract_file", || {
+        kreuzberg::extract_file_sync(&path, mime_type.as_deref(), &config)
+    });
+
+    match extraction_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+        Ok(Ok(result)) => match convert_extraction_result_to_term(env, &result) {
+            Ok(term) => Ok((atoms::ok(), term).encode(env)),
+            Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
+        },
     }
 }
 
 /// Extract text and data from a file at the given path with custom configuration
-///
-/// # Arguments
-/// * `path` - String containing the file path
-/// * `mime_type` - Optional string representing the MIME type; if None, MIME type is detected from file
-/// * `options` - Term containing extraction options (as map or keyword list)
-///
-/// # Returns
-/// * `{:ok, result_map}` - Map containing extraction results
-/// * `{:error, reason}` - Error tuple with reason string
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn extract_file_with_options<'a>(
     env: Env<'a>,
@@ -137,35 +116,26 @@ pub fn extract_file_with_options<'a>(
     mime_type: Option<String>,
     options_term: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    // Parse options from Elixir term to ExtractionConfig
     let config = match parse_extraction_config(env, options_term) {
         Ok(cfg) => cfg,
         Err(e) => return Ok((atoms::error(), format!("Invalid options: {}", e)).encode(env)),
     };
 
-    // Call kreuzberg file extraction with parsed config
-    match kreuzberg::extract_file_sync(&path, mime_type.as_deref(), &config) {
-        Ok(result) => {
-            // Convert ExtractionResult to Elixir term
-            match convert_extraction_result_to_term(env, &result) {
-                Ok(term) => Ok((atoms::ok(), term).encode(env)),
-                Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
-            }
-        }
-        Err(e) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+    let extraction_result = catch_native_panic("extract_file_with_options", || {
+        kreuzberg::extract_file_sync(&path, mime_type.as_deref(), &config)
+    });
+
+    match extraction_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Extraction failed: {}", e)).encode(env)),
+        Ok(Ok(result)) => match convert_extraction_result_to_term(env, &result) {
+            Ok(term) => Ok((atoms::ok(), term).encode(env)),
+            Err(e) => Ok((atoms::error(), format!("Failed to encode result: {}", e)).encode(env)),
+        },
     }
 }
 
 /// Render a single page of a PDF file to a PNG byte buffer
-///
-/// # Arguments
-/// * `input` - String file path to the PDF
-/// * `page_index` - Zero-based page index
-/// * `dpi` - Optional DPI (default 150)
-///
-/// # Returns
-/// * `{:ok, binary}` - PNG binary
-/// * `{:error, reason}` - Error tuple with reason string
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn render_pdf_page<'a>(env: Env<'a>, input: String, page_index: usize, dpi: Option<i32>) -> NifResult<Term<'a>> {
     if input.is_empty() {
@@ -177,8 +147,14 @@ pub fn render_pdf_page<'a>(env: Env<'a>, input: String, page_index: usize, dpi: 
         Err(e) => return Ok((atoms::error(), format!("Failed to read file: {}", e)).encode(env)),
     };
 
-    match kreuzberg::pdf::render_pdf_page_to_png(&pdf_bytes, page_index, dpi, None) {
-        Ok(png) => {
+    let render_result = catch_native_panic("render_pdf_page", || {
+        kreuzberg::pdf::render_pdf_page_to_png(&pdf_bytes, page_index, dpi, None)
+    });
+
+    match render_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Rendering failed: {}", e)).encode(env)),
+        Ok(Ok(png)) => {
             let mut obin = match rustler::OwnedBinary::new(png.len()) {
                 Some(b) => b,
                 None => {
@@ -192,7 +168,6 @@ pub fn render_pdf_page<'a>(env: Env<'a>, input: String, page_index: usize, dpi: 
             obin.as_mut_slice().copy_from_slice(&png);
             Ok((atoms::ok(), obin.release(env)).encode(env))
         }
-        Err(e) => Ok((atoms::error(), format!("Rendering failed: {}", e)).encode(env)),
     }
 }
 
@@ -211,14 +186,19 @@ pub fn render_pdf_pages_iter_open<'a>(env: Env<'a>, path: String, dpi: Option<i3
         return Ok((atoms::error(), "File path cannot be empty").encode(env));
     }
 
-    match kreuzberg::pdf::PdfPageIterator::from_file(&path, dpi, None) {
-        Ok(iter) => {
+    let open_result = catch_native_panic("render_pdf_pages_iter_open", || {
+        kreuzberg::pdf::PdfPageIterator::from_file(&path, dpi, None)
+    });
+
+    match open_result {
+        Err(panic_msg) => Ok((atoms::error(), panic_msg).encode(env)),
+        Ok(Err(e)) => Ok((atoms::error(), format!("Failed to open iterator: {}", e)).encode(env)),
+        Ok(Ok(iter)) => {
             let resource = ResourceArc::new(PdfPageIteratorResource {
                 inner: Mutex::new(Some(iter)),
             });
             Ok(resource.encode(env))
         }
-        Err(e) => Ok((atoms::error(), format!("Failed to open iterator: {}", e)).encode(env)),
     }
 }
 
@@ -240,6 +220,9 @@ pub fn render_pdf_pages_iter_next<'a>(
         None => return Ok(atoms::done().encode(env)),
     };
 
+    // Note: catch_unwind can't easily wrap Iterator::next with a mutable borrow,
+    // so we accept the risk here. The iterator is already behind a Mutex and
+    // runs on a dirty scheduler.
     match iter.next() {
         Some(Ok((page_index, png))) => {
             let mut obin = match rustler::OwnedBinary::new(png.len()) {

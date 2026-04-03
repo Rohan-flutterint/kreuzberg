@@ -7,17 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [4.7.1] - Unreleased
+## [4.7.1] - 2026-04-03
+
+### Added
+
+- **Tree-sitter grammar management CLI** — New `kreuzberg tree-sitter` subcommand with `download`, `list`, `cache-dir`, and `clean` sub-commands for managing tree-sitter grammar parsers. Supports downloading by language name, group (`--groups web,systems,scripting`), or all (`--all`). Reads `[tree_sitter]` config from `kreuzberg.toml` with `--from-config`.
+- **Tree-sitter grammar management API** — New REST endpoints: `POST /grammars/download`, `GET /grammars/list`, `GET /grammars/cache`, `DELETE /grammars/cache` for programmatic grammar management.
+- **Tree-sitter grammar management MCP tools** — New MCP tools: `download_grammars`, `list_grammars`, `grammar_cache_info`, `clean_grammar_cache` for AI assistant-driven grammar management.
+- **Tree-sitter config startup initialization** — API and MCP servers auto-download tree-sitter grammars on startup when `[tree_sitter]` config specifies `languages` or `groups`.
 
 ### Changed
 
 - **Normalized OCR+layout pipeline** — Tesseract+layout path now follows the same architecture as pdfium+layout: hOCR → PdfParagraph → `apply_layout_overrides` → `assemble_internal_document` → comrak. Replaces the broken custom `apply_layout_to_ocr_document` path that destroyed paragraph structure and reading order.
+- **Elixir NIF crash protection** — All extraction and batch NIFs now wrapped with `catch_unwind` to prevent panics in native C libraries (pdfium, tesseract) from crashing the BEAM VM. Panics are caught and returned as `{:error, reason}` tuples with error-level tracing including backtraces.
 
 ### Fixed
 
 - **hOCR parser depth tracking** — Fixed paragraph boundary detection in the hOCR parser that used a generic depth counter for `<p>`, `<span>`, and `<div>` tags. Closing tags from inner word spans could prematurely terminate a paragraph, causing content after that point to be silently dropped. Now uses tag-name-specific depth tracking.
 - **hOCR multi-page content loss** — Per-page hOCR documents from tesseract always report `ppageno=0` (page=1), but the paragraph conversion filtered by the actual page index, silently dropping all content on pages 2+. Removed the per-page filter since each hOCR document is independently extracted per page.
 - **OCR batch parallelization** — OCR page processing was hardcoded to 4 concurrent pages regardless of available CPUs. Now uses `resolve_thread_budget()` (auto-detects CPUs, capped at 8) for significantly faster multi-page document processing.
+- **Benchmark workflow** — Removed reference to deleted `kreuzberg-extract` binary target.
+- **Ruby OCR backend** — Added missing `ocr_internal_document` field to `ExtractionResult` construction.
+- **Keyword extraction tests** — Updated test assertions to use new `extracted_keywords` field instead of deprecated `metadata.additional["keywords"]`.
+- **PaddleOCR cache dir test** — Fixed test failure when `KREUZBERG_CACHE_DIR` environment variable is set by CI setup actions.
+- **API `pdf_password` handler** — Added `#[cfg(feature = "pdf")]` gate to prevent compile error when `api` feature is enabled without `pdf`.
 - **Chunking page boundary regression** (#636): Page boundaries were computed against raw extractor text but `result.content` uses rendered text with different byte lengths. Chunks now recompute boundaries from per-page content, fixing `first_page`/`last_page` being null and the "Page boundary byte_end exceeds text length" validation warning.
 - **HF Hub environment variables** (#634): Use `ApiBuilder::from_env()` instead of `ApiBuilder::new()` for Hugging Face model downloads, respecting `HF_HOME` and `HF_ENDPOINT` environment variables. Fixes permission errors on Kubernetes when running as non-root.
 - **PDF bridge tracing panic on multibyte characters** (#635): Use `.chars().take()` instead of byte indexing for `text_preview` in PDF structure bridge tracing, preventing panics on multibyte UTF-8 characters (e.g., `•`).

@@ -231,7 +231,7 @@ async function extractBatch(filePaths: string[], ocrEnabled: boolean): Promise<E
 	const perFileDurationMs = filePaths.length > 0 ? totalDurationMs / filePaths.length : 0;
 
 	const peakMemory = process.memoryUsage().rss;
-	return settled.map((settlement, i) => {
+	return settled.map((settlement, _i) => {
 		if (settlement.status === "rejected") {
 			const reason = settlement.reason instanceof Error ? settlement.reason.message : String(settlement.reason);
 			return {

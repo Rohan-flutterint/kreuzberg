@@ -21,6 +21,7 @@ pub(crate) mod config;
 pub(crate) mod conversion;
 pub mod extraction;
 pub mod plugins;
+pub(crate) mod safe;
 pub mod utilities;
 mod utils;
 

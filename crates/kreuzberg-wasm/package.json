@@ -1,6 +1,6 @@
 {
 	"name": "@kreuzberg/wasm",
-	"version": "4.7.0",
+	"version": "4.7.1",
 	"type": "module",
 	"packageManager": "pnpm@10.17.0",
 	"description": "Kreuzberg document intelligence - WebAssembly bindings",
@@ -109,7 +109,7 @@
 		"prepublishOnly": "npm run build"
 	},
 	"devDependencies": {
-		"@types/node": "^25.5.1",
+		"@types/node": "^25.5.2",
 		"@vitest/coverage-v8": "^4.1.2",
 		"@vitest/ui": "^4.1.2",
 		"jsdom": "^29.0.1",

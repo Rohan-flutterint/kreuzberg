@@ -947,7 +947,10 @@ pub(super) fn perform_ocr(
                 .elements
                 .iter()
                 .filter_map(|e| match e.kind {
-                    ElementKind::PageBreak => Some("\n---\n".to_string()),
+                    // Skip PageBreak: each page is OCR'd independently, so any
+                    // PageBreak elements within a single-page hOCR doc are
+                    // artefacts and should not produce thematic breaks.
+                    ElementKind::PageBreak => None,
                     _ if !e.text.is_empty() => Some(e.text.clone()),
                     _ => None,
                 })

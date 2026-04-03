@@ -699,9 +699,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.58"
+version = "1.2.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1e928d4b69e3077709075a938a05ffbedfa53a84c8f766efbf8220bb1ff60e1"
+checksum = "b7a4d3ec6524d28a329fc53654bbadc9bdd7b0431f5d65f1a56ffb28a1ee5283"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -2792,7 +2792,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -2884,7 +2884,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-ffi"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -2900,7 +2900,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-paddle-ocr"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "geo-clipper",
  "geo-types",
@@ -2914,7 +2914,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-pdfium-render"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "bitflags",
  "bytemuck",
@@ -2937,7 +2937,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-rb"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "async-trait",
  "html-to-markdown-rs",
@@ -2954,7 +2954,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-tesseract"
-version = "4.7.0"
+version = "4.7.1"
 dependencies = [
  "cc",
  "cmake",

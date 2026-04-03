@@ -46,14 +46,23 @@ pub(crate) fn assemble_internal_document(
         images_by_page.entry(page_idx).or_default().push(image_index);
     }
 
+    let mut has_emitted_content = false;
     for (page_idx, paragraphs) in pages.iter().enumerate() {
-        // Page break between pages (except first)
-        if page_idx > 0 {
-            builder.push_page_break();
-        }
-
         let page_num = Some((page_idx + 1) as u32);
         let page_tables = tables_by_page.remove(&page_idx);
+
+        // Check whether this page has any content (paragraphs, tables, or images).
+        let page_has_content = !paragraphs.is_empty()
+            || page_tables
+                .as_ref()
+                .is_some_and(|t| t.iter().any(|tb| !tb.markdown.trim().is_empty()))
+            || images_by_page.contains_key(&(page_idx + 1));
+
+        // Insert page break only between pages that both have content, so that
+        // blank leading/trailing pages do not produce spurious thematic breaks.
+        if page_has_content && has_emitted_content {
+            builder.push_page_break();
+        }
 
         if let Some(ref page_tables) = page_tables {
             tracing::debug!(
@@ -68,6 +77,10 @@ pub(crate) fn assemble_internal_document(
             assemble_page_elements_with_tables(&mut builder, paragraphs, &page_tables, page_num);
         } else {
             assemble_page_elements(&mut builder, paragraphs, page_num);
+        }
+
+        if page_has_content {
+            has_emitted_content = true;
         }
 
         // Inject image placeholders for this page
@@ -783,6 +796,66 @@ mod tests {
         let doc = assemble_internal_document(pages, &tables, &[]);
         // Table with whitespace-only markdown should be skipped
         assert!(doc.tables.is_empty() || doc.tables.iter().all(|t| t.markdown.trim().is_empty()));
+    }
+
+    #[test]
+    fn test_no_page_break_when_leading_page_empty() {
+        // Blank first page, content on second page — no PageBreak should be emitted.
+        let pages = vec![
+            vec![], // empty page 1
+            vec![make_paragraph("Content on page 2", None)],
+        ];
+        let doc = assemble_internal_document(pages, &[], &[]);
+        assert!(
+            !doc.elements.iter().any(|e| matches!(e.kind, ElementKind::PageBreak)),
+            "Blank leading page should not produce a page break"
+        );
+        assert_eq!(
+            doc.elements
+                .iter()
+                .filter(|e| matches!(e.kind, ElementKind::Paragraph))
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn test_no_page_break_when_trailing_page_empty() {
+        // Content on first page, blank second page — no PageBreak should be emitted.
+        let pages = vec![
+            vec![make_paragraph("Content on page 1", None)],
+            vec![], // empty page 2
+        ];
+        let doc = assemble_internal_document(pages, &[], &[]);
+        assert!(
+            !doc.elements.iter().any(|e| matches!(e.kind, ElementKind::PageBreak)),
+            "Blank trailing page should not produce a page break"
+        );
+    }
+
+    #[test]
+    fn test_page_break_between_content_pages() {
+        // Both pages have content — PageBreak should be inserted between them.
+        let pages = vec![
+            vec![make_paragraph("Page 1", None)],
+            vec![make_paragraph("Page 2", None)],
+        ];
+        let doc = assemble_internal_document(pages, &[], &[]);
+        assert!(
+            doc.elements.iter().any(|e| matches!(e.kind, ElementKind::PageBreak)),
+            "PageBreak should separate two content pages"
+        );
+    }
+
+    #[test]
+    fn test_no_page_break_single_page() {
+        // Single page with content — no PageBreak.
+        let pages = vec![vec![make_paragraph("Only page", None)]];
+        let doc = assemble_internal_document(pages, &[], &[]);
+        assert!(
+            !doc.elements.iter().any(|e| matches!(e.kind, ElementKind::PageBreak)),
+            "Single page should not produce a page break"
+        );
     }
 
     #[test]
