@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OCR InternalDocument propagation** — `run_ocr_pipeline` discarded the structured InternalDocument built by `extract_with_ocr`, causing OCR results to fall back to naive `\n\n` paragraph splitting. Now propagated through the full pipeline.
 - **OCR table cells** — OCR-detected tables (via TATR) had empty `cells` vectors, causing comrak to render them as paragraphs instead of proper tables. Now populated from the cell grid, matching the native text path fix.
 - **OCR non-layout InternalDocument** — When layout detection is not active, the OCR path now builds an InternalDocument from results instead of returning None. Ensures structured output regardless of layout detection availability.
+- **Italian/European PDF ligature corruption** — Extended contextual ligature repair to handle `tt`, `ti`, `tti` ligatures common in Italian fonts. Fixes garbled text like `Dire*ore` → `Direttore`, `ges:one` → `gestione`, `progeM` → `progetti`.
 
 ---
 

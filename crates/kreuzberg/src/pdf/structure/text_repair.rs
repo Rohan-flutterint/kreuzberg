@@ -16,7 +16,6 @@
 
 use std::borrow::Cow;
 
-use memchr::memchr3;
 use pdfium_render::prelude::*;
 
 use super::types::PdfParagraph;
@@ -96,6 +95,11 @@ pub(super) fn build_ligature_repair_map(page: &PdfPage) -> Option<Vec<(char, &'s
             0x23 => "fl",  // '#' → fl
             0x24 => "ffi", // '$' → ffi
             0x25 => "ffl", // '%' → ffl
+            // Italian/European ligatures: tt, ti, tti
+            // Some fonts (especially Italian) encode these ligatures at ASCII positions
+            0x2A => "tt",  // '*' → tt (e.g., "Dire*ore" → "Direttore")
+            0x3A => "ti",  // ':' → ti (e.g., "ges:one" → "gestione")
+            0x4D => "tti", // 'M' → tti (e.g., "progeM" → "progetti") — only with map error
             _ => continue,
         };
 
@@ -147,22 +151,14 @@ pub(super) fn apply_ligature_repairs<'a>(text: &'a str, repair_map: &[(char, &st
 
 /// Repair ligature corruption using contextual heuristics.
 ///
-/// Some PDF fonts (particularly Computer Modern from TeX/LaTeX) have broken
-/// ToUnicode CMaps that map ligature glyphs to ASCII characters:
-/// - `fi` → `!` (0x21)
-/// - `ff` → `"` (0x22)
-/// - `fl` → `#` (0x23)
+/// Some PDF fonts have broken ToUnicode CMaps that map ligature glyphs to
+/// ASCII characters. This function detects and repairs these patterns:
 ///
-/// Unlike `build_ligature_repair_map()` which relies on `has_unicode_map_error()`,
-/// this function detects corruption contextually: `!`, `"`, or `#` appearing
-/// between alphabetic characters (e.g., `e!cient`, `o"ces`, `#nancial`) is
-/// a near-certain indicator of ligature corruption, as these patterns virtually
-/// never occur in real text.
+/// **f-ligatures**: `!` → fi/ff, `"` → ffi, `#` → fi/fl
+/// **t-ligatures**: `*` → tt, `:` → ti, uppercase `M` between lowercase → tti
 ///
-/// This is safe to apply broadly because:
-/// - Normal `!` appears at word/sentence boundaries, not between letters
-/// - Normal `"` appears at word boundaries (quotation marks), not mid-word
-/// - Normal `#` appears at word start (hashtags) or after non-letters, not mid-word
+/// All patterns are contextual: the corrupt character must appear between
+/// alphabetic characters (mid-word), where it virtually never occurs in real text.
 pub(super) fn repair_contextual_ligatures(text: &str) -> Cow<'_, str> {
     if text.len() < 2 {
         return Cow::Borrowed(text);
@@ -214,6 +210,7 @@ pub(super) fn repair_contextual_ligatures(text: &str) -> Cow<'_, str> {
         };
 
         match ch {
+            // f-ligatures (standard)
             '!' if prev_is_alpha && next_is_vowel => {
                 result.push_str("ff");
                 repaired = true;
@@ -241,6 +238,36 @@ pub(super) fn repair_contextual_ligatures(text: &str) -> Cow<'_, str> {
             '!' if prev_is_space_or_start && next_is_lower => {
                 result.push_str("fi");
                 repaired = true;
+            }
+            // tt/ti/tti ligatures (European fonts)
+            '*' if prev_is_alpha && next_is_alpha => {
+                result.push_str("tt");
+                repaired = true;
+            }
+            '*' if prev_is_alpha && (next_byte_idx >= bytes.len() || !next_is_alpha) => {
+                result.push_str("tt");
+                repaired = true;
+            }
+            ':' if prev_is_alpha && next_is_lower => {
+                // ':' mid-word: letter immediately before AND lowercase letter immediately after
+                // e.g., "ges:one" → "gestione". Safe because real colons have a space after.
+                result.push_str("ti");
+                repaired = true;
+            }
+            // Uppercase M between lowercase letters → "tti" (e.g., "progeM" → "progetti")
+            'M' if prev_is_alpha && !prev_is_space_or_start => {
+                // Check: previous char must be lowercase, and either at word end or next is lowercase
+                let prev_was_lower = if byte_idx > 0 {
+                    bytes.get(byte_idx - 1).is_some_and(|&b| (b as char).is_lowercase())
+                } else {
+                    false
+                };
+                if prev_was_lower && (next_is_lower || next_byte_idx >= bytes.len() || !next_is_alpha) {
+                    result.push_str("tti");
+                    repaired = true;
+                } else {
+                    result.push(ch);
+                }
             }
             _ => result.push(ch),
         }
@@ -273,7 +300,11 @@ pub(super) fn text_has_ligature_corruption(text: &str) -> bool {
     let mut count = 0u32;
     let mut pos = 0;
 
-    while let Some(idx) = memchr3(b'!', b'"', b'#', &bytes[pos..]) {
+    // Check for both f-ligature chars (!, ", #) and tt/ti ligature chars (*, :)
+    while let Some(idx) = bytes[pos..]
+        .iter()
+        .position(|&b| matches!(b, b'!' | b'"' | b'#' | b'*' | b':'))
+    {
         let i = pos + idx;
         let ch = bytes[i];
 
