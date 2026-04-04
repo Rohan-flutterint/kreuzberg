@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Centralized concurrency controls** — Fixed 5 places bypassing `resolve_thread_budget()`: embeddings ONNX session (no thread config at all), image OCR (hardcoded 8 tasks), batch extraction fallback (`num_cpus * 1.5`), doc orientation (`.min(4)` cap), PaddleOCR BaseNet (`inter_threads` set to `num_thread` instead of `1`).
 - **Chunk page numbers missing** (#636) — Chunks produced with `first_page: null, last_page: null` when chunking was configured without explicit `pages` config. Three fixes: (1) auto-enable page tracking when chunking is configured, so the PDF extractor always produces per-page boundaries; (2) improved page boundary recomputation with first-line fallback when exact content match fails due to rendering transformations; (3) allow zero-length boundaries for blank pages instead of failing validation.
 
 ---

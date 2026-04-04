@@ -421,8 +421,19 @@ fn get_or_init_engine(
         )?;
 
         // Create ORT session
+        let thread_budget = crate::core::config::concurrency::resolve_thread_budget(None);
         let session = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            ort::session::Session::builder().and_then(|mut builder| builder.commit_from_file(&model_path))
+            let mut builder = ort::session::Session::builder()?;
+            builder = builder
+                .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
+                .map_err(|e| ort::Error::new(e.message()))?;
+            builder = builder
+                .with_intra_threads(thread_budget)
+                .map_err(|e| ort::Error::new(e.message()))?;
+            builder = builder
+                .with_inter_threads(1)
+                .map_err(|e| ort::Error::new(e.message()))?;
+            builder.commit_from_file(&model_path)
         }))
         .map_err(|panic_payload| {
             let panic_msg = panic_to_string(panic_payload);

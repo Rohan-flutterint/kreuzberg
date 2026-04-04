@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 use image::RgbImage;
 use ort::session::Session;
-use ort::session::builder::SessionBuilder;
+use ort::session::builder::{GraphOptimizationLevel, SessionBuilder};
 use ort::value::Tensor;
 
 use crate::Result;
@@ -168,15 +168,25 @@ impl DocOrientationDetector {
 
             crate::ort_discovery::ensure_ort_available();
 
-            let num_threads = crate::core::config::concurrency::resolve_thread_budget(None).min(4);
+            let num_threads = crate::core::config::concurrency::resolve_thread_budget(None);
             let session = SessionBuilder::new()
                 .map_err(|e| KreuzbergError::Ocr {
                     message: format!("Failed to create doc_ori session builder: {e}"),
                     source: None,
                 })?
+                .with_optimization_level(GraphOptimizationLevel::Level3)
+                .map_err(|e| KreuzbergError::Ocr {
+                    message: format!("Failed to set doc_ori optimization level: {e}"),
+                    source: None,
+                })?
                 .with_intra_threads(num_threads)
                 .map_err(|e| KreuzbergError::Ocr {
                     message: format!("Failed to set doc_ori thread count: {e}"),
+                    source: None,
+                })?
+                .with_inter_threads(1)
+                .map_err(|e| KreuzbergError::Ocr {
+                    message: format!("Failed to set doc_ori inter threads: {e}"),
                     source: None,
                 })?
                 .commit_from_file(&model_path)
