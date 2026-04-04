@@ -145,6 +145,10 @@ enum Commands {
         #[arg(long)]
         guardrails: bool,
 
+        /// Path to guardrails JSON config file (used when --guardrails is set)
+        #[arg(long, default_value = "guardrails.json")]
+        guardrails_file: PathBuf,
+
         /// Only run documents whose name contains this string
         #[arg(long)]
         filter: Option<String>,
@@ -164,6 +168,25 @@ enum Commands {
         /// SF1 threshold below which to diagnose (default 0.8)
         #[arg(long, default_value = "0.8")]
         diagnose_threshold: f64,
+    },
+
+    /// Generate quality guardrails JSON from benchmark results
+    GenerateGuardrails {
+        /// Directory containing fixture JSON files
+        #[arg(short, long)]
+        fixtures: PathBuf,
+
+        /// Pipelines to run (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        pipelines: Option<Vec<String>>,
+
+        /// Threshold factor applied to observed scores (e.g. 0.9 = 90% of observed)
+        #[arg(long, default_value = "0.9")]
+        threshold_factor: f64,
+
+        /// Output path for the guardrails JSON file
+        #[arg(short, long, default_value = "guardrails.json")]
+        output: PathBuf,
     },
 
     /// Run 6-path pipeline benchmark across the document corpus
@@ -692,6 +715,7 @@ async fn main() -> Result<()> {
             pipelines,
             dump_outputs,
             guardrails,
+            guardrails_file,
             filter,
             json_output,
             noise,
@@ -710,6 +734,7 @@ async fn main() -> Result<()> {
                 pipelines: selected_pipelines,
                 dump_outputs,
                 guardrails,
+                guardrails_file: Some(guardrails_file),
                 name_filter: filter,
                 json_output,
                 noise,
@@ -721,6 +746,48 @@ async fn main() -> Result<()> {
             if exit_code != 0 {
                 std::process::exit(exit_code);
             }
+            Ok(())
+        }
+
+        Commands::GenerateGuardrails {
+            fixtures,
+            pipelines,
+            threshold_factor,
+            output,
+        } => {
+            use benchmark_harness::comparison::{
+                ComparisonConfig, Pipeline, generate_guardrails, run_comparison,
+            };
+
+            let selected_pipelines = match pipelines {
+                Some(names) => names.iter().filter_map(|n| Pipeline::parse(n)).collect(),
+                None => vec![Pipeline::Baseline, Pipeline::Layout],
+            };
+
+            let config = ComparisonConfig {
+                fixtures_dir: fixtures,
+                pipelines: selected_pipelines,
+                dump_outputs: false,
+                guardrails: false,
+                guardrails_file: None,
+                name_filter: None,
+                json_output: None,
+                noise: false,
+                diagnose: false,
+                diagnose_threshold: 0.8,
+            };
+
+            let results = run_comparison(&config).await?;
+            let guardrails = generate_guardrails(&results, threshold_factor);
+            let json = serde_json::to_string_pretty(&guardrails)
+                .map_err(|e| benchmark_harness::Error::Benchmark(format!("Failed to serialize guardrails: {}", e)))?;
+            std::fs::write(&output, json).map_err(benchmark_harness::Error::Io)?;
+            eprintln!(
+                "Generated {} guardrails for {} docs to {}",
+                guardrails.contracts.len(),
+                results.len(),
+                output.display()
+            );
             Ok(())
         }
 

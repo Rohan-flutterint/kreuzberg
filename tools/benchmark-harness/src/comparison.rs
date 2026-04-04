@@ -34,6 +34,7 @@ use crate::quality::{compute_f1, compute_token_diff, tokenize};
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::Path;
 use std::time::Instant;
 
 /// Extraction pipeline identifier.
@@ -147,6 +148,9 @@ pub struct ComparisonConfig {
     pub pipelines: Vec<Pipeline>,
     pub dump_outputs: bool,
     pub guardrails: bool,
+    /// Path to a JSON guardrails file. When `guardrails` is true this file
+    /// is loaded instead of using hardcoded thresholds.
+    pub guardrails_file: Option<std::path::PathBuf>,
     /// Optional name filter (only run docs whose name contains this)
     pub name_filter: Option<String>,
     /// Optional path to write full comparison results as JSON.
@@ -831,299 +835,107 @@ pub fn write_comparison_json(results: &[DocResult], path: &std::path::Path) -> R
     Ok(())
 }
 
-/// A quality guardrail: minimum threshold for a specific document + pipeline.
-struct Guardrail {
-    doc_name: &'static str,
-    pipeline: Pipeline,
-    min_sf1: Option<f64>,
-    min_tf1: Option<f64>,
+/// Data-driven guardrails configuration loaded from JSON.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GuardrailsConfig {
+    pub version: String,
+    pub generated_at: String,
+    pub threshold_factor: f64,
+    pub contracts: Vec<GuardrailContract>,
 }
 
-/// Quality guardrails — minimum thresholds for specific documents and pipelines.
-/// Thresholds are set to ~90% of observed scores (floor) to catch regressions
-/// without false-positive failures from run-to-run variance.
-/// Updated: 2026-03-20, git b2cb26479, 6-pipeline benchmark.
-const GUARDRAILS: &[Guardrail] = &[
-    // ── Baseline (pdfium text extraction, no OCR, no layout) ──
-    Guardrail {
-        doc_name: "extra-attrs-example",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "test-punkt",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "multi_page",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.79),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "pdf_tiny_memo",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.70),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "nougat_011",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.70),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "2305.03393v1",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.63),
-        min_tf1: Some(0.87),
-    },
-    Guardrail {
-        doc_name: "pdfa_032",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.58),
-        min_tf1: Some(0.88),
-    },
-    Guardrail {
-        doc_name: "la-precinct-bulletin-2014-p1",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.57),
-        min_tf1: Some(0.87),
-    },
-    Guardrail {
-        doc_name: "pdf_tables",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.54),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "pdf_medium",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.49),
-        min_tf1: Some(0.86),
-    },
-    Guardrail {
-        doc_name: "pdf_google_docs",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.45),
-        min_tf1: Some(0.84),
-    },
-    Guardrail {
-        doc_name: "pdf_structure",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.69),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "nics-background-checks-2015-11",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.37),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "amt_handbook_sample",
-        pipeline: Pipeline::Baseline,
-        min_sf1: Some(0.69),
-        min_tf1: Some(0.83),
-    },
-    // ── Layout (pdfium + layout detection) ──
-    Guardrail {
-        doc_name: "extra-attrs-example",
-        pipeline: Pipeline::Layout,
-        min_sf1: None,
-        min_tf1: None,
-    },
-    Guardrail {
-        doc_name: "test-punkt",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "multi_page",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.88),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "pdf_tiny_memo",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.80),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "nougat_011",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.70),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdf_structure",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.80),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdf_medium",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.60),
-        min_tf1: Some(0.86),
-    },
-    Guardrail {
-        doc_name: "2305.03393v1",
-        pipeline: Pipeline::Layout,
-        min_sf1: Some(0.56),
-        min_tf1: Some(0.87),
-    },
-    // ── Tesseract (OCR, no layout) ──
-    Guardrail {
-        doc_name: "test-punkt",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "nougat_011",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.62),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdfa_032",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.62),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdf_medium",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.47),
-        min_tf1: Some(0.83),
-    },
-    Guardrail {
-        doc_name: "pdf_image_only_german",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.49),
-        min_tf1: Some(0.75),
-    },
-    Guardrail {
-        doc_name: "pdf_non_searchable",
-        pipeline: Pipeline::Tesseract,
-        min_sf1: Some(0.33),
-        min_tf1: Some(0.90),
-    },
-    // ── Tesseract + Layout ──
-    Guardrail {
-        doc_name: "test-punkt",
-        pipeline: Pipeline::TesseractLayout,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "nougat_011",
-        pipeline: Pipeline::TesseractLayout,
-        min_sf1: Some(0.87),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdfa_032",
-        pipeline: Pipeline::TesseractLayout,
-        min_sf1: Some(0.81),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdf_non_searchable",
-        pipeline: Pipeline::TesseractLayout,
-        min_sf1: Some(0.33),
-        min_tf1: Some(0.90),
-    },
-    // ── PaddleOCR (mobile, no layout) ──
-    Guardrail {
-        doc_name: "extra-attrs-example",
-        pipeline: Pipeline::Paddle,
-        min_sf1: Some(0.90),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "pdf_tiny_memo",
-        pipeline: Pipeline::Paddle,
-        min_sf1: Some(0.64),
-        min_tf1: Some(0.86),
-    },
-    Guardrail {
-        doc_name: "pdf_structure",
-        pipeline: Pipeline::Paddle,
-        min_sf1: Some(0.40),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "pdf_non_searchable",
-        pipeline: Pipeline::Paddle,
-        min_sf1: Some(0.33),
-        min_tf1: Some(0.90),
-    },
-    Guardrail {
-        doc_name: "multi_page",
-        pipeline: Pipeline::Paddle,
-        min_sf1: Some(0.27),
-        min_tf1: Some(0.89),
-    },
-    // ── PaddleOCR + Layout ──
-    Guardrail {
-        doc_name: "pdf_structure",
-        pipeline: Pipeline::PaddleLayout,
-        min_sf1: Some(0.62),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "multi_page",
-        pipeline: Pipeline::PaddleLayout,
-        min_sf1: Some(0.51),
-        min_tf1: Some(0.89),
-    },
-    Guardrail {
-        doc_name: "pdf_non_searchable",
-        pipeline: Pipeline::PaddleLayout,
-        min_sf1: Some(0.33),
-        min_tf1: Some(0.90),
-    },
-];
+/// A single guardrail contract: minimum threshold for a specific document + pipeline.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GuardrailContract {
+    pub doc: String,
+    pub pipeline: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_sf1: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_tf1: Option<f64>,
+}
 
-/// Check guardrails, returning a list of failure messages (empty = all passed).
-pub fn check_guardrails(results: &[DocResult]) -> Vec<String> {
+/// Load a guardrails configuration from a JSON file.
+pub fn load_guardrails(path: &Path) -> Result<GuardrailsConfig> {
+    let data = std::fs::read_to_string(path)
+        .map_err(|e| crate::Error::Benchmark(format!("Failed to read guardrails file {}: {}", path.display(), e)))?;
+    serde_json::from_str(&data)
+        .map_err(|e| crate::Error::Benchmark(format!("Failed to parse guardrails file: {}", e)))
+}
+
+/// Generate a guardrails configuration from benchmark results.
+///
+/// Each document+pipeline pair with meaningful scores produces a contract
+/// whose minimum thresholds are the observed score multiplied by
+/// `threshold_factor` (e.g. 0.9 means 90% of observed score).
+pub fn generate_guardrails(results: &[DocResult], threshold_factor: f64) -> GuardrailsConfig {
+    let mut contracts = Vec::new();
+    for doc in results {
+        for result in &doc.results {
+            // Skip NaN scores (timeouts/errors)
+            if result.sf1.is_nan() || result.tf1.is_nan() {
+                continue;
+            }
+            // Only include docs with meaningful scores
+            if result.sf1 < 0.01 && result.tf1 < 0.01 {
+                continue;
+            }
+            contracts.push(GuardrailContract {
+                doc: doc.name.clone(),
+                pipeline: result.pipeline.name().to_string(),
+                min_sf1: if result.sf1 > 0.01 {
+                    Some((result.sf1 * threshold_factor * 100.0).round() / 100.0)
+                } else {
+                    None
+                },
+                min_tf1: if result.tf1 > 0.01 {
+                    Some((result.tf1 * threshold_factor * 100.0).round() / 100.0)
+                } else {
+                    None
+                },
+            });
+        }
+    }
+    GuardrailsConfig {
+        version: "1.0".to_string(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        threshold_factor,
+        contracts,
+    }
+}
+
+/// Check guardrails from a loaded config, returning a list of failure messages (empty = all passed).
+pub fn check_guardrails(results: &[DocResult], config: &GuardrailsConfig) -> Vec<String> {
     let mut failures = Vec::new();
 
-    for guardrail in GUARDRAILS {
-        let Some(doc) = results.iter().find(|r| r.name == guardrail.doc_name) else {
+    for contract in &config.contracts {
+        let Some(doc) = results.iter().find(|r| r.name == contract.doc) else {
             continue;
         };
 
-        let Some(pr) = doc.results.iter().find(|pr| pr.pipeline == guardrail.pipeline) else {
+        let Some(pr) = doc.results.iter().find(|pr| pr.pipeline.name() == contract.pipeline) else {
             continue;
         };
 
-        if let Some(min_sf1) = guardrail.min_sf1
+        if let Some(min_sf1) = contract.min_sf1
             && pr.sf1 < min_sf1
         {
             failures.push(format!(
                 "SF1 regression: {} {} SF1 {:.1}% < minimum {:.1}%",
-                guardrail.doc_name,
-                pr.pipeline.name(),
+                contract.doc,
+                contract.pipeline,
                 pr.sf1 * 100.0,
                 min_sf1 * 100.0,
             ));
         }
 
-        if let Some(min_tf1) = guardrail.min_tf1
+        if let Some(min_tf1) = contract.min_tf1
             && pr.tf1 < min_tf1
         {
             failures.push(format!(
                 "TF1 regression: {} {} TF1 {:.1}% < minimum {:.1}%",
-                guardrail.doc_name,
-                pr.pipeline.name(),
+                contract.doc,
+                contract.pipeline,
                 pr.tf1 * 100.0,
                 min_tf1 * 100.0,
             ));
@@ -1145,7 +957,19 @@ pub async fn run_with_guardrails(config: &ComparisonConfig) -> Result<i32> {
     }
 
     if config.guardrails {
-        let failures = check_guardrails(&results);
+        let guardrails_path = config
+            .guardrails_file
+            .as_deref()
+            .unwrap_or_else(|| Path::new("guardrails.json"));
+        let guardrails_config = load_guardrails(guardrails_path)?;
+        eprintln!(
+            "Loaded {} guardrail contracts from {} (v{}, factor {})",
+            guardrails_config.contracts.len(),
+            guardrails_path.display(),
+            guardrails_config.version,
+            guardrails_config.threshold_factor,
+        );
+        let failures = check_guardrails(&results, &guardrails_config);
         if !failures.is_empty() {
             eprintln!("\nGUARDRAIL FAILURES:");
             for f in &failures {
