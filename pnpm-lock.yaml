@@ -197,8 +197,8 @@ importers:
   test_apps/typescript:
     dependencies:
       '@kreuzberg/node':
-        specifier: 4.7.2
-        version: 4.7.2
+        specifier: 4.7.3
+        version: 4.7.3
     devDependencies:
       '@types/node':
         specifier: ^25.5.2
@@ -691,34 +691,34 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@kreuzberg/node-darwin-arm64@4.7.2':
-    resolution: {integrity: sha512-lpLRUJ5pcxX7a6Tq1tyKrxOF+DvpJ+m3T5gMm1gFpGlQ4/iqdhd0Da/9KTLeURxOAUUygmWm9H9mt9nLXax4nQ==}
+  '@kreuzberg/node-darwin-arm64@4.7.3':
+    resolution: {integrity: sha512-/V7fOCK1bZZri3S5EEiSvA1ZYp+W/+qH1UpXSiWe+W6FKWwjYssCdd8rxZ9BO9wuf+YVjWNIiO5P57UKFdtRbw==}
     engines: {bun: '>= 1.3', node: '>= 22'}
     cpu: [arm64]
     os: [darwin]
 
-  '@kreuzberg/node-linux-arm64-gnu@4.7.2':
-    resolution: {integrity: sha512-5R+/lb+qbr1G/YEoUoqbgPryikWDFfLqgPC0uqI79DjN68W2BTplnllAno7mdxwNSfiQ+IuZD6/rNp9MdZL15A==}
+  '@kreuzberg/node-linux-arm64-gnu@4.7.3':
+    resolution: {integrity: sha512-RENNDWjphUxF8SrQrAAEnVQSnMPrZb86sOBLTcSodhbR04LJtfOeG0Tc/nxrDFWDwdapbUxK/ozSfaRRDQ3T/Q==}
     engines: {bun: '>= 1.3', node: '>= 22'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@kreuzberg/node-linux-x64-gnu@4.7.2':
-    resolution: {integrity: sha512-JuSIGC2FJnnvj8gjUKNUuosh6Jjfac0M8vqeBYlJySYoAs77Zy5jNyi7P1RGe8+Zt0kgAJ1QGmXz3SW4ru+KNg==}
+  '@kreuzberg/node-linux-x64-gnu@4.7.3':
+    resolution: {integrity: sha512-/Wg9I9NtRHHRnl7LXF5+XcktoN5h4VBY26Gvq5YxD83gk5JmsQaLV7zX57wdD/o8pO7paz6sEec4N624QMo1vQ==}
     engines: {bun: '>= 1.3', node: '>= 22'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@kreuzberg/node-win32-x64-msvc@4.7.2':
-    resolution: {integrity: sha512-aL0cFmsKxzaHEKZIi3KvxRqgc/ml7Prf6EINUJaO9IxDvPYyvyRsBHHNTLVqtQtfwDFf/frDwhTW+QHf/uaL/w==}
+  '@kreuzberg/node-win32-x64-msvc@4.7.3':
+    resolution: {integrity: sha512-P94M9JbRgpidXGm/OfSPDLzZe5kxwZNa7HWBeAX7k4DoHm6yyoiJUjNM6jngd6E/pXuxann0OqcNsahz8f0yNA==}
     engines: {bun: '>= 1.3', node: '>= 22'}
     cpu: [x64]
     os: [win32]
 
-  '@kreuzberg/node@4.7.2':
-    resolution: {integrity: sha512-KMtnfeT6zu02y61f47wybeh8HvUZtZ7banG1xRUxT4G9jTJl6JjIpdwpTx7crTcehHeF3lSMtuSnyVi7mFnH7g==}
+  '@kreuzberg/node@4.7.3':
+    resolution: {integrity: sha512-/q1dNL22+VxOpFZs0d86s9IAZzBDCuOcNiFwu6tI2ZTCr1pmy99cdOIkRsT0psCKrwnuOaGx8oj+wZbV5vF+xQ==}
     engines: {bun: '>= 1.3', node: '>= 22'}
     hasBin: true
 
@@ -2072,8 +2072,8 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
-  lru-cache@11.2.7:
-    resolution: {integrity: sha512-aY/R+aEsRelme17KGQa/1ZSIpLpNYYrhcrepKTZgE+W3WM16YMCaPwOHLHsmopZHELU0Ojin1lPVxKR0MihncA==}
+  lru-cache@11.3.0:
+    resolution: {integrity: sha512-sr8xPKE25m6vJVcrdn6NxtC0fVfuPowbscLypegRgOm0yXSqr5JNHCAY3hnusdJ7HRBW04j6Ip4khvHU778DuQ==}
     engines: {node: 20 || >=22}
 
   magic-string@0.30.21:
@@ -2581,7 +2581,7 @@ snapshots:
       '@csstools/css-color-parser': 4.0.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
-      lru-cache: 11.2.7
+      lru-cache: 11.3.0
 
   '@asamuzakjp/dom-selector@7.0.6':
     dependencies:
@@ -2589,7 +2589,7 @@ snapshots:
       bidi-js: 1.0.3
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.2.7
+      lru-cache: 11.3.0
 
   '@asamuzakjp/nwsapi@2.3.9': {}
 
@@ -2906,27 +2906,27 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@kreuzberg/node-darwin-arm64@4.7.2':
+  '@kreuzberg/node-darwin-arm64@4.7.3':
     optional: true
 
-  '@kreuzberg/node-linux-arm64-gnu@4.7.2':
+  '@kreuzberg/node-linux-arm64-gnu@4.7.3':
     optional: true
 
-  '@kreuzberg/node-linux-x64-gnu@4.7.2':
+  '@kreuzberg/node-linux-x64-gnu@4.7.3':
     optional: true
 
-  '@kreuzberg/node-win32-x64-msvc@4.7.2':
+  '@kreuzberg/node-win32-x64-msvc@4.7.3':
     optional: true
 
-  '@kreuzberg/node@4.7.2':
+  '@kreuzberg/node@4.7.3':
     dependencies:
       '@emnapi/runtime': 1.9.2
       which: 6.0.1
     optionalDependencies:
-      '@kreuzberg/node-darwin-arm64': 4.7.2
-      '@kreuzberg/node-linux-arm64-gnu': 4.7.2
-      '@kreuzberg/node-linux-x64-gnu': 4.7.2
-      '@kreuzberg/node-win32-x64-msvc': 4.7.2
+      '@kreuzberg/node-darwin-arm64': 4.7.3
+      '@kreuzberg/node-linux-arm64-gnu': 4.7.3
+      '@kreuzberg/node-linux-x64-gnu': 4.7.3
+      '@kreuzberg/node-win32-x64-msvc': 4.7.3
 
   '@kreuzberg/wasm@4.7.2':
     optionalDependencies:
@@ -3922,7 +3922,7 @@ snapshots:
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.2.7
+      lru-cache: 11.3.0
       parse5: 8.0.0
       saxes: 6.0.0
       symbol-tree: 3.2.4
@@ -4001,7 +4001,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lru-cache@11.2.7: {}
+  lru-cache@11.3.0: {}
 
   magic-string@0.30.21:
     dependencies:

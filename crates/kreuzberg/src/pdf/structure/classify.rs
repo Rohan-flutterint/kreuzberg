@@ -1045,6 +1045,121 @@ fn is_greek_letter(c: char) -> bool {
     matches!(c, '\u{0391}'..='\u{03A9}' | '\u{03B1}'..='\u{03C9}')
 }
 
+/// Mark paragraphs containing arXiv identifiers as page furniture.
+///
+/// Catches arXiv watermark text (e.g. "arXiv:2408.09869v5 [cs.CL] 9 Dec 2024")
+/// that appears on the first page(s) of academic papers. Only marks short
+/// paragraphs (≤25 words) to avoid filtering references that cite arXiv papers.
+pub(super) fn mark_arxiv_noise(all_pages: &mut [Vec<PdfParagraph>]) {
+    let arxiv_re = regex::Regex::new(r"arXiv:\d{4}\.\d{4,5}").expect("valid regex");
+
+    // Only check first 2 pages — arXiv watermarks don't appear later.
+    for page in all_pages.iter_mut().take(2) {
+        for para in page.iter_mut() {
+            if para.is_page_furniture {
+                continue;
+            }
+            let text = paragraph_plain_text(para);
+            let trimmed = text.trim();
+            let word_count = trimmed.split_whitespace().count();
+
+            // Short paragraph dominated by the arXiv identifier → mark as furniture.
+            if word_count <= 25 && arxiv_re.is_match(trimmed) {
+                tracing::trace!(
+                    text = %trimmed.chars().take(80).collect::<String>(),
+                    "marking arXiv watermark as furniture"
+                );
+                para.is_page_furniture = true;
+                para.heading_level = None;
+            }
+        }
+    }
+}
+
+/// Second-tier cross-page repeating text detection.
+///
+/// Supplements `mark_cross_page_repeating_text` by scanning ALL paragraphs
+/// (not just margin-positioned ones) for short text that repeats on a
+/// supermajority of pages. Catches inline conference headers, journal running
+/// titles, and similar repeated boilerplate that appears outside the margin zone.
+pub(super) fn mark_cross_page_repeating_short_text(all_pages: &mut [Vec<PdfParagraph>]) {
+    if all_pages.len() < 5 {
+        return;
+    }
+
+    let max_words = 20;
+    let threshold = (all_pages.len() as f64 * 0.7).ceil() as usize;
+
+    // Count how many pages each short text appears on.
+    let mut text_page_count: ahash::AHashMap<String, usize> = ahash::AHashMap::new();
+    for page in all_pages.iter() {
+        let mut seen: ahash::AHashSet<String> = ahash::AHashSet::new();
+        for para in page {
+            if para.is_page_furniture {
+                continue;
+            }
+            let text = paragraph_plain_text(para);
+            let normalized = text.trim().to_lowercase();
+            if normalized.is_empty() {
+                continue;
+            }
+            let word_count = normalized.split_whitespace().count();
+            if word_count > max_words {
+                continue;
+            }
+            let alphanum_key: String = normalized.chars().filter(|c| c.is_alphanumeric()).collect();
+            if alphanum_key.is_empty() {
+                continue;
+            }
+            if seen.insert(alphanum_key.clone()) {
+                *text_page_count.entry(alphanum_key).or_insert(0) += 1;
+            }
+        }
+    }
+
+    // Collect keys that repeat on ≥70% of pages.
+    let repeating: ahash::AHashSet<String> = text_page_count
+        .into_iter()
+        .filter(|(_, count)| *count >= threshold)
+        .map(|(key, _)| key)
+        .collect();
+
+    if repeating.is_empty() {
+        return;
+    }
+
+    tracing::debug!(
+        repeating_count = repeating.len(),
+        threshold,
+        total_pages = all_pages.len(),
+        "cross-page short-text repeating detection (tier 2)"
+    );
+
+    // Mark matching paragraphs as furniture.
+    for page in all_pages.iter_mut() {
+        for para in page.iter_mut() {
+            if para.is_page_furniture {
+                continue;
+            }
+            let text = paragraph_plain_text(para);
+            let normalized = text.trim().to_lowercase();
+            let word_count = normalized.split_whitespace().count();
+            if word_count > max_words {
+                continue;
+            }
+            let alphanum_key: String = normalized.chars().filter(|c| c.is_alphanumeric()).collect();
+            if repeating.contains(&alphanum_key) {
+                tracing::trace!(
+                    text = %normalized.chars().take(60).collect::<String>(),
+                    "marking repeating short text as furniture (tier 2)"
+                );
+                para.is_page_furniture = true;
+                para.heading_level = None;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

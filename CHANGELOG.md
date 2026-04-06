@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Empty image references in PDF markdown/HTML output** — PDFs with embedded images produced empty `![]()` references in markdown and `<img src="" alt="">` in HTML output. The PDF structure pipeline now extracts actual image pixel data via pdfium and populates document images, producing proper `![](image_N.png)` references.
+- **Invalid `extractFromFile` config in documentation** — Demo code in the TypeScript API reference included invalid configuration parameters that caused runtime errors.
+
+---
+
 ## [4.7.3] - 2026-04-05
 
 ### Fixed

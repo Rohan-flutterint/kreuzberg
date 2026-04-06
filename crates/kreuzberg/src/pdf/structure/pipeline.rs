@@ -11,8 +11,8 @@ use rayon::prelude::*;
 use super::assembly::assemble_internal_document;
 use super::bridge::{ImagePosition, extracted_blocks_to_paragraphs, filter_sidebar_blocks, objects_to_page_data};
 use super::classify::{
-    classify_paragraphs, demote_heading_runs, demote_unnumbered_subsections, mark_cross_page_repeating_text,
-    refine_heading_hierarchy,
+    classify_paragraphs, demote_heading_runs, demote_unnumbered_subsections, mark_arxiv_noise,
+    mark_cross_page_repeating_short_text, mark_cross_page_repeating_text, refine_heading_hierarchy,
 };
 use super::constants::{
     FULL_LINE_FRACTION, MIN_FONT_SIZE, MIN_HEADING_FONT_GAP, MIN_HEADING_FONT_RATIO, PAGE_BOTTOM_MARGIN_FRACTION,
@@ -1187,6 +1187,10 @@ pub fn extract_document_structure(
 
     // Mark short text that repeats across many pages as furniture (headers/footers/watermarks).
     mark_cross_page_repeating_text(&mut all_page_paragraphs, &page_heights);
+    // Tier 2: catch short repeating text outside margin zones (e.g. conference headers).
+    mark_cross_page_repeating_short_text(&mut all_page_paragraphs);
+    // Mark arXiv watermark identifiers on first pages.
+    mark_arxiv_noise(&mut all_page_paragraphs);
     for page in &mut all_page_paragraphs {
         retain_page_furniture_safely(page);
     }

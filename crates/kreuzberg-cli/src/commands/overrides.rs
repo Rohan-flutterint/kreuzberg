@@ -146,6 +146,11 @@ pub struct ExtractionOverrides {
     pub detect_language: Option<bool>,
 
     // ── Layout detection ─────────────────────────────────────────────
+    /// Enable layout detection with default model settings (RT-DETR v2).
+    #[cfg(feature = "layout-detection")]
+    #[arg(long)]
+    pub layout: Option<bool>,
+
     /// Layout detection confidence threshold (0.0 - 1.0).
     #[cfg(feature = "layout-detection")]
     #[arg(long)]
@@ -258,12 +263,17 @@ impl ExtractionOverrides {
             bail!("Invalid target DPI: {dpi}. Value must be between 36 and 2400.");
         }
 
-        // Layout confidence validation
+        // Layout validation
         #[cfg(feature = "layout-detection")]
-        if let Some(conf) = self.layout_confidence
-            && !(0.0..=1.0).contains(&conf)
         {
-            bail!("Invalid layout confidence: {conf}. Value must be between 0.0 and 1.0.");
+            if let Some(conf) = self.layout_confidence
+                && !(0.0..=1.0).contains(&conf)
+            {
+                bail!("Invalid layout confidence: {conf}. Value must be between 0.0 and 1.0.");
+            }
+            if self.layout == Some(false) && (self.layout_confidence.is_some() || self.layout_table_model.is_some()) {
+                bail!("--layout false cannot be combined with --layout-confidence or --layout-table-model");
+            }
         }
 
         // Chunking tokenizer feature validation
@@ -482,7 +492,14 @@ impl ExtractionOverrides {
     fn apply_layout(&self, config: &mut ExtractionConfig) {
         #[cfg(feature = "layout-detection")]
         {
-            let has_layout_flag = self.layout_confidence.is_some() || self.layout_table_model.is_some();
+            // --layout false explicitly disables layout detection
+            if self.layout == Some(false) {
+                config.layout = None;
+                return;
+            }
+
+            let has_layout_flag =
+                self.layout == Some(true) || self.layout_confidence.is_some() || self.layout_table_model.is_some();
             if has_layout_flag {
                 let mut layout = config.layout.clone().unwrap_or_default();
                 if let Some(confidence) = self.layout_confidence {
