@@ -1,6 +1,6 @@
 # LLM Integration <span class="version-badge">v4.8.0</span>
 
-Kreuzberg integrates with 142+ LLM providers via [liter-llm](https://crates.io/crates/liter-llm) for three capabilities: VLM OCR, structured extraction, and provider-hosted embeddings.
+Kreuzberg integrates with 150+ LLM providers (including local inference engines) via [liter-llm](https://github.com/kreuzberg-dev/liter-llm) for three capabilities: VLM OCR, structured extraction, and provider-hosted embeddings.
 
 !!! note "Feature gate"
     Requires the `llm` Cargo feature. Not included in the default feature set.
@@ -100,6 +100,9 @@ Any liter-llm vision-capable provider works as a VLM OCR backend:
 | Anthropic | `anthropic/claude-sonnet-4-20250514` |
 | Google | `google/gemini-2.0-flash` |
 | Groq | `groq/llama-3.2-90b-vision-preview` |
+| Ollama (local) | `ollama/llama3.2-vision` |
+| LM Studio (local) | `lmstudio/llava-1.5` |
+| vLLM (local) | `vllm/llava-next` |
 
 ## Structured Extraction
 
@@ -250,6 +253,73 @@ Use provider-hosted embedding models instead of local ONNX models. Useful when y
 | `mistral/mistral-embed` | 1024 | Mistral |
 | Any liter-llm embedding-capable provider | Varies | Various |
 
+## Local LLM Support
+
+<span class="version-badge">v4.8.0</span>
+
+Kreuzberg supports local LLM inference engines via [liter-llm](https://github.com/kreuzberg-dev/liter-llm)'s built-in provider routing. No API key required — just point to your local server.
+
+### Supported Local Engines
+
+| Engine | Prefix | Default URL | Install |
+|--------|--------|-------------|---------|
+| [Ollama](https://ollama.com) | `ollama/` | `http://localhost:11434/v1` | `brew install ollama` |
+| [LM Studio](https://lmstudio.ai) | `lmstudio/` | `http://localhost:1234/v1` | Desktop app |
+| [vLLM](https://vllm.ai) | `vllm/` | `http://localhost:8000/v1` | `pip install vllm` |
+| [llama.cpp](https://github.com/ggerganov/llama.cpp) | `llamacpp/` | `http://localhost:8080/v1` | Build from source |
+| [LocalAI](https://localai.io) | `localai/` | `http://localhost:8080/v1` | Docker |
+| [llamafile](https://github.com/Mozilla-Ocho/llamafile) | `llamafile/` | `http://localhost:8080/v1` | Single binary |
+
+### Example: Ollama
+
+=== "CLI"
+    ```bash
+
+    # Start Ollama and pull a model
+
+    ollama pull llama3.2-vision
+
+    # Use it for VLM OCR (no API key needed)
+    kreuzberg extract scan.pdf --force-ocr true \
+      --vlm-model ollama/llama3.2-vision
+
+    # Use it for structured extraction
+    kreuzberg extract-structured doc.pdf \
+      --schema schema.json \
+      --model ollama/llama3.2
+
+    # Use it for embeddings
+    kreuzberg embed --provider llm \
+      --model ollama/all-minilm \
+      --text "Hello world"
+    ```
+
+=== "Python"
+    ```python
+    from kreuzberg import extract_file, ExtractionConfig, StructuredExtractionConfig, LlmConfig
+
+    config = ExtractionConfig(
+        structured_extraction=StructuredExtractionConfig(
+            schema={"type": "object", "properties": {"title": {"type": "string"}}},
+            llm=LlmConfig(model="ollama/llama3.2"),  # No api_key needed
+        ),
+    )
+    result = await extract_file("doc.pdf", config=config)
+    ```
+
+=== "TOML Config"
+    ```toml
+    [structured_extraction.llm]
+    model = "ollama/llama3.2"
+
+    # No api_key needed for local providers
+    ```
+
+!!! tip "Custom Base URL"
+    If your local server runs on a non-default port, use `base_url`:
+    ```python
+    LlmConfig(model="ollama/llama3.2", base_url="http://localhost:11435/v1")```
+
 ## API Key Configuration
 
 API keys can be set via (in order of precedence):
@@ -257,6 +327,9 @@ API keys can be set via (in order of precedence):
 1. `api_key` field in `LlmConfig` — highest priority, per-request
 2. Provider standard env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, etc.)
 3. Kreuzberg-specific env var (`KREUZBERG_LLM_API_KEY`) — used as fallback for any provider
+
+!!! note "Local providers skip API key lookup"
+    Local inference engines (Ollama, LM Studio, vLLM, llama.cpp, LocalAI, llamafile) do not require an API key. If you use a local provider prefix (e.g., `ollama/`), the API key fields are ignored.
 
 ```python title="Python"
 from kreuzberg import LlmConfig

@@ -313,7 +313,7 @@ Skip OCR entirely, even for image files that would normally require it. When `di
 
 ### Using VLM OCR <span class="version-badge">v4.8.0</span>
 
-Use a vision-language model (e.g., GPT-4o, Claude) as the OCR backend. Each page is rendered as an image and sent to the VLM for text extraction. Requires an API key for the chosen provider.
+Use a vision-language model (e.g., GPT-4o, Claude) as the OCR backend. Each page is rendered as an image and sent to the VLM for text extraction. Cloud providers require an API key; local engines like Ollama do not — just start the server and use the `ollama/` prefix (e.g., `ollama/llama3.2-vision`). See [Local LLM Support](llm-integration.md#local-llm-support) for setup details.
 
 === "Python"
 
