@@ -1413,3 +1413,59 @@ for (i in seq_along(results)) {
   cat(sprintf("%s: %d characters\n", files[i], nchar(results[[i]]$content)))
 }
 ```
+
+---
+
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The R binding passes LLM configuration as list options through the `extendr` FFI layer. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Pass `structured_extraction` config to extract structured data from documents using an LLM:
+
+```r title="structured_extraction.R"
+library(kreuzberg)
+
+config <- list(
+  structured_extraction = list(
+    schema = list(
+      type = "object",
+      properties = list(
+        title = list(type = "string"),
+        authors = list(type = "array", items = list(type = "string")),
+        date = list(type = "string")
+      ),
+      required = c("title", "authors", "date"),
+      additionalProperties = FALSE
+    ),
+    llm = list(model = "openai/gpt-4o-mini"),
+    strict = TRUE
+  )
+)
+
+result <- extract_file_sync("paper.pdf", config = config)
+
+if (!is.null(result$structured_output)) {
+  data <- jsonlite::fromJSON(result$structured_output)
+  cat("Title:", data$title, "\n")
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```r title="vlm_ocr.R"
+config <- list(
+  force_ocr = TRUE,
+  ocr = list(
+    backend = "vlm",
+    vlm_config = list(model = "openai/gpt-4o-mini")
+  )
+)
+
+result <- extract_file_sync("scan.pdf", config = config)
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).

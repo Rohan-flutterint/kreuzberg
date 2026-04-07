@@ -1888,6 +1888,75 @@ The C# bindings use P/Invoke to load the native `libkreuzberg_ffi` library. The 
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The C# binding passes LLM configuration through the FFI/P/Invoke layer as JSON. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
+
+```csharp title="StructuredExtraction.cs"
+using Kreuzberg;
+using System.Text.Json;
+
+var schema = new Dictionary<string, object>
+{
+    ["type"] = "object",
+    ["properties"] = new Dictionary<string, object>
+    {
+        ["title"] = new Dictionary<string, string> { ["type"] = "string" },
+        ["authors"] = new Dictionary<string, object>
+        {
+            ["type"] = "array",
+            ["items"] = new Dictionary<string, string> { ["type"] = "string" }
+        },
+        ["date"] = new Dictionary<string, string> { ["type"] = "string" },
+    },
+    ["required"] = new[] { "title", "authors", "date" },
+    ["additionalProperties"] = false,
+};
+
+var config = new ExtractionConfig
+{
+    StructuredExtraction = new StructuredExtractionConfig
+    {
+        Schema = schema,
+        Llm = new LlmConfig { Model = "openai/gpt-4o-mini" },
+        Strict = true,
+    },
+};
+
+var result = KreuzbergClient.ExtractFileSync("paper.pdf", config: config);
+
+if (result.StructuredOutput is not null)
+{
+    Console.WriteLine(result.StructuredOutput);
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```csharp title="VlmOcr.cs"
+var config = new ExtractionConfig
+{
+    ForceOcr = true,
+    Ocr = new OcrConfig
+    {
+        Backend = "vlm",
+        VlmConfig = new LlmConfig { Model = "openai/gpt-4o-mini" },
+    },
+};
+
+var result = KreuzbergClient.ExtractFileSync("scan.pdf", config: config);
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## See Also
 
 - [Configuration Reference](configuration.md)

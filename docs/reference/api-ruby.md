@@ -1180,6 +1180,60 @@ config = {
 result = Kreuzberg.extract_file_sync('scanned.pdf', config)
 ```
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Ruby binding passes LLM configuration as hash options through the native extension. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Pass `structured_extraction` config to extract structured data from documents using an LLM:
+
+```ruby title="structured_extraction.rb"
+config = {
+  structured_extraction: {
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        authors: { type: 'array', items: { type: 'string' } },
+        date: { type: 'string' }
+      },
+      required: %w[title authors date],
+      additionalProperties: false
+    },
+    llm: { model: 'openai/gpt-4o-mini' },
+    strict: true
+  }
+}
+
+result = Kreuzberg.extract_file_sync('paper.pdf', config: config)
+
+if result.structured_output
+  data = JSON.parse(result.structured_output)
+  puts data['title']
+end
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```ruby title="vlm_ocr.rb"
+config = {
+  force_ocr: true,
+  ocr: {
+    backend: 'vlm',
+    vlm_config: { model: 'openai/gpt-4o-mini' }
+  }
+}
+
+result = Kreuzberg.extract_file_sync('scan.pdf', config: config)
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ### Plugin Management
 
 **Methods:**

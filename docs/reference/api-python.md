@@ -1272,6 +1272,51 @@ Same parameters and return type as `embed_sync()`.
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
+
+--8<-- "snippets/python/llm/structured_extraction.md"
+
+The `structured_output` field on `ExtractionResult` contains the JSON string conforming to the provided schema:
+
+```python title="access_structured_output.py"
+result = await extract_file("paper.pdf", config=config)
+
+if result.structured_output:
+    import json
+    data = json.loads(result.structured_output)
+    print(data["title"])
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend by setting `backend="vlm"` with a `vlm_config`:
+
+--8<-- "snippets/python/llm/vlm_ocr.md"
+
+### LLM Embeddings
+
+Generate embeddings using an LLM provider instead of local ONNX models:
+
+```python title="llm_embeddings.py"
+from kreuzberg import EmbeddingConfig
+
+config = EmbeddingConfig(
+    model_type="llm",
+    llm=LlmConfig(model="openai/text-embedding-3-small"),
+)
+vectors = embed_sync(["hello world"], config=config)
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## Code Intelligence
 
 Kreuzberg uses [tree-sitter-language-pack](https://docs.tree-sitter-language-pack.kreuzberg.dev) to parse and analyze source code files across 248 programming languages. When extracting code files, the result metadata includes structural analysis, imports, exports, symbols, diagnostics, and semantic code chunks.

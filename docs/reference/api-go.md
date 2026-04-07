@@ -1968,6 +1968,66 @@ func uint32Ptr(u uint32) *uint32 {
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Go binding passes LLM configuration as JSON through the FFI layer. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Pass `StructuredExtraction` config to extract structured data from documents using an LLM:
+
+```go title="structured_extraction.go"
+config := &kreuzberg.ExtractionConfig{
+	StructuredExtraction: &kreuzberg.StructuredExtractionConfig{
+		Schema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"title":   map[string]interface{}{"type": "string"},
+				"authors": map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+				"date":    map[string]interface{}{"type": "string"},
+			},
+			"required":             []string{"title", "authors", "date"},
+			"additionalProperties": false,
+		},
+		Llm: &kreuzberg.LlmConfig{
+			Model: "openai/gpt-4o-mini",
+		},
+		Strict: boolPtr(true),
+	},
+}
+
+result, err := kreuzberg.ExtractFileSync("paper.pdf", config)
+if err != nil {
+	log.Fatal(err)
+}
+
+if result.StructuredOutput != "" {
+	fmt.Println(result.StructuredOutput)
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```go title="vlm_ocr.go"
+config := &kreuzberg.ExtractionConfig{
+	ForceOCR: boolPtr(true),
+	OCR: &kreuzberg.OcrConfig{
+		Backend: "vlm",
+		VlmConfig: &kreuzberg.LlmConfig{
+			Model: "openai/gpt-4o-mini",
+		},
+	},
+}
+
+result, err := kreuzberg.ExtractFileSync("scan.pdf", config)
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## Code Intelligence
 
 Kreuzberg uses [tree-sitter-language-pack](https://docs.tree-sitter-language-pack.kreuzberg.dev) to parse and analyze source code files across 248 programming languages. When extracting code files, the result metadata includes structural analysis, imports, exports, symbols, diagnostics, and semantic code chunks.

@@ -2158,3 +2158,60 @@ LayoutDetectionConfig config = LayoutDetectionConfig.builder()
 ```
 
 ---
+
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Java binding passes LLM configuration through the FFI layer as JSON. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
+
+```java title="StructuredExtraction.java"
+import dev.kreuzberg.*;
+
+var schema = Map.of(
+    "type", "object",
+    "properties", Map.of(
+        "title", Map.of("type", "string"),
+        "authors", Map.of("type", "array", "items", Map.of("type", "string")),
+        "date", Map.of("type", "string")
+    ),
+    "required", List.of("title", "authors", "date"),
+    "additionalProperties", false
+);
+
+var config = ExtractionConfig.builder()
+    .structuredExtraction(StructuredExtractionConfig.builder()
+        .schema(schema)
+        .llm(LlmConfig.builder().model("openai/gpt-4o-mini").build())
+        .strict(true)
+        .build())
+    .build();
+
+ExtractionResult result = Kreuzberg.extractFileSync("paper.pdf", config);
+
+if (result.getStructuredOutput() != null) {
+    System.out.println(result.getStructuredOutput());
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```java title="VlmOcr.java"
+var config = ExtractionConfig.builder()
+    .forceOcr(true)
+    .ocr(OcrConfig.builder()
+        .backend("vlm")
+        .vlmConfig(LlmConfig.builder().model("openai/gpt-4o-mini").build())
+        .build())
+    .build();
+
+ExtractionResult result = Kreuzberg.extractFileSync("scan.pdf", config);
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---

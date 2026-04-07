@@ -251,6 +251,7 @@ Main extraction configuration controlling all aspects of document processing.
 | `acceleration`               | `AccelerationConfig?`      | `None`                 | Hardware acceleration configuration for ONNX Runtime inference (layout detection and embeddings). See [AccelerationConfig](#accelerationconfig).                                                 |
 | `include_document_structure` | `bool`                     | `false`                | Enable structured document model output. When true, the `document` field on ExtractionResult is populated with a tree-based representation of document content.                                  |
 | `tree_sitter`                | `TreeSitterConfig?`        | `None`                 | Tree-sitter code intelligence configuration. Controls code analysis features when extracting source code files. Only available with `tree-sitter` feature.                                       |
+| `structured_extraction`      | `StructuredExtractionConfig?` | `None`              | Structured extraction configuration for LLM-powered schema-based extraction. When set, extraction results include a `structured_output` field with data conforming to the provided JSON schema. Only available with `llm` feature. |
 
 ### Result Format vs Output Format
 
@@ -470,6 +471,8 @@ Configuration for OCR (Optical Character Recognition) processing on images and s
 | `language`         | `str`              | `"eng"`       | Language code(s) for OCR, e.g., `"eng"`, `"eng+fra"`, `"eng+deu+fra"` |
 | `tesseract_config` | `TesseractConfig?` | `None`        | Tesseract-specific configuration options                              |
 | `paddle_ocr_config` | `PaddleOcrConfig?` | `None`       | PaddleOCR-specific configuration options                              |
+| `vlm_config`       | `LlmConfig?`       | `None`        | Vision Language Model configuration for VLM-based OCR. When set, enables using a VLM as an OCR backend. Requires the `llm` feature. |
+| `vlm_prompt`       | `String?`           | `None`        | Custom prompt for VLM-based OCR. Overrides the default OCR prompt sent to the vision model. Useful for domain-specific extraction instructions. |
 
 ### Example
 
@@ -719,6 +722,34 @@ Custom ONNX models from HuggingFace can be specified for specialized use cases. 
 
 **Note**: Custom model support for full embedding generation is planned for future releases. Currently, custom models can be loaded and used via the Rust API.
 
+#### LLM Provider-Hosted Embeddings
+
+Instead of running local ONNX models, you can delegate embedding generation to a cloud provider's embedding API via liter-llm. This is useful when you want to use the same embedding model as your vector database provider or when local model hosting is impractical.
+
+```rust title="llm_embedding.rs"
+use kreuzberg::core::{EmbeddingConfig, EmbeddingModelType, LlmConfig};
+
+let config = EmbeddingConfig {
+    model: EmbeddingModelType::Llm {
+        llm: LlmConfig {
+            model: "openai/text-embedding-3-small".to_string(),
+            api_key: None, // Falls back to OPENAI_API_KEY env var
+            base_url: None,
+        },
+    },
+    batch_size: 32,
+    ..Default::default()
+};
+```
+
+```toml title="kreuzberg.toml"
+[chunking.embedding]
+model = { type = "llm", model = "openai/text-embedding-3-small" }
+batch_size = 32
+```
+
+**Note**: When `api_key` is not set in `LlmConfig`, liter-llm falls back to provider-standard environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). Requires the `llm` feature.
+
 ### Cache Directory
 
 Model files are cached locally to avoid re-downloading on subsequent runs.
@@ -925,6 +956,245 @@ chunking:
     }
   }
 }
+```
+
+---
+
+## LlmConfig
+
+Configuration for LLM provider connections used by structured extraction, VLM-based OCR, and provider-hosted embeddings. Uses [liter-llm](https://github.com/kreuzberg-dev/liter-llm) for provider-agnostic model access.
+
+### Fields
+
+| Field      | Type      | Default | Description                                                                                                                                     |
+| ---------- | --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`    | `String`  | —       | Model identifier in `provider/model-name` format (e.g., `"openai/gpt-4o-mini"`, `"anthropic/claude-sonnet-4-20250514"`)                                |
+| `api_key`  | `String?` | `None`  | API key for the provider. When `None`, falls back to provider-standard env vars (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)                   |
+| `base_url` | `String?` | `None`  | Custom base URL for the provider API. When `None`, uses the provider's default endpoint. Useful for proxies or self-hosted API-compatible servers |
+
+### Configuration Examples
+
+=== "Rust"
+
+    ```rust title="llm_config.rs"
+    use kreuzberg::core::LlmConfig;
+
+    // Minimal config (uses provider env var for API key)
+    let config = LlmConfig {
+        model: "openai/gpt-4o-mini".to_string(),
+        api_key: None,
+        base_url: None,
+    };
+
+    // Explicit API key and custom endpoint
+    let config = LlmConfig {
+        model: "openai/gpt-4o".to_string(),
+        api_key: Some("sk-...".to_string()),
+        base_url: Some("https://api.example.com".to_string()),
+    };
+    ```
+
+=== "Python"
+
+    ```python title="llm_config.py"
+    config = {
+        "model": "openai/gpt-4o-mini",
+        "api_key": None,       # Falls back to OPENAI_API_KEY
+        "base_url": None,
+    }
+    ```
+
+=== "TypeScript"
+
+    ```typescript title="llm_config.ts"
+    const config: LlmConfig = {
+      model: "openai/gpt-4o-mini",
+      apiKey: undefined,     // Falls back to OPENAI_API_KEY
+      baseUrl: undefined,
+    };
+    ```
+
+=== "Go"
+
+    ```go title="llm_config.go"
+    config := kreuzberg.LlmConfig{
+        Model:   "openai/gpt-4o-mini",
+        ApiKey:  nil,  // Falls back to OPENAI_API_KEY
+        BaseUrl: nil,
+    }
+    ```
+
+### Configuration File Examples
+
+```toml title="kreuzberg.toml"
+[llm]
+model = "openai/gpt-4o-mini"
+# api_key = "sk-..."       # Optional: falls back to OPENAI_API_KEY
+# base_url = "https://..."  # Optional: uses provider default
+```
+
+```yaml title="kreuzberg.yaml"
+llm:
+  model: openai/gpt-4o-mini
+  # api_key: sk-...
+  # base_url: https://...
+```
+
+---
+
+## StructuredExtractionConfig
+
+Configuration for LLM-powered structured data extraction. Enables extracting structured data from documents by providing a JSON schema that defines the expected output format. The LLM processes the document content and returns data conforming to the schema.
+
+### Fields
+
+| Field             | Type         | Default | Description                                                                                                                                                    |
+| ----------------- | ------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `llm`             | `LlmConfig`  | —       | LLM provider configuration for the structured extraction model                                                                                                |
+| `schema`          | `JsonValue`  | —       | JSON Schema defining the expected output structure. Must be a valid JSON Schema object.                                                                        |
+| `prompt`          | `String?`    | `None`  | Custom system prompt for structured extraction. Overrides the default prompt. Useful for domain-specific instructions.                                         |
+| `max_tokens`      | `usize?`     | `None`  | Maximum tokens for LLM response. When `None`, uses the provider's default limit.                                                                               |
+| `temperature`     | `f64?`       | `None`  | Sampling temperature (0.0-2.0). Lower values produce more deterministic output. When `None`, defaults to `0.0` for maximum consistency.                        |
+
+### Configuration Examples
+
+=== "Rust"
+
+    ```rust title="structured_extraction.rs"
+    use kreuzberg::core::{ExtractionConfig, StructuredExtractionConfig, LlmConfig};
+    use serde_json::json;
+
+    let config = ExtractionConfig {
+        structured_extraction: Some(StructuredExtractionConfig {
+            llm: LlmConfig {
+                model: "openai/gpt-4o-mini".to_string(),
+                api_key: None,
+                base_url: None,
+            },
+            schema: json!({
+                "type": "object",
+                "properties": {
+                    "invoice_number": { "type": "string" },
+                    "total_amount": { "type": "number" },
+                    "line_items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "description": { "type": "string" },
+                                "amount": { "type": "number" }
+                            }
+                        }
+                    }
+                },
+                "required": ["invoice_number", "total_amount"]
+            }),
+            prompt: None,
+            max_tokens: None,
+            temperature: Some(0.0),
+        }),
+        ..Default::default()
+    };
+    ```
+
+=== "Python"
+
+    ```python title="structured_extraction.py"
+    config = {
+        "structured_extraction": {
+            "llm": {
+                "model": "openai/gpt-4o-mini",
+            },
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "invoice_number": {"type": "string"},
+                    "total_amount": {"type": "number"},
+                    "line_items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "description": {"type": "string"},
+                                "amount": {"type": "number"},
+                            },
+                        },
+                    },
+                },
+                "required": ["invoice_number", "total_amount"],
+            },
+            "temperature": 0.0,
+        },
+    }
+    ```
+
+=== "TypeScript"
+
+    ```typescript title="structured_extraction.ts"
+    const config: ExtractionConfig = {
+      structuredExtraction: {
+        llm: {
+          model: "openai/gpt-4o-mini",
+        },
+        schema: {
+          type: "object",
+          properties: {
+            invoice_number: { type: "string" },
+            total_amount: { type: "number" },
+            line_items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  description: { type: "string" },
+                  amount: { type: "number" },
+                },
+              },
+            },
+          },
+          required: ["invoice_number", "total_amount"],
+        },
+        temperature: 0.0,
+      },
+    };
+    ```
+
+### Configuration File Examples
+
+```toml title="kreuzberg.toml"
+[structured_extraction]
+prompt = "Extract invoice data from the document."
+max_tokens = 4096
+temperature = 0.0
+
+[structured_extraction.llm]
+model = "openai/gpt-4o-mini"
+
+[structured_extraction.schema]
+type = "object"
+
+[structured_extraction.schema.properties.invoice_number]
+type = "string"
+
+[structured_extraction.schema.properties.total_amount]
+type = "number"
+```
+
+```yaml title="kreuzberg.yaml"
+structured_extraction:
+  llm:
+    model: openai/gpt-4o-mini
+  schema:
+    type: object
+    properties:
+      invoice_number:
+        type: string
+      total_amount:
+        type: number
+    required:
+      - invoice_number
+      - total_amount
+  temperature: 0.0
 ```
 
 ---

@@ -2081,6 +2081,60 @@ files = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Elixir binding passes LLM configuration as map options through the Rustler NIF layer. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Pass `structured_extraction` config to extract structured data from documents using an LLM:
+
+```elixir title="structured_extraction.exs"
+config = %{
+  structured_extraction: %{
+    schema: %{
+      "type" => "object",
+      "properties" => %{
+        "title" => %{"type" => "string"},
+        "authors" => %{"type" => "array", "items" => %{"type" => "string"}},
+        "date" => %{"type" => "string"}
+      },
+      "required" => ["title", "authors", "date"],
+      "additionalProperties" => false
+    },
+    llm: %{model: "openai/gpt-4o-mini"},
+    strict: true
+  }
+}
+
+{:ok, result} = Kreuzberg.extract_file("paper.pdf", config)
+
+case result.structured_output do
+  nil -> IO.puts("No structured output")
+  output -> IO.puts(output)
+end
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```elixir title="vlm_ocr.exs"
+config = %{
+  force_ocr: true,
+  ocr: %{
+    backend: "vlm",
+    vlm_config: %{model: "openai/gpt-4o-mini"}
+  }
+}
+
+{:ok, result} = Kreuzberg.extract_file("scan.pdf", config)
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## Version Information
 
 Check the Kreuzberg version:

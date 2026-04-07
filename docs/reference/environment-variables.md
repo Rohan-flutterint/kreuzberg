@@ -473,6 +473,98 @@ export KREUZBERG_ENCODING_CACHE_MAX_BYTES=524288000  # 500 MB
 export KREUZBERG_ENCODING_CACHE_MAX_BYTES=10485760   # 10 MB
 ```
 
+## LLM Integration
+
+Configure LLM-powered features such as structured extraction, vision-based OCR, and provider-hosted embeddings.
+
+### KREUZBERG_LLM_MODEL
+
+**Type**: `String`
+**Default**: None (must be set explicitly or via config)
+
+Default LLM model for structured extraction. Uses [liter-llm](https://github.com/kreuzberg-dev/liter-llm) model format (`provider/model-name`).
+
+```bash title="LLM Model Configuration"
+# OpenAI
+export KREUZBERG_LLM_MODEL=openai/gpt-4o-mini
+
+# Anthropic
+export KREUZBERG_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+
+# Local provider
+export KREUZBERG_LLM_MODEL=ollama/llama3
+```
+
+### KREUZBERG_LLM_API_KEY
+
+**Type**: `String`
+**Default**: None
+
+API key for the structured extraction LLM provider. When not set, liter-llm falls back to provider-standard environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+
+```bash title="LLM API Key Configuration"
+export KREUZBERG_LLM_API_KEY=sk-...
+```
+
+**Security Warning**: Prefer using provider-standard environment variables or a secrets manager over setting this directly. This variable is provided for cases where multiple providers are used and explicit key routing is needed.
+
+### KREUZBERG_LLM_BASE_URL
+
+**Type**: `String`
+**Default**: None (uses provider default)
+
+Custom base URL for the structured extraction LLM provider. Useful for self-hosted models, proxies, or alternative API-compatible endpoints.
+
+```bash title="LLM Base URL Configuration"
+# Custom OpenAI-compatible endpoint
+export KREUZBERG_LLM_BASE_URL=https://api.example.com
+
+# Local Ollama instance
+export KREUZBERG_LLM_BASE_URL=http://localhost:11434
+```
+
+### KREUZBERG_VLM_OCR_MODEL
+
+**Type**: `String`
+**Default**: None (must be set explicitly or via config)
+
+VLM (Vision Language Model) model for vision-based OCR. When configured, Kreuzberg can use a vision model as an OCR backend, sending document images directly to the VLM for text extraction.
+
+```bash title="VLM OCR Model Configuration"
+# OpenAI GPT-4o for vision OCR
+export KREUZBERG_VLM_OCR_MODEL=openai/gpt-4o
+
+# Anthropic Claude for vision OCR
+export KREUZBERG_VLM_OCR_MODEL=anthropic/claude-sonnet-4-20250514
+```
+
+### KREUZBERG_VLM_EMBEDDING_MODEL
+
+**Type**: `String`
+**Default**: None (must be set explicitly or via config)
+
+LLM model for provider-hosted embeddings. Instead of running local ONNX embedding models, Kreuzberg can delegate embedding generation to a cloud provider's embedding API.
+
+```bash title="VLM Embedding Model Configuration"
+# OpenAI embeddings
+export KREUZBERG_VLM_EMBEDDING_MODEL=openai/text-embedding-3-small
+
+# Cohere embeddings
+export KREUZBERG_VLM_EMBEDDING_MODEL=cohere/embed-english-v3.0
+```
+
+**Note**: When `api_key` is not set in config, liter-llm falls back to provider-standard environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `KREUZBERG_LLM_MODEL` | Default LLM model for structured extraction | `openai/gpt-4o-mini` |
+| `KREUZBERG_LLM_API_KEY` | API key for structured extraction LLM provider | `sk-...` |
+| `KREUZBERG_LLM_BASE_URL` | Custom base URL for structured extraction provider | `https://api.example.com` |
+| `KREUZBERG_VLM_OCR_MODEL` | VLM model for vision-based OCR | `openai/gpt-4o` |
+| `KREUZBERG_VLM_EMBEDDING_MODEL` | LLM model for provider-hosted embeddings | `openai/text-embedding-3-small` |
+
+---
+
 ## Testing Variables
 
 Variables for development, testing, and quality assurance.

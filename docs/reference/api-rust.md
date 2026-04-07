@@ -1810,6 +1810,72 @@ pub fn get_extensions_for_mime(mime_type: &str) -> Result<Vec<String>>
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. Requires the `llm` feature flag. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
+
+--8<-- "snippets/rust/llm/structured_extraction.md"
+
+The `structured_output` field on `ExtractionResult` contains the JSON string conforming to the provided schema:
+
+```rust title="access_structured_output.rs"
+let result = extract_file("paper.pdf", None, &config).await?;
+if let Some(ref output) = result.structured_output {
+    let data: serde_json::Value = serde_json::from_str(output)?;
+    println!("Title: {}", data["title"]);
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend by setting `backend` to `"vlm"` with a `vlm_config`:
+
+```rust title="vlm_ocr.rs"
+use kreuzberg::{ExtractionConfig, OcrConfig, LlmConfig};
+
+let config = ExtractionConfig {
+    force_ocr: true,
+    ocr: Some(OcrConfig {
+        backend: "vlm".to_string(),
+        vlm_config: Some(LlmConfig {
+            model: "openai/gpt-4o-mini".to_string(),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }),
+    ..Default::default()
+};
+
+let result = extract_file("scan.pdf", None, &config).await?;
+```
+
+### LLM Embeddings
+
+Generate embeddings using an LLM provider via `EmbeddingModelType::Llm`:
+
+```rust title="llm_embeddings.rs"
+use kreuzberg::{embed, EmbeddingConfig, EmbeddingModelType, LlmConfig};
+
+let config = EmbeddingConfig {
+    model_type: EmbeddingModelType::Llm,
+    llm: Some(LlmConfig {
+        model: "openai/text-embedding-3-small".to_string(),
+        ..Default::default()
+    }),
+    ..Default::default()
+};
+
+let vectors = embed(&["hello world"], &config).await?;
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## Code Intelligence
 
 Kreuzberg uses [tree-sitter-language-pack](https://docs.tree-sitter-language-pack.kreuzberg.dev) to parse and analyze source code files across 248 programming languages. When extracting code files, the result metadata includes structural analysis, imports, exports, symbols, diagnostics, and semantic code chunks.

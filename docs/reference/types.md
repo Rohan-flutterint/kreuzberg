@@ -22,6 +22,7 @@ pub struct ExtractionResult {
     pub djot_content: Option<DjotContent>,
     pub ocr_elements: Option<Vec<OcrElement>>,
     pub document: Option<DocumentStructure>,
+    pub structured_output: Option<serde_json::Value>,  // LLM-extracted structured data conforming to provided JSON schema
 }
 ```
 
@@ -44,6 +45,7 @@ class ExtractionResult(TypedDict):
     pages: list[PageContent] | None
     elements: list[Element] | None
     document: DocumentStructure | None
+    structured_output: dict[str, Any] | None  # LLM-extracted structured data
 ```
 
 ### TypeScript
@@ -61,6 +63,7 @@ export interface ExtractionResult {
   pages?: PageContent[];
   elements?: Element[];
   document?: DocumentStructure;
+  structuredOutput?: Record<string, unknown>;  // LLM-extracted structured data
 }
 ```
 
@@ -71,6 +74,7 @@ class Kreuzberg::Result
     attr_reader :content, :mime_type, :metadata, :tables
     attr_reader :detected_languages, :chunks, :images, :extracted_keywords, :quality_score, :processing_warnings
     attr_reader :djot_content, :pages, :elements, :document
+    attr_reader :structured_output  # LLM-extracted structured data (Hash or nil)
 end
 ```
 
@@ -91,7 +95,8 @@ public record ExtractionResult(
     DjotContent djotContent,
     List<PageContent> pages,
     List<Element> elements,
-    DocumentStructure document
+    DocumentStructure document,
+    Map<String, Object> structuredOutput  // LLM-extracted structured data
 ) {}
 ```
 
@@ -99,20 +104,21 @@ public record ExtractionResult(
 
 ```go title="extraction_result.go"
 type ExtractionResult struct {
-    Content             string              `json:"content"`
-    MimeType            string              `json:"mime_type"`
-    Metadata            Metadata            `json:"metadata"`
-    Tables              []Table             `json:"tables"`
-    DetectedLanguages   []string            `json:"detected_languages,omitempty"`
-    Chunks              []Chunk             `json:"chunks,omitempty"`
-    Images              []ExtractedImage    `json:"images,omitempty"`
-    ExtractedKeywords   []ExtractedKeyword  `json:"extracted_keywords,omitempty"`
-    QualityScore        *float64            `json:"quality_score,omitempty"`
-    ProcessingWarnings  []ProcessingWarning `json:"processing_warnings"`
-    DjotContent         *DjotContent        `json:"djot_content,omitempty"`
-    Pages               []PageContent       `json:"pages,omitempty"`
-    Elements            []Element           `json:"elements,omitempty"`
-    Document            *DocumentStructure  `json:"document,omitempty"`
+    Content             string                 `json:"content"`
+    MimeType            string                 `json:"mime_type"`
+    Metadata            Metadata               `json:"metadata"`
+    Tables              []Table                `json:"tables"`
+    DetectedLanguages   []string               `json:"detected_languages,omitempty"`
+    Chunks              []Chunk                `json:"chunks,omitempty"`
+    Images              []ExtractedImage       `json:"images,omitempty"`
+    ExtractedKeywords   []ExtractedKeyword     `json:"extracted_keywords,omitempty"`
+    QualityScore        *float64               `json:"quality_score,omitempty"`
+    ProcessingWarnings  []ProcessingWarning    `json:"processing_warnings"`
+    DjotContent         *DjotContent           `json:"djot_content,omitempty"`
+    Pages               []PageContent          `json:"pages,omitempty"`
+    Elements            []Element              `json:"elements,omitempty"`
+    Document            *DocumentStructure     `json:"document,omitempty"`
+    StructuredOutput    map[string]interface{} `json:"structured_output,omitempty"` // LLM-extracted structured data
 }
 ```
 

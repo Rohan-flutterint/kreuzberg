@@ -16,6 +16,7 @@ The following configuration options are not supported in WASM:
 - **Hardware Acceleration** – No GPU or accelerator support. `AccelerationConfig` is not applicable and cannot be used.
 - **Concurrency Configuration** – Single-threaded WASM environment. `ConcurrencyConfig.maxThreads` is ignored; all extraction runs on a single thread.
 - **Email Codepage Configuration** – `EmailConfig` is not supported in WASM bindings.
+- **LLM Integration** – `StructuredExtractionConfig`, VLM OCR (`backend: "vlm"`), and LLM embeddings require native HTTP networking via `liter-llm`, which is unavailable in WebAssembly. See the [LLM Integration section](#llm-integration) for workarounds.
 
 ### Supported Features
 
@@ -2173,6 +2174,40 @@ try {
 // Extraction will work in both cases
 const result = await extractBytes(pdfBytes, 'application/pdf');
 ```
+
+---
+
+## LLM Integration
+
+!!! warning "Not Available in WASM"
+
+    LLM integration features (`StructuredExtractionConfig`, VLM OCR, LLM embeddings) are **not available** in the WASM binding. The `liter-llm` crate requires native HTTP networking which is unavailable in WebAssembly environments.
+
+    For LLM-powered extraction, use the native bindings ([Node.js](api-typescript.md), [Python](api-python.md), [Rust](api-rust.md)) or the [HTTP API](../guides/llm-integration.md) (`POST /extract-structured`) from your WASM application.
+
+If your application runs in the browser, you can call the Kreuzberg API server's `/extract-structured` endpoint:
+
+```typescript title="wasm_llm_workaround.ts"
+// Extract text in the browser using WASM
+import { extractBytes } from '@kreuzberg/wasm';
+
+const result = await extractBytes(pdfBytes, 'application/pdf');
+
+// Then call the API server for structured extraction
+const response = await fetch('https://your-api.example.com/extract-structured', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    content: result.content,
+    schema: { type: 'object', properties: { title: { type: 'string' } } },
+    model: 'openai/gpt-4o-mini',
+  }),
+});
+
+const structured = await response.json();
+```
+
+See the [LLM Integration Guide](../guides/llm-integration.md) for full details on server-side LLM features.
 
 ---
 

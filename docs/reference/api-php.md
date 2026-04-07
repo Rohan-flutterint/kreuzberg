@@ -2316,6 +2316,72 @@ $result = $kreuzberg->extractFile($filePath);
 
 ---
 
+## LLM Integration
+
+Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The PHP binding exposes typed `LlmConfig` and `StructuredExtractionConfig` classes. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+
+### Structured Extraction
+
+Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
+
+```php title="structured_extraction.php"
+<?php
+
+use Kreuzberg\Kreuzberg;
+use Kreuzberg\Config\ExtractionConfig;
+use Kreuzberg\Config\StructuredExtractionConfig;
+use Kreuzberg\Config\LlmConfig;
+
+$config = new ExtractionConfig(
+    structuredExtraction: new StructuredExtractionConfig(
+        schema: [
+            'type' => 'object',
+            'properties' => [
+                'title' => ['type' => 'string'],
+                'authors' => ['type' => 'array', 'items' => ['type' => 'string']],
+                'date' => ['type' => 'string'],
+            ],
+            'required' => ['title', 'authors', 'date'],
+            'additionalProperties' => false,
+        ],
+        llm: new LlmConfig(model: 'openai/gpt-4o-mini'),
+        strict: true,
+    ),
+);
+
+$kreuzberg = new Kreuzberg($config);
+$result = $kreuzberg->extractFile('paper.pdf');
+
+if ($result->structuredOutput !== null) {
+    $data = json_decode($result->structuredOutput, true);
+    echo $data['title'] . "\n";
+}
+```
+
+### VLM OCR
+
+Use a vision-language model as an OCR backend:
+
+```php title="vlm_ocr.php"
+<?php
+
+use Kreuzberg\Config\ExtractionConfig;
+use Kreuzberg\Config\OcrConfig;
+use Kreuzberg\Config\LlmConfig;
+
+$config = new ExtractionConfig(
+    forceOcr: true,
+    ocr: new OcrConfig(
+        backend: 'vlm',
+        vlmConfig: new LlmConfig(model: 'openai/gpt-4o-mini'),
+    ),
+);
+```
+
+For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
+
+---
+
 ## System Requirements
 
 **PHP:** 8.1.0 or higher
