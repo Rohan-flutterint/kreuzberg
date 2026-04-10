@@ -63,6 +63,7 @@ def test_extraction_config_field_parity():
         "force_ocr",
         "force_ocr_pages",
         "html_options",
+        "html_output",
         "images",
         "include_document_structure",
         "keywords",
@@ -104,17 +105,6 @@ def test_bounding_box_field_parity():
         "y1",
     ]
     assert len(expected_fields) > 0, "BoundingBox should have at least one field"
-
-
-def test_content_filter_config_field_parity():
-    """Verify ContentFilterConfig has all expected fields in the manifest."""
-    expected_fields = [
-        "include_footers",
-        "include_headers",
-        "include_watermarks",
-        "strip_repeating_text",
-    ]
-    assert len(expected_fields) > 0, "ContentFilterConfig should have at least one field"
 
 
 def test_keyword_field_parity():

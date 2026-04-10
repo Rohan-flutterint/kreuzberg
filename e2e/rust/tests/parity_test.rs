@@ -31,32 +31,10 @@ fn test_bounding_box_field_parity() {
 }
 
 #[test]
-fn test_content_filter_config_field_parity() {
-    // Compile-time check that ContentFilterConfig exists and has the expected fields.
-    // If a field is added/removed in the Rust type, this will fail to compile.
-    let expected_fields: &[&str] = &[
-        "include_footers",
-        "include_headers",
-        "include_watermarks",
-        "strip_repeating_text",
-    ];
-    // Verify the type is constructible (fields exist at compile time)
-    fn _assert_fields_exist(v: &kreuzberg::ContentFilterConfig) {
-        let _ = &v.include_footers;
-        let _ = &v.include_headers;
-        let _ = &v.include_watermarks;
-        let _ = &v.strip_repeating_text;
-    }
-    assert!(
-        !expected_fields.is_empty(),
-        "ContentFilterConfig parity check has fields"
-    );
-}
-
-#[test]
 fn test_extraction_config_field_parity() {
     // Verify ExtractionConfig has the expected fields via serde serialization
     let required_fields: &[&str] = &[
+        "content_filter",
         "disable_ocr",
         "enable_quality_processing",
         "force_ocr",
@@ -80,6 +58,7 @@ fn test_extraction_config_field_parity() {
         "force_ocr",
         "force_ocr_pages",
         "html_options",
+        "html_output",
         "images",
         "include_document_structure",
         "keywords",

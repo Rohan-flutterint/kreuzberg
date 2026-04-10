@@ -43,14 +43,6 @@ RSpec.describe 'Parity' do
     end
   end
 
-  describe 'ContentFilterConfig field parity' do
-    %w[include_footers include_headers include_watermarks strip_repeating_text].each do |field|
-      it "has field '#{field}'" do
-        expect(Kreuzberg::ContentFilterConfig.method_defined?(field.to_sym)).to be(true)
-      end
-    end
-  end
-
   describe 'Keyword field parity' do
     %w[algorithm positions score text].each do |field|
       it "has field '#{field}'" do

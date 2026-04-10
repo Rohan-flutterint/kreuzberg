@@ -58,6 +58,7 @@ describe("ExtractionConfig field parity", () => {
 			"forceOcr",
 			"forceOcrPages",
 			"htmlOptions",
+			"htmlOutput",
 			"images",
 			"includeDocumentStructure",
 			"keywords",
@@ -90,13 +91,6 @@ describe("ArchiveEntry field parity", () => {
 describe("BoundingBox field parity", () => {
 	it("has expected fields in manifest", () => {
 		const expectedFields = ["x0", "x1", "y0", "y1"];
-		expect(expectedFields.length).toBeGreaterThan(0);
-	});
-});
-
-describe("ContentFilterConfig field parity", () => {
-	it("has expected fields in manifest", () => {
-		const expectedFields = ["includeFooters", "includeHeaders", "includeWatermarks", "stripRepeatingText"];
 		expect(expectedFields.length).toBeGreaterThan(0);
 	});
 });

@@ -49,6 +49,7 @@ class ExtractionConfigBuilder
     private ?int $cacheTtlSecs = null;
     private ?int $extractionTimeoutSecs = null;
     private ?TreeSitterConfig $treeSitter = null;
+    private ?HtmlOutputConfig $htmlOutput = null;
     private ?ContentFilterConfig $contentFilter = null;
 
     /**
@@ -323,6 +324,22 @@ class ExtractionConfigBuilder
     }
 
     /**
+     * Set the HTML styled output configuration.
+     *
+     * @param HtmlOutputConfig|array<string, mixed>|null $htmlOutput HTML output configuration
+     * @return self For method chaining
+     */
+    public function withHtmlOutput(HtmlOutputConfig|array|null $htmlOutput = null): self
+    {
+        if (is_array($htmlOutput)) {
+            $this->htmlOutput = HtmlOutputConfig::fromArray($htmlOutput);
+        } else {
+            $this->htmlOutput = $htmlOutput;
+        }
+        return $this;
+    }
+
+    /**
      * Set the content filter configuration.
      *
      * @param ContentFilterConfig|null $contentFilter Content filtering settings
@@ -364,6 +381,7 @@ class ExtractionConfigBuilder
             cacheTtlSecs: $this->cacheTtlSecs,
             extractionTimeoutSecs: $this->extractionTimeoutSecs,
             treeSitter: $this->treeSitter,
+            htmlOutput: $this->htmlOutput,
             contentFilter: $this->contentFilter,
         );
     }

@@ -385,6 +385,18 @@ def main():
         else:
             unchanged_files.append(str(rel_path))
 
+    # R native extension Cargo.toml (has its own [workspace] so needs explicit handling)
+    r_native_cargo = repo_root / "packages/r/src/rust/Cargo.toml"
+    if r_native_cargo.exists():
+        changed, old_ver, new_ver = update_cargo_toml(r_native_cargo, version)
+        rel_path = r_native_cargo.relative_to(repo_root)
+
+        if changed:
+            print(f"✓ {rel_path}: {old_ver} → {new_ver}")
+            updated_files.append(str(rel_path))
+        else:
+            unchanged_files.append(str(rel_path))
+
     # Ruby native extension Cargo.toml (has its own [workspace] so needs explicit handling)
     ruby_native_cargo = repo_root / "packages/ruby/ext/kreuzberg_rb/native/Cargo.toml"
     if ruby_native_cargo.exists():

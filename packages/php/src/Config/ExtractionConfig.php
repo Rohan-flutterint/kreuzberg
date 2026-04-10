@@ -365,6 +365,17 @@ readonly class ExtractionConfig
         public ?StructuredExtractionConfig $structuredExtraction = null,
 
         /**
+         * HTML styled output configuration.
+         *
+         * Controls how extraction results are rendered as styled HTML,
+         * including theme selection, CSS customization, and class prefix configuration.
+         *
+         * @var HtmlOutputConfig|null
+         * @default null
+         */
+        public ?HtmlOutputConfig $htmlOutput = null,
+
+        /**
          * Content filtering configuration.
          *
          * Controls which content elements are included or excluded during extraction,
@@ -611,6 +622,13 @@ readonly class ExtractionConfig
             $structuredExtraction = StructuredExtractionConfig::fromArray($structuredExtractionData);
         }
 
+        $htmlOutput = null;
+        if (isset($data['html_output']) && is_array($data['html_output'])) {
+            /** @var array<string, mixed> $htmlOutputData */
+            $htmlOutputData = $data['html_output'];
+            $htmlOutput = HtmlOutputConfig::fromArray($htmlOutputData);
+        }
+
         $contentFilter = null;
         if (isset($data['content_filter']) && is_array($data['content_filter'])) {
             /** @var array<string, mixed> $contentFilterData */
@@ -649,6 +667,7 @@ readonly class ExtractionConfig
             layout: $layout,
             treeSitter: $treeSitter,
             structuredExtraction: $structuredExtraction,
+            htmlOutput: $htmlOutput,
             contentFilter: $contentFilter,
         );
     }
@@ -823,6 +842,7 @@ readonly class ExtractionConfig
             'layout' => $this->layout?->toArray(),
             'tree_sitter' => $this->treeSitter?->toArray(),
             'structured_extraction' => $this->structuredExtraction?->toArray(),
+            'html_output' => $this->htmlOutput?->toArray(),
             'content_filter' => $this->contentFilter?->toArray(),
         ];
 

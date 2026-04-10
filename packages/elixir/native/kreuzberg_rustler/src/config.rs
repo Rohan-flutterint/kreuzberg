@@ -80,6 +80,7 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
         "keywords",
         "pdf_options",
         "html_options",
+        "html_output",
         "security_limits",
         "content_filter",
     ];
@@ -207,6 +208,7 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
             config.result_format = deserialized.result_format;
             config.output_format = deserialized.output_format;
             config.html_options = deserialized.html_options;
+            config.html_output = deserialized.html_output;
             config.max_concurrent_extractions = deserialized.max_concurrent_extractions;
             config.security_limits = deserialized.security_limits;
             config.content_filter = deserialized.content_filter;

@@ -64,6 +64,9 @@ type YakeParamsOption func(*YakeParams)
 // RakeParamsOption is a functional option for configuring RakeParams.
 type RakeParamsOption func(*RakeParams)
 
+// HTMLOutputOption is a functional option for configuring HTMLOutputConfig.
+type HTMLOutputOption func(*HTMLOutputConfig)
+
 // HTMLPreprocessingOption is a functional option for configuring HTMLPreprocessingOptions.
 type HTMLPreprocessingOption func(*HTMLPreprocessingOptions)
 
@@ -103,6 +106,7 @@ type ExtractionConfig struct {
 	Keywords                 *KeywordConfig           `json:"keywords,omitempty"`
 	Postprocessor            *PostProcessorConfig     `json:"postprocessor,omitempty"`
 	HTMLOptions              *HTMLConversionOptions   `json:"html_options,omitempty"`
+	HTMLOutput               *HTMLOutputConfig        `json:"html_output,omitempty"`
 	Layout                   *LayoutDetectionConfig   `json:"layout,omitempty"`
 	Pages                    *PageConfig              `json:"pages,omitempty"`
 	SecurityLimits           *SecurityLimitsConfig    `json:"security_limits,omitempty"`
@@ -377,6 +381,15 @@ type HTMLConversionOptions struct {
 	StripTags          []string                  `json:"strip_tags,omitempty"`
 	PreserveTags       []string                  `json:"preserve_tags,omitempty"`
 	Preprocessing      *HTMLPreprocessingOptions `json:"preprocessing,omitempty"`
+}
+
+// HTMLOutputConfig controls styled HTML output rendering.
+type HTMLOutputConfig struct {
+	CSS         *string `json:"css,omitempty"`
+	CSSFile     *string `json:"css_file,omitempty"`
+	Theme       string  `json:"theme,omitempty"`
+	ClassPrefix string  `json:"class_prefix,omitempty"`
+	EmbedCSS    *bool   `json:"embed_css,omitempty"`
 }
 
 // AccelerationConfig controls ONNX Runtime execution provider selection.

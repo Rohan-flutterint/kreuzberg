@@ -51,6 +51,9 @@ defmodule E2E.Helpers do
 
   defp atomize_keys(value), do: value
 
+  defp is_nan(v) when is_float(v), do: v != v
+  defp is_nan(_), do: false
+
   def skip_reason_for(error, fixture_id, requirements, notes \\ nil) do
     message = Exception.message(error)
     downcased = String.downcase(message)

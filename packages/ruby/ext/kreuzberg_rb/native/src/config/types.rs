@@ -1005,6 +1005,16 @@ pub fn parse_extraction_config(ruby: &Ruby, opts: Option<RHash>) -> Result<Extra
             config.html_options = Some(parse_html_options(ruby, html_hash)?);
         }
 
+        if let Some(val) = get_kw(ruby, hash, "html_output")
+            && val.equal(ruby.qnil()).ok() != Some(true)
+        {
+            let html_output_json = ruby_value_to_json(val)?;
+            let parsed: kreuzberg::core::config::html_output::HtmlOutputConfig =
+                serde_json::from_value(html_output_json)
+                    .map_err(|e| runtime_error(format!("Invalid html_output: {}", e)))?;
+            config.html_output = Some(parsed);
+        }
+
         if let Some(val) = get_kw(ruby, hash, "pages")
             && val.equal(ruby.qnil()).ok() != Some(true)
         {

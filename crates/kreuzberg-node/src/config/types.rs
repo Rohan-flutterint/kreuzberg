@@ -1224,6 +1224,62 @@ impl From<RustContentFilterConfig> for JsContentFilterConfig {
     }
 }
 
+/// HTML output configuration for styled HTML rendering.
+///
+/// Controls how `outputFormat: "html"` renders documents when `htmlOutput`
+/// is set on the extraction config.
+#[napi(object)]
+pub struct JsHtmlOutputConfig {
+    /// Inline CSS string injected after the theme stylesheet.
+    pub css: Option<String>,
+    /// Path to a CSS file loaded at renderer construction time.
+    pub css_file: Option<String>,
+    /// Built-in theme: "default", "github", "dark", "light", "unstyled". Default: "unstyled".
+    pub theme: Option<String>,
+    /// CSS class prefix for emitted class names. Default: "kb-".
+    pub class_prefix: Option<String>,
+    /// Embed resolved CSS in a `<style>` block. Default: true.
+    pub embed_css: Option<bool>,
+}
+
+impl From<JsHtmlOutputConfig> for kreuzberg::HtmlOutputConfig {
+    fn from(val: JsHtmlOutputConfig) -> Self {
+        let theme = match val.theme.as_deref().unwrap_or("unstyled") {
+            "default" => kreuzberg::HtmlTheme::Default,
+            "github" => kreuzberg::HtmlTheme::GitHub,
+            "dark" => kreuzberg::HtmlTheme::Dark,
+            "light" => kreuzberg::HtmlTheme::Light,
+            _ => kreuzberg::HtmlTheme::Unstyled,
+        };
+
+        kreuzberg::HtmlOutputConfig {
+            css: val.css,
+            css_file: val.css_file.map(std::path::PathBuf::from),
+            theme,
+            class_prefix: val.class_prefix.unwrap_or_else(|| "kb-".to_string()),
+            embed_css: val.embed_css.unwrap_or(true),
+        }
+    }
+}
+
+impl From<kreuzberg::HtmlOutputConfig> for JsHtmlOutputConfig {
+    fn from(val: kreuzberg::HtmlOutputConfig) -> Self {
+        Self {
+            css: val.css,
+            css_file: val.css_file.map(|p| p.to_string_lossy().into_owned()),
+            theme: Some(match val.theme {
+                kreuzberg::HtmlTheme::Default => "default".to_string(),
+                kreuzberg::HtmlTheme::GitHub => "github".to_string(),
+                kreuzberg::HtmlTheme::Dark => "dark".to_string(),
+                kreuzberg::HtmlTheme::Light => "light".to_string(),
+                kreuzberg::HtmlTheme::Unstyled => "unstyled".to_string(),
+            }),
+            class_prefix: Some(val.class_prefix),
+            embed_css: Some(val.embed_css),
+        }
+    }
+}
+
 /// Hardware acceleration configuration for ONNX Runtime inference.
 ///
 /// Controls which execution provider (CPU, CoreML, CUDA, TensorRT) is used
@@ -1413,6 +1469,8 @@ pub struct JsExtractionConfig {
     pub structured_extraction: Option<JsStructuredExtractionConfig>,
     /// Content filtering configuration for headers/footers/watermarks
     pub content_filter: Option<JsContentFilterConfig>,
+    /// HTML output configuration for styled HTML rendering
+    pub html_output: Option<JsHtmlOutputConfig>,
 }
 
 impl TryFrom<JsPageConfig> for kreuzberg::core::config::PageConfig {
@@ -1504,7 +1562,7 @@ impl TryFrom<JsExtractionConfig> for ExtractionConfig {
             max_archive_depth: val.max_archive_depth.map(|v| v as usize).unwrap_or(3),
             tree_sitter: val.tree_sitter.map(Into::into),
             structured_extraction: val.structured_extraction.map(Into::into),
-            html_output: None,
+            html_output: val.html_output.map(Into::into),
         })
     }
 }
@@ -1690,6 +1748,7 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
             tree_sitter: val.tree_sitter.map(JsTreeSitterConfig::from),
             structured_extraction: val.structured_extraction.map(JsStructuredExtractionConfig::from),
             content_filter: val.content_filter.map(JsContentFilterConfig::from),
+            html_output: val.html_output.map(JsHtmlOutputConfig::from),
         })
     }
 }

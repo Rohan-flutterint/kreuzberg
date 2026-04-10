@@ -19,6 +19,7 @@ use crate::parity::{FieldDef, ParityManifest, TypeDef, VariantDef};
 const FEATURE_GATES: &[(&str, &str, &str)] = &[
     ("ExtractionConfig", "pdf_options", "pdf"),
     ("ExtractionConfig", "html_options", "html"),
+    ("ExtractionConfig", "html_output", "html"),
     ("ExtractionConfig", "keywords", "keywords"),
     ("ExtractionConfig", "security_limits", "archives"),
     ("ExtractionConfig", "layout", "layout-detection"),
@@ -57,6 +58,7 @@ const OPTIONAL_FIELDS: &[(&str, &str)] = &[
     ("ExtractionConfig", "keywords"),
     ("ExtractionConfig", "postprocessor"),
     ("ExtractionConfig", "html_options"),
+    ("ExtractionConfig", "html_output"),
     ("ExtractionConfig", "extraction_timeout_secs"),
     ("ExtractionConfig", "max_concurrent_extractions"),
     ("ExtractionConfig", "security_limits"),

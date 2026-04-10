@@ -62,6 +62,7 @@ public final class ExtractionConfig {
 	private final boolean maxArchiveDepthSet;
 	private final TreeSitterConfig treeSitter;
 	private final ContentFilterConfig contentFilter;
+	private final HtmlOutputConfig htmlOutput;
 
 	private ExtractionConfig(Builder builder) {
 		this.useCache = builder.useCache;
@@ -100,6 +101,7 @@ public final class ExtractionConfig {
 		this.maxArchiveDepthSet = builder.maxArchiveDepthSet;
 		this.treeSitter = builder.treeSitter;
 		this.contentFilter = builder.contentFilter;
+		this.htmlOutput = builder.htmlOutput;
 	}
 
 	public static Builder builder() {
@@ -317,6 +319,16 @@ public final class ExtractionConfig {
 	 */
 	public ContentFilterConfig getContentFilter() {
 		return contentFilter;
+	}
+
+	/**
+	 * Get the HTML output configuration for styled HTML rendering.
+	 *
+	 * @return the HTML output configuration, or null if not set
+	 * @since 4.8.1
+	 */
+	public HtmlOutputConfig getHtmlOutput() {
+		return htmlOutput;
 	}
 
 	/**
@@ -647,6 +659,9 @@ public final class ExtractionConfig {
 		if (contentFilter != null) {
 			map.put("content_filter", contentFilter.toMap());
 		}
+		if (htmlOutput != null) {
+			map.put("html_output", htmlOutput.toMap());
+		}
 		return map;
 	}
 
@@ -779,6 +794,10 @@ public final class ExtractionConfig {
 		if (contentFilterMap != null) {
 			builder.contentFilter(ContentFilterConfig.fromMap(contentFilterMap));
 		}
+		Map<String, Object> htmlOutputMap = asMap(raw.get("html_output"));
+		if (htmlOutputMap != null) {
+			builder.htmlOutput(HtmlOutputConfig.fromMap(htmlOutputMap));
+		}
 	}
 
 	private static boolean asBoolean(Object value, boolean defaultValue) {
@@ -863,6 +882,7 @@ public final class ExtractionConfig {
 		private boolean maxArchiveDepthSet = false;
 		private TreeSitterConfig treeSitter;
 		private ContentFilterConfig contentFilter;
+		private HtmlOutputConfig htmlOutput;
 
 		private Builder() {
 		}
@@ -1147,6 +1167,19 @@ public final class ExtractionConfig {
 		 */
 		public Builder contentFilter(ContentFilterConfig contentFilter) {
 			this.contentFilter = contentFilter;
+			return this;
+		}
+
+		/**
+		 * Set the HTML output configuration for styled HTML rendering.
+		 *
+		 * @param htmlOutput
+		 *            the HTML output configuration
+		 * @return this builder for chaining
+		 * @since 4.8.1
+		 */
+		public Builder htmlOutput(HtmlOutputConfig htmlOutput) {
+			this.htmlOutput = htmlOutput;
 			return this;
 		}
 

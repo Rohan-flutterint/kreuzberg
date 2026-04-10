@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.8.2] - 2026-04-10
+
+### Added
+
+- **`HtmlOutputConfig` typed in all bindings** — `html_output` config field (themes, CSS classes, embed CSS, custom CSS, class prefix) now fully typed in Python, TypeScript/Node, Go, Ruby, Elixir, PHP, Java, C#, R, and FFI. Previously only available in Rust core.
 
 ### Fixed
 
 - **PDF: legitimate repeated content stripped during page merging regardless of `strip_repeating_text` flag** — `deduplicate_paragraphs()` in the PDF merge pipeline runs unconditionally after per-page extraction, removing consecutive identical paragraphs (≥5 chars) and non-consecutive body-text duplicates (≥15 chars) via HashSet dedup. This strips brand names and other legitimately repeated content even when `ContentFilterConfig.strip_repeating_text` is set to `false`. Gated both deduplication passes behind the `strip_repeating_text` flag so they are skipped when content filtering is disabled (#670, #681)
+- **R package build failure** — R binding Cargo.toml version was stuck at 4.6.3 while core was at 4.8.1, causing tokio version resolution failure. Version sync script now includes the R native extension Cargo.toml.
+- **CI: PyPI publish action failure** — pinned `pypa/gh-action-pypi-publish` to v1.13.0 (v1.14.0 has broken Docker image on GHCR)
+- **E2E: Elixir generator emitted undefined `is_nan/1` function** — added helper function definition to the generated Elixir test helpers
 
 ---
 

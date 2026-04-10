@@ -136,6 +136,13 @@ func WithContentFilter(opts ...ContentFilterOption) ExtractionOption {
 	}
 }
 
+// WithHTMLOutput sets the HTML output configuration with functional options.
+func WithHTMLOutput(opts ...HTMLOutputOption) ExtractionOption {
+	return func(c *ExtractionConfig) {
+		c.HTMLOutput = NewHTMLOutputConfig(opts...)
+	}
+}
+
 // WithPages sets the page configuration with functional options.
 func WithPages(opts ...PageOption) ExtractionOption {
 	return func(c *ExtractionConfig) {
@@ -1389,5 +1396,49 @@ func WithStripRepeatingText(enabled bool) ContentFilterOption {
 func WithIncludeWatermarks(enabled bool) ContentFilterOption {
 	return func(c *ContentFilterConfig) {
 		c.IncludeWatermarks = &enabled
+	}
+}
+
+// NewHTMLOutputConfig creates an HTMLOutputConfig from functional options.
+func NewHTMLOutputConfig(opts ...HTMLOutputOption) *HTMLOutputConfig {
+	cfg := &HTMLOutputConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return cfg
+}
+
+// WithHTMLOutputCSS sets the inline CSS string for HTML output.
+func WithHTMLOutputCSS(css string) HTMLOutputOption {
+	return func(c *HTMLOutputConfig) {
+		c.CSS = &css
+	}
+}
+
+// WithHTMLOutputCSSFile sets the path to a CSS file for HTML output.
+func WithHTMLOutputCSSFile(cssFile string) HTMLOutputOption {
+	return func(c *HTMLOutputConfig) {
+		c.CSSFile = &cssFile
+	}
+}
+
+// WithHTMLOutputTheme sets the built-in HTML theme (default, github, dark, light, unstyled).
+func WithHTMLOutputTheme(theme string) HTMLOutputOption {
+	return func(c *HTMLOutputConfig) {
+		c.Theme = theme
+	}
+}
+
+// WithHTMLOutputClassPrefix sets the CSS class prefix for HTML output.
+func WithHTMLOutputClassPrefix(prefix string) HTMLOutputOption {
+	return func(c *HTMLOutputConfig) {
+		c.ClassPrefix = prefix
+	}
+}
+
+// WithHTMLOutputEmbedCSS sets whether to embed CSS in the HTML output.
+func WithHTMLOutputEmbedCSS(embed bool) HTMLOutputOption {
+	return func(c *HTMLOutputConfig) {
+		c.EmbedCSS = &embed
 	}
 }

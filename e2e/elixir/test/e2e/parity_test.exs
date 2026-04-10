@@ -35,22 +35,6 @@ defmodule Kreuzberg.E2E.ParityTest do
     end
   end
 
-  test "ContentFilterConfig has all expected fields" do
-    expected = [
-      :include_footers,
-      :include_headers,
-      :include_watermarks,
-      :strip_repeating_text
-    ]
-
-    struct_fields = Map.keys(%Kreuzberg.ContentFilterConfig{}) -- [:__struct__]
-
-    for field <- expected do
-      assert field in struct_fields,
-             "ContentFilterConfig missing field: #{inspect(field)}"
-    end
-  end
-
   test "ExtractionConfig has all expected fields" do
     expected = [
       :acceleration,
@@ -66,6 +50,7 @@ defmodule Kreuzberg.E2E.ParityTest do
       :force_ocr,
       :force_ocr_pages,
       :html_options,
+      :html_output,
       :images,
       :include_document_structure,
       :keywords,

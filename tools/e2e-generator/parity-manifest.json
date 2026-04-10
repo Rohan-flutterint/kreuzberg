@@ -109,27 +109,6 @@
 				}
 			}
 		},
-		"ContentFilterConfig": {
-			"kind": "struct",
-			"fields": {
-				"include_footers": {
-					"json_type": "boolean",
-					"required": false
-				},
-				"include_headers": {
-					"json_type": "boolean",
-					"required": false
-				},
-				"include_watermarks": {
-					"json_type": "boolean",
-					"required": false
-				},
-				"strip_repeating_text": {
-					"json_type": "boolean",
-					"required": false
-				}
-			}
-		},
 		"ContentLayer": {
 			"kind": "enum",
 			"values": ["body", "header", "footer", "footnote"]
@@ -174,8 +153,8 @@
 					"required": false
 				},
 				"content_filter": {
-					"json_type": "object",
-					"required": false
+					"json_type": "null",
+					"required": true
 				},
 				"disable_ocr": {
 					"json_type": "boolean",
@@ -203,6 +182,11 @@
 				},
 				"html_options": {
 					"json_type": "object",
+					"required": false,
+					"feature_gate": "html"
+				},
+				"html_output": {
+					"json_type": "null",
 					"required": false,
 					"feature_gate": "html"
 				},

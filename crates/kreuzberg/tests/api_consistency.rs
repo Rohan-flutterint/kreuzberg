@@ -252,6 +252,7 @@ fn test_extraction_config_no_unknown_fields_in_default() {
         "keywords",
         "postprocessor",
         "html_options",
+        "html_output",
         "max_concurrent_extractions",
         "result_format",
         "output_format",

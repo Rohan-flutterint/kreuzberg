@@ -72,6 +72,7 @@ export type {
 	ExtractionConfig,
 	ExtractionResult,
 	HtmlConversionOptions,
+	HtmlOutputConfig,
 	HtmlPreprocessingOptions,
 	ImageExtractionConfig,
 	KeywordConfig,
@@ -231,7 +232,7 @@ export {
 // Version
 // ============================================================================
 
-export const __version__ = "4.8.1";
+export const __version__ = "4.8.2";
 
 // ============================================================================
 // Test Utilities

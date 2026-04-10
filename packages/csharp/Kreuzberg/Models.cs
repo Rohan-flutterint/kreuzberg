@@ -2495,6 +2495,14 @@ public sealed class ExtractionConfig
     [JsonPropertyName("content_filter")]
     public ContentFilterConfig? ContentFilter { get; init; }
 
+    /// <summary>
+    /// HTML output configuration for styled HTML rendering.
+    /// Controls CSS themes, custom stylesheets, and class prefixes when using HTML output format.
+    /// If null, the default plain HTML renderer is used.
+    /// </summary>
+    [JsonPropertyName("html_output")]
+    public HtmlOutputConfig? HtmlOutput { get; init; }
+
 }
 
 /// <summary>
@@ -3104,6 +3112,46 @@ public sealed class ContentFilterConfig
     /// </summary>
     [JsonPropertyName("include_watermarks")]
     public bool? IncludeWatermarks { get; init; }
+}
+
+/// <summary>
+/// Configuration for styled HTML output rendering.
+///
+/// Controls CSS themes, custom stylesheets, class prefixes, and whether CSS
+/// is embedded in the output when using HTML output format.
+/// </summary>
+public sealed class HtmlOutputConfig
+{
+    /// <summary>
+    /// Inline CSS string injected into the output after the theme stylesheet.
+    /// </summary>
+    [JsonPropertyName("css")]
+    public string? Css { get; init; }
+
+    /// <summary>
+    /// Path to a CSS file loaded at renderer construction time.
+    /// </summary>
+    [JsonPropertyName("css_file")]
+    public string? CssFile { get; init; }
+
+    /// <summary>
+    /// Built-in colour/typography theme (default, github, dark, light, unstyled).
+    /// </summary>
+    [JsonPropertyName("theme")]
+    public string? Theme { get; init; }
+
+    /// <summary>
+    /// CSS class prefix applied to every emitted class name. Default: "kb-".
+    /// </summary>
+    [JsonPropertyName("class_prefix")]
+    public string? ClassPrefix { get; init; }
+
+    /// <summary>
+    /// When true (default), write the resolved CSS into a style block in the output.
+    /// Set to false to emit only structural markup.
+    /// </summary>
+    [JsonPropertyName("embed_css")]
+    public bool? EmbedCss { get; init; }
 }
 
 /// <summary>

@@ -42,23 +42,6 @@ public class ParityTest
     }
 
     [Fact]
-    public void ContentFilterConfig_Has_All_Expected_Properties()
-    {
-        var type = typeof(ContentFilterConfig);
-        string[] expected = new string[]
-        {
-            "IncludeFooters",
-            "IncludeHeaders",
-            "IncludeWatermarks",
-            "StripRepeatingText",
-        };
-        foreach (var prop in expected)
-        {
-            Assert.NotNull(type.GetProperty(prop, BindingFlags.Public | BindingFlags.Instance));
-        }
-    }
-
-    [Fact]
     public void ExtractionConfig_Has_All_Expected_Properties()
     {
         var type = typeof(ExtractionConfig);
@@ -77,6 +60,7 @@ public class ParityTest
             "ForceOcr",
             "ForceOcrPages",
             "HtmlOptions",
+            "HtmlOutput",
             "Images",
             "IncludeDocumentStructure",
             "Keywords",

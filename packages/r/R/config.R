@@ -17,6 +17,11 @@
 #' @param pages Named list. Page-level extraction configuration.
 #' @param pdf_options Named list. PDF-specific options.
 #' @param html_options Named list. HTML-specific options.
+#' @param html_output Named list. HTML styled output configuration.
+#'   Controls styled HTML rendering with fields: theme (character, one of
+#'   "default", "github", "dark", "light", "unstyled"), class_prefix (character,
+#'   default "kb-"), embed_css (logical, default TRUE), css (character or NULL,
+#'   custom CSS string), css_file (character or NULL, path to CSS file).
 #' @param postprocessor Named list. Post-processor configuration.
 #' @param security_limits Named list. Security limits configuration.
 #' @param max_concurrent_extractions Integer. Max concurrent extractions.
@@ -47,7 +52,8 @@ extraction_config <- function(force_ocr = FALSE, disable_ocr = FALSE,
                               language_detection = NULL, keywords = NULL,
                               token_reduction = NULL, images = NULL,
                               pages = NULL, pdf_options = NULL,
-                              html_options = NULL, postprocessor = NULL,
+                              html_options = NULL, html_output = NULL,
+                              postprocessor = NULL,
                               security_limits = NULL,
                               max_concurrent_extractions = NULL,
                               max_archive_depth = 3L,
@@ -86,6 +92,7 @@ extraction_config <- function(force_ocr = FALSE, disable_ocr = FALSE,
   if (!is.null(pages)) config$pages <- pages
   if (!is.null(pdf_options)) config$pdf_options <- pdf_options
   if (!is.null(html_options)) config$html_options <- html_options
+  if (!is.null(html_output)) config$html_output <- html_output
   if (!is.null(postprocessor)) config$postprocessor <- postprocessor
   if (!is.null(security_limits)) config$security_limits <- security_limits
   if (!is.null(max_concurrent_extractions)) {

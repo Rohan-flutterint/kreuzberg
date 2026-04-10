@@ -660,6 +660,39 @@ export interface LayoutDetectionConfig {
 }
 
 /**
+ * HTML output configuration for styled HTML rendering.
+ *
+ * Controls how `outputFormat: "html"` renders documents when styled output
+ * is desired. Supports built-in themes and custom CSS injection.
+ */
+export interface HtmlOutputConfig {
+	/** Inline CSS string injected after the theme stylesheet. */
+	css?: string;
+
+	/** Path to a CSS file loaded at renderer construction time. */
+	cssFile?: string;
+
+	/**
+	 * Built-in colour/typography theme.
+	 * Default: "unstyled".
+	 */
+	theme?: "default" | "github" | "dark" | "light" | "unstyled";
+
+	/**
+	 * CSS class prefix applied to every emitted class name.
+	 * Default: "kb-".
+	 */
+	classPrefix?: string;
+
+	/**
+	 * When true, embed resolved CSS in a `<style>` block in the output.
+	 * Set to false to emit only structural markup.
+	 * Default: true.
+	 */
+	embedCss?: boolean;
+}
+
+/**
  * Main extraction configuration interface.
  *
  * Combines all sub-configurations for document extraction, OCR, chunking, post-processing, etc.
@@ -733,6 +766,14 @@ export interface ExtractionConfig {
 
 	/** Layout detection configuration for detecting document structure in PDFs. */
 	layout?: LayoutDetectionConfig;
+
+	/**
+	 * HTML output configuration for styled HTML rendering.
+	 *
+	 * When set alongside `outputFormat: "html"`, the pipeline uses a styled HTML renderer
+	 * with theme support and optional custom CSS instead of the plain renderer.
+	 */
+	htmlOutput?: HtmlOutputConfig;
 }
 
 /**
