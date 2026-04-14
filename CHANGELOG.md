@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **R e2e embed tests fail** — generated R embedding config was missing the `type` discriminator field required by Rust's tagged enum deserialization.
 - **Elixir parity test fails** — `ExtractionConfig` struct was missing the `:html_output` field.
 - **Go LLM e2e tests fail** — `EmbeddingModelType` struct was missing `Llm` nested config, `ExtractionConfig` was missing `StructuredExtraction` field.
+- **WASM tree-sitter build fails** — `tree-sitter-language-pack` 1.6.0 removed the `wasm` feature; removed stale feature gate from wasm32 target dependency.
 
 ---
 
