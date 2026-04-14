@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.8.5] - 2026-04-14
 
 ### Fixed
 
 - **Markdown chunker duplicates heading when `prepend_heading_context` is enabled** — the heading was prepended twice when a chunk boundary aligned with a heading node, producing repeated heading text in the output. (#701)
 - **Helm chart icon 404 on Artifact Hub** — `Chart.yaml` referenced `logo.png` but the file is `logo.svg`.
+- **Python wheel manylinux_2_38 compliance failure** — tesseract build script dynamically links `libstdc++`, introducing `GLIBCXX_3.4.31` symbols that violate manylinux_2_38. Added `KREUZBERG_STATIC_LIBSTDCXX` env var to force static `libstdc++` linking in manylinux builds.
 
 ---
 
