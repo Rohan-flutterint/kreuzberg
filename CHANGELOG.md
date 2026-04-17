@@ -2233,7 +2233,7 @@ First stable release of Kreuzberg v4, a complete rewrite with a Rust core and po
 
 #### API Server
 
-- Added `POST /embed` endpoint for generating embeddings from text. ([#266](https://github.com/Anthropic/kreuzberg/issues/266))
+- Added `POST /embed` endpoint for generating embeddings from text. ([#266](https://github.com/kreuzberg-dev/kreuzberg/issues/266))
 - Added `ServerConfig` type for file-based server configuration (TOML/YAML/JSON) with environment variable overrides.
 
 #### Observability
@@ -3055,10 +3055,10 @@ See [Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/) for detail
 
 ## See Also
 
-- [Configuration Reference](docs/reference/configuration.md) - Detailed configuration options
-- [Migration Guide](docs/migration/v3-to-v4.md) - v3 to v4 migration instructions
-- [Format Support](docs/reference/formats.md) - Supported file formats
-- [Extraction Guide](docs/guides/extraction.md) - Extraction examples
+- [Configuration Reference](https://docs.kreuzberg.dev/reference/configuration/) - Detailed configuration options
+- [Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/) - v3 to v4 migration instructions
+- [Format Support](https://docs.kreuzberg.dev/reference/formats/) - Supported file formats
+- [Extraction Guide](https://docs.kreuzberg.dev/guides/extraction/) - Extraction examples
 
 [4.8.5]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.8.5
 [4.8.4]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.8.4
@@ -3151,7 +3151,6 @@ See [Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/) for detail
 [4.0.0-rc.4]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.0.0-rc.4
 [4.0.0-rc.3]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.0.0-rc.3
 [4.0.0-rc.2]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.0.0-rc.2
-[4.0.0-rc.1]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.0.0-rc.1
 [3.22.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.22.0
 [3.21.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.21.0
 [3.20.2]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.20.2
@@ -3170,7 +3169,6 @@ See [Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/) for detail
 [3.11.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.11.0
 [3.10.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.10.0
 [3.9.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.9.0
-[3.8.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.8.0
 [3.7.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.7.0
 [3.6.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.6.0
 [3.5.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v3.5.0

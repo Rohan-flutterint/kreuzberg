@@ -166,4 +166,4 @@ The RT-DETR v2 model detects 17 layout classes:
 ## Related
 
 - [Configuration Reference](../reference/configuration.md#layoutdetectionconfig) — full field reference
-- [Element-Based Output](element-based-output.md) — using layout-aware results
+- [Element-Based Output](output-formats.md#element-based-output) — using layout-aware results

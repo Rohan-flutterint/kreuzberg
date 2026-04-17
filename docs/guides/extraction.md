@@ -480,6 +480,54 @@ Control the content mode with `TreeSitterProcessConfig.content_mode`:
 - `raw` -- Source code as-is, no transformation
 - `structure` -- Headings and docstrings only
 
+## PDF Page Rendering
+
+Render individual PDF pages as PNG images. Unlike the extraction pipeline (which parses text, tables, metadata), this API produces raw pixel data for thumbnails, vision model input, or custom OCR pipelines.
+
+### Two Approaches
+
+| API | When to use |
+|-----|-------------|
+| `render_pdf_page` | You know which page you need, or only need a few pages |
+| `PdfPageIterator` | Process every page sequentially without loading all images into memory |
+
+See the [PDF Page Rendering](#pdf-page-rendering) section above for complete examples and language-specific syntax.
+
+### DPI Configuration
+
+| DPI | Pixel size (US Letter) | Use case |
+|-----|----------------------|----------|
+| 72 | 612 x 792 | Thumbnails, quick previews |
+| 150 (default) | 1275 x 1650 | General-purpose, screen display |
+| 300 | 2550 x 3300 | OCR input, print quality |
+
+**Tip:** Use 300 DPI when rendering pages for OCR or vision models. The default 150 DPI may reduce recognition accuracy on small text.
+
+## MIME Type Detection
+
+Kreuzberg automatically detects file MIME types from the file extension and content, then selects the right parser. If you need to override the detection or work with files without extensions, you can provide an explicit MIME type.
+
+### How It Works
+
+- **From file path:** Extension normalized and mapped to MIME type (e.g., `.pdf` → `application/pdf`)
+- **From bytes:** MIME type is required since there's no extension to infer from
+- **Explicit override:** Pass `mime_type` to skip auto-detection
+
+### Supported Formats
+
+Kreuzberg supports 75+ formats across 8 categories: PDF, Images, Office (DOCX/XLSX/PPTX), Legacy Office (DOC/PPT), Email, Web, Text (Markdown/JSON/XML), and Archives. See the [format reference](../reference/formats.md) for the complete list.
+
+### Example: Override MIME Type
+
+```python title="Python"
+from kreuzberg import extract_file
+
+# File without extension — provide MIME type explicitly
+result = extract_file("document_copy", mime_type="application/pdf", config=config)
+```
+
+See [Format Support](../reference/formats.md) for the complete list of supported formats and MIME type detection information.
+
 ## Error Handling
 
 All extraction functions raise typed exceptions on failure. Catch specific exceptions to handle different failure modes:
@@ -532,5 +580,5 @@ All extraction functions raise typed exceptions on failure. Catch specific excep
 - [Configuration](configuration.md) — all configuration options and file formats
 - [OCR Guide](ocr.md) — set up optical character recognition
 - [Advanced Features](advanced.md) — chunking, language detection, embeddings
-- [Element-Based Output](element-based-output.md) — structured element arrays for RAG
-- [Document Structure](document-structure.md) — hierarchical tree output
+- [Element-Based Output](output-formats.md#element-based-output) — structured element arrays for RAG
+- [Document Structure](output-formats.md#document-structure) — hierarchical tree output

@@ -679,7 +679,7 @@ V4 delivers significant performance improvements over v3 through its Rust-first 
 - **Async concurrency** – True parallelism without GIL limitations
 - **Smart caching** – Content-based deduplication
 
-See the [Performance Guide](../concepts/performance.md) for detailed explanations of optimization techniques and architecture benefits.
+See the [Development Workflow](../guides/development.md#performance) for detailed explanations of optimization techniques and architecture benefits.
 
 ## New Features in v4
 

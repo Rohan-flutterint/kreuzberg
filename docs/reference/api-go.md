@@ -2092,4 +2092,4 @@ For configuration details, see the [Code Intelligence Guide](../guides/code-inte
 - **FFI Bridge:** [crates/kreuzberg-ffi/](https://github.com/kreuzberg-dev/kreuzberg/tree/main/crates/kreuzberg-ffi) (C FFI layer)
 - **Rust Core:** [crates/kreuzberg/](https://github.com/kreuzberg-dev/kreuzberg/tree/main/crates/kreuzberg) (extraction logic)
 - **E2E Tests:** [e2e/go/](https://github.com/kreuzberg-dev/kreuzberg/tree/main/e2e/go) (auto-generated test fixtures)
-- **CI:** [.github/workflows/go-test.yml](https://github.com/kreuzberg-dev/kreuzberg/blob/main/.github/workflows/go-test.yml) (test pipeline)
+- **CI:** [.github/workflows/ci.yaml](https://github.com/kreuzberg-dev/kreuzberg/blob/main/.github/workflows/ci.yaml) (test pipeline)

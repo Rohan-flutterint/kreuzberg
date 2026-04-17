@@ -254,5 +254,5 @@ All generated HTML elements include semantic `kb-*` classes for targeted styling
 
 - [Configuration](configuration.md) -- all configuration options
 - [Extraction Basics](extraction.md) -- core extraction API and supported formats
-- [Element-Based Output](element-based-output.md) -- structured element output as an alternative to HTML
-- [Document Structure](document-structure.md) -- how Kreuzberg models document structure
+- [Element-Based Output](output-formats.md#element-based-output) -- structured element output as an alternative to HTML
+- [Document Structure](output-formats.md#document-structure) -- how Kreuzberg models document structure

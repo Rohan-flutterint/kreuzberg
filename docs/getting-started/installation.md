@@ -148,7 +148,7 @@ The fastest way to try Kreuzberg - no SDK, no code, just your terminal.
     ```
 
     [API Reference](../reference/api-csharp.md){ .install-btn .install-btn--ghost }
-    [:material-lightning-bolt: Quick Start](../guides/csharp.md){ .install-btn .install-btn--solid }
+    [:material-lightning-bolt: Quick Start](../reference/api-csharp.md){ .install-btn .install-btn--solid }
 
 -   :fontawesome-brands-php:{ .lg .middle } **PHP**
 
