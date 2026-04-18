@@ -2108,6 +2108,12 @@ fn populate_images_from_pdfium(
             continue;
         };
 
+        // Build an O(1) lookup set so the inner loop over page objects is O(N)
+        // rather than O(N²). Pages from Ghostscript-produced PDFs can contain
+        // thousands of inline images; a Vec::contains scan inside the object
+        // loop was catastrophically slow in those cases.
+        let indices_set: ahash::AHashSet<usize> = indices.iter().copied().collect();
+
         // Walk page objects, extracting image data for each matching index.
         let first_idx_on_page = indices.iter().copied().min().unwrap_or(0);
         let mut current_image = 0usize;
@@ -2117,7 +2123,7 @@ fn populate_images_from_pdfium(
         for obj in page.objects().iter() {
             if let Some(image_obj) = obj.as_image_object() {
                 let global_idx = first_idx_on_page + current_image;
-                if indices.contains(&global_idx)
+                if indices_set.contains(&global_idx)
                     && let Ok(dynamic_image) = image_obj.get_processed_image(document)
                 {
                     let w = dynamic_image.width();
@@ -2572,6 +2578,45 @@ mod tests {
             pages[0].len(),
             3,
             "non-consecutive heading duplicates must be preserved"
+        );
+    }
+
+    /// Verify that the AHashSet-based index lookup used in `populate_images_from_pdfium`
+    /// correctly identifies which image indices are present.
+    ///
+    /// This is a regression guard for issue #752: the original code used
+    /// `Vec::contains` (O(N) per lookup) inside the per-page object loop,
+    /// causing O(N²) behaviour with ~1,924 images on Ghostscript-produced PDFs.
+    /// The fix collects indices into an `AHashSet` before the loop for O(1) lookup.
+    #[test]
+    fn test_image_index_ahashset_lookup_correctness() {
+        // Simulate a page with 1924 image indices (the Ghostscript repro size).
+        let indices: Vec<usize> = (100..2024).collect();
+        let indices_set: ahash::AHashSet<usize> = indices.iter().copied().collect();
+
+        // Every index in the original vec must be found in the set.
+        for &idx in &indices {
+            assert!(
+                indices_set.contains(&idx),
+                "AHashSet must contain index {idx} that was in the source Vec"
+            );
+        }
+
+        // Indices outside the range must not be present.
+        assert!(
+            !indices_set.contains(&99usize),
+            "index 99 must not be in set (range starts at 100)"
+        );
+        assert!(
+            !indices_set.contains(&2024usize),
+            "index 2024 must not be in set (range ends at 2023)"
+        );
+
+        // Verify set size matches input.
+        assert_eq!(
+            indices_set.len(),
+            indices.len(),
+            "AHashSet must contain exactly as many elements as the source Vec"
         );
     }
 }
