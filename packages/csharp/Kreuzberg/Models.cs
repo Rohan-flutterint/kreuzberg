@@ -721,6 +721,41 @@ public sealed class PageHierarchy
 }
 
 /// <summary>
+/// A detected layout region on a page.
+/// </summary>
+/// <remarks>
+/// When layout detection is enabled, each page may have layout regions
+/// identifying different content types (text, pictures, tables, etc.)
+/// with confidence scores and spatial positions.
+/// </remarks>
+public sealed class LayoutRegion
+{
+    /// <summary>
+    /// Layout class name (e.g. "picture", "table", "text", "section_header").
+    /// </summary>
+    [JsonPropertyName("class")]
+    public string Class { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Detection confidence score (0.0 to 1.0).
+    /// </summary>
+    [JsonPropertyName("confidence")]
+    public double Confidence { get; set; }
+
+    /// <summary>
+    /// Bounding box in document coordinate space.
+    /// </summary>
+    [JsonPropertyName("bounding_box")]
+    public BoundingBox BoundingBox { get; set; } = new();
+
+    /// <summary>
+    /// Fraction of the page area covered by this region (0.0 to 1.0).
+    /// </summary>
+    [JsonPropertyName("area_fraction")]
+    public double AreaFraction { get; set; }
+}
+
+/// <summary>
 /// Extracted content for a single page when page extraction is enabled.
 /// </summary>
 public sealed class PageContent
@@ -760,6 +795,12 @@ public sealed class PageContent
     /// </summary>
     [JsonPropertyName("is_blank")]
     public bool? IsBlank { get; set; }
+
+    /// <summary>
+    /// Layout detection regions for this page (when layout detection is enabled).
+    /// </summary>
+    [JsonPropertyName("layout_regions")]
+    public List<LayoutRegion>? LayoutRegions { get; set; }
 }
 
 /// <summary>

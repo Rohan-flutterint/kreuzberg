@@ -1283,6 +1283,17 @@ module Kreuzberg
       def to_h: () -> image_hash
     end
 
+    # Layout detection region on a page (Struct from result.rb)
+    class LayoutRegion
+      attr_reader class_name: String
+      attr_reader confidence: Float
+      attr_reader bounding_box: ElementBoundingBox?
+      attr_reader area_fraction: Float
+
+      def initialize: (class_name: String, confidence: Float, bounding_box: ElementBoundingBox?, area_fraction: Float) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
     # Page content with text and extracted elements (Struct from result.rb)
     class PageContent
       attr_reader page_number: Integer
@@ -1291,8 +1302,9 @@ module Kreuzberg
       attr_reader images: Array[Image]?
       attr_reader hierarchy: PageHierarchy?
       attr_reader is_blank: bool?
+      attr_reader layout_regions: Array[LayoutRegion]?
 
-      def initialize: (page_number: Integer, content: String, tables: Array[Table], images: Array[Image]?, hierarchy: PageHierarchy?, is_blank: bool?) -> void
+      def initialize: (page_number: Integer, content: String, tables: Array[Table], images: Array[Image]?, hierarchy: PageHierarchy?, is_blank: bool?, layout_regions: Array[LayoutRegion]?) -> void
       def to_h: () -> Hash[Symbol, untyped]
     end
 

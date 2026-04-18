@@ -86,6 +86,7 @@ __all__ = [
     "KeywordConfig",
     "LanguageDetectionConfig",
     "LayoutDetectionConfig",
+    "LayoutRegion",
     "LinkMetadata",
     "LlmConfig",
     "LlmUsage",
@@ -2497,12 +2498,23 @@ class ExtractionResult:
     def get_detected_language(self) -> str | None: ...
     def get_metadata_field(self, field_name: str) -> Any | None: ...
 
+LayoutRegion = TypedDict(
+    "LayoutRegion",
+    {
+        "class": str,
+        "confidence": float,
+        "bounding_box": BoundingBox,
+        "area_fraction": float,
+    },
+)
+
 class PageContent(TypedDict):
     page_number: int
     content: str
     tables: list[ExtractedTable]
     images: list[ExtractedImage]
     is_blank: bool | None
+    layout_regions: list[LayoutRegion] | None
 
 class ExtractedTable:
     cells: list[list[str]]
