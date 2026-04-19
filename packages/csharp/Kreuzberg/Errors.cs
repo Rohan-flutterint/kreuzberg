@@ -33,6 +33,8 @@ public enum KreuzbergErrorKind
     Runtime,
     /// <summary>Error during text embedding generation.</summary>
     Embedding,
+    /// <summary>Operation was cancelled.</summary>
+    Cancelled,
 }
 
 /// <summary>
@@ -286,6 +288,22 @@ public class KreuzbergEmbeddingException : KreuzbergException
 }
 
 /// <summary>
+/// Exception thrown when an operation is cancelled.
+/// </summary>
+public class KreuzbergCancelledException : KreuzbergException
+{
+    /// <summary>
+    /// Initializes a new instance of the KreuzbergCancelledException class.
+    /// </summary>
+    /// <param name="message">The cancellation message.</param>
+    /// <param name="inner">The inner exception that caused this error, if any.</param>
+    public KreuzbergCancelledException(string message, Exception? inner = null)
+        : base(KreuzbergErrorKind.Cancelled, ErrorMapper.PrefixMessage(message, "Extraction cancelled"), inner)
+    {
+    }
+}
+
+/// <summary>
 /// Internal utility class for mapping native Kreuzberg errors to .NET exceptions.
 /// This class parses error messages from the Rust FFI layer and creates appropriate exception types.
 /// </summary>
@@ -373,6 +391,11 @@ internal static class ErrorMapper
         if (trimmed.StartsWith("Embedding error:", StringComparison.OrdinalIgnoreCase))
         {
             return new KreuzbergEmbeddingException(trimmed);
+        }
+
+        if (trimmed.StartsWith("Extraction cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            return new KreuzbergCancelledException(trimmed);
         }
 
         return new KreuzbergRuntimeException(trimmed);

@@ -10,7 +10,7 @@ package dev.kreuzberg;
  *
  * <p>
  * These codes match the panic_shield::ErrorCode enum in the Rust FFI layer
- * (codes 0-7). Higher-level error types like cache and image processing errors
+ * (codes 0-9). Higher-level error types like cache and image processing errors
  * are created by the Java binding through message-based classification and do
  * not have corresponding FFI error codes.
  *
@@ -42,7 +42,10 @@ public enum ErrorCode {
 	MISSING_DEPENDENCY(7),
 
 	/** Error during embedding generation (8). */
-	EMBEDDING(8);
+	EMBEDDING(8),
+
+	/** Operation was cancelled (9). */
+	CANCELLED(9);
 
 	private final int code;
 
@@ -67,6 +70,7 @@ public enum ErrorCode {
 	private static final int CODE_OCR_ERROR = 6;
 	private static final int CODE_MISSING_DEPENDENCY = 7;
 	private static final int CODE_EMBEDDING = 8;
+	private static final int CODE_CANCELLED = 9;
 
 	/**
 	 * Returns the ErrorCode for the given numeric code.
@@ -85,6 +89,7 @@ public enum ErrorCode {
 			case CODE_OCR_ERROR -> OCR_ERROR;
 			case CODE_MISSING_DEPENDENCY -> MISSING_DEPENDENCY;
 			case CODE_EMBEDDING -> EMBEDDING;
+			case CODE_CANCELLED -> CANCELLED;
 			default -> SUCCESS;
 		};
 	}
@@ -115,6 +120,11 @@ public enum ErrorCode {
 		}
 
 		String lower = message.toLowerCase(java.util.Locale.ROOT);
+
+		// Check for cancellation errors
+		if (lower.contains("cancel") || lower.contains("cancelled")) {
+			return CANCELLED;
+		}
 
 		// Check for parsing errors
 		if (lower.contains("parse") || lower.contains("parsing") || lower.contains("corrupt")
