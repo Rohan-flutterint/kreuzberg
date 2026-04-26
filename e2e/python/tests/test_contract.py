@@ -342,7 +342,7 @@ async def test_config_email_msg_fallback_codepage() -> None:
     assert result.mime_type.strip() == "application/vnd.ms-outlook"  # noqa: S101
     assert len(result.content) >= 10  # noqa: S101
 
-@pytest.mark.skip(reason="EmbeddingModelType::Plugin requires a host-language backend registered via register_embedding_backend before dispatch; the e2e harness cannot register one. This fixture validates config round-trip (the {"type":"plugin","name":...} shape is accepted by every binding's EmbeddingConfig).")
+@pytest.mark.skip(reason='EmbeddingModelType::Plugin requires a host-language backend registered via register_embedding_backend before dispatch; the e2e harness cannot register one. This fixture validates config round-trip (the {{"type":"plugin","name":...}} shape is accepted by every binding\'s EmbeddingConfig).')
 def test_config_embedding_plugin() -> None:
     """Tests EmbeddingModelType::Plugin variant deserialization in ChunkingConfig — config accepts the plugin variant shape; actual dispatch requires a host-language backend registered via register_embedding_backend at runtime."""
     path = "pdf/fake_memo.pdf"

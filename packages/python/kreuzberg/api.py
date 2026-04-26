@@ -7,7 +7,51 @@
 
 import kreuzberg._kreuzberg as _rust
 
-from ._kreuzberg import LlmUsage, DocumentStructure, PdfConfig, ExtractionResult, AccelerationConfig, OcrQualityThresholds, OcrConfidence, ChunkingConfig, HtmlOutputConfig, OcrConfig, ImageExtractionConfig, TreeSitterProcessConfig, TextAnnotation, ChunkingResult, RakeParams, ExtractionConfig, ByteBufferPool, LayoutDetectionConfig, ImagePreprocessingConfig, KeywordConfig, LlmConfig, PostProcessorConfig, YakeParams, EmailExtractionResult, HierarchyConfig, StringBufferPool, PageConfig, TokenReductionConfig, TesseractConfig, Element, TreeSitterConfig, EmbeddingConfig, UriKind, SupportedFormat, EmbeddingModelType, LanguageDetectionConfig, EmailConfig, ContentFilterConfig, Keyword, OcrElementConfig, Metadata, OcrElement, PageBoundary
+from ._kreuzberg import (
+    AccelerationConfig,
+    ByteBufferPool,
+    ChunkingConfig,
+    ChunkingResult,
+    ContentFilterConfig,
+    DocumentStructure,
+    Element,
+    EmailConfig,
+    EmailExtractionResult,
+    EmbeddingConfig,
+    EmbeddingModelType,
+    ExtractionConfig,
+    ExtractionResult,
+    HierarchyConfig,
+    HtmlOutputConfig,
+    ImageExtractionConfig,
+    ImagePreprocessingConfig,
+    Keyword,
+    KeywordConfig,
+    LanguageDetectionConfig,
+    LayoutDetectionConfig,
+    LlmConfig,
+    LlmUsage,
+    Metadata,
+    OcrConfidence,
+    OcrConfig,
+    OcrElement,
+    OcrElementConfig,
+    OcrQualityThresholds,
+    PageBoundary,
+    PageConfig,
+    PdfConfig,
+    PostProcessorConfig,
+    RakeParams,
+    StringBufferPool,
+    SupportedFormat,
+    TesseractConfig,
+    TextAnnotation,
+    TokenReductionConfig,
+    TreeSitterConfig,
+    TreeSitterProcessConfig,
+    UriKind,
+    YakeParams,
+)
 
 
 def _to_rust_image_preprocessing_config(

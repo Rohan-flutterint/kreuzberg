@@ -993,6 +993,11 @@ exclude_types = [
 [r]
 package_name = "kreuzberg"
 
+[update.r]
+precondition = "command -v Rscript >/dev/null"
+update = "cd packages/r && Rscript -e \"if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes', repos = 'https://cloud.r-project.org'); remotes::update_packages(ask = FALSE)\""
+upgrade = "cd packages/r && Rscript -e \"if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes', repos = 'https://cloud.r-project.org'); remotes::update_packages(ask = FALSE)\""
+
 [wasm]
 # Only exclude ort-dependent types/functions (paddle-ocr, layout-detection, embeddings, auto-rotate).
 exclude_types = [

@@ -1,30 +1,9 @@
 name: CI GPU
 
+# NOTE: The `gpu_acceleration` integration test was removed in 245539484
+# during the alef-migration cleanup. This workflow is dormant until the test
+# is restored — keep `workflow_dispatch` so we can re-enable it on demand.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "crates/kreuzberg/src/**"
-      - "crates/kreuzberg/tests/gpu_acceleration.rs"
-      - "crates/kreuzberg-paddle-ocr/**"
-      - "test_documents/**"
-      - ".github/workflows/ci-gpu.yaml"
-      - ".github/actions/setup-paddle-ocr-models/**"
-      - ".github/actions/install-system-deps/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-  pull_request:
-    branches: [main]
-    paths:
-      - "crates/kreuzberg/src/**"
-      - "crates/kreuzberg/tests/gpu_acceleration.rs"
-      - "crates/kreuzberg-paddle-ocr/**"
-      - "test_documents/**"
-      - ".github/workflows/ci-gpu.yaml"
-      - ".github/actions/setup-paddle-ocr-models/**"
-      - ".github/actions/install-system-deps/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
   workflow_dispatch:
 
 concurrency:
@@ -73,12 +52,18 @@ jobs:
 
       - name: Build GPU test binary
         run: |
+          set -o pipefail
           cargo test -p kreuzberg \
             --features "paddle-ocr,layout-detection,embeddings,pdf,ocr,ort-dynamic" \
             --test gpu_acceleration \
-            --no-run --message-format=json 2>/dev/null \
+            --no-run --message-format=json 2> /tmp/cargo-stderr.log \
             | jq -r 'select(.executable != null) | .executable' \
             | head -1 > /tmp/test-binary-path.txt
+          if [ ! -s /tmp/test-binary-path.txt ]; then
+            echo "::error::cargo test produced no executable; stderr below:"
+            cat /tmp/cargo-stderr.log
+            exit 1
+          fi
           TEST_BIN=$(cat /tmp/test-binary-path.txt)
           echo "Test binary: $TEST_BIN"
           cp "$TEST_BIN" gpu-acceleration-test
