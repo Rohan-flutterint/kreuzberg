@@ -15,8 +15,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * blocks with heading levels (H1-H6) for semantic document structure.
  */
 public record PageHierarchy(
-		/** Number of hierarchy blocks on this page */
-		@JsonProperty("block_count") long blockCount,
-		/** Hierarchical blocks with heading levels */
-		List<HierarchicalBlock> blocks) {
+    /** Number of hierarchy blocks on this page */
+    @JsonProperty("block_count") long blockCount,
+    /** Hierarchical blocks with heading levels */
+    List<HierarchicalBlock> blocks
+) {
 }

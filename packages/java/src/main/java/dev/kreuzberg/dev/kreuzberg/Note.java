@@ -8,5 +8,9 @@ package dev.kreuzberg;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record Note(String id, @JsonProperty("note_type") String noteType, List<String> paragraphs) {
+public record Note(
+    String id,
+    @JsonProperty("note_type") String noteType,
+    List<String> paragraphs
+) {
 }

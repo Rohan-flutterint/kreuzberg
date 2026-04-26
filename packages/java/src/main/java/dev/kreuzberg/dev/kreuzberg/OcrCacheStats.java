@@ -7,9 +7,11 @@ package dev.kreuzberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record OcrCacheStats(@JsonProperty("total_files") long totalFiles,
-		@JsonProperty("total_size_mb") double totalSizeMb) {
-	public static OcrCacheStatsBuilder builder() {
-		return new OcrCacheStatsBuilder();
-	}
+public record OcrCacheStats(
+    @JsonProperty("total_files") long totalFiles,
+    @JsonProperty("total_size_mb") double totalSizeMb
+) {
+    public static OcrCacheStatsBuilder builder() {
+        return new OcrCacheStatsBuilder();
+    }
 }

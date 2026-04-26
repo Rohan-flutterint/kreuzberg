@@ -11,12 +11,13 @@ import java.util.Optional;
  * Link element in Djot.
  */
 public record DjotLink(
-		/** Link URL */
-		String url,
-		/** Link text content */
-		String text,
-		/** Optional title */
-		Optional<String> title,
-		/** Element attributes */
-		Optional<String> attributes) {
+    /** Link URL */
+    String url,
+    /** Link text content */
+    String text,
+    /** Optional title */
+    Optional<String> title,
+    /** Element attributes */
+    Optional<String> attributes
+) {
 }

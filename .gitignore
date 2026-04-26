@@ -48,7 +48,7 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-crates/kreuzberg-node/index.d.ts
+# NAPI-RS generated files (index.d.ts is committed for TypeScript type resolution)
 crates/kreuzberg-node/index.js
 libpdfium.a
 .wrangler/

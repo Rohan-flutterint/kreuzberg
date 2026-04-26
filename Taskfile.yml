@@ -242,6 +242,39 @@ tasks:
     cmds:
       - alef publish package -o dist/
 
+  # === Language binding lint/format ===
+  go:lint:
+    desc: "Lint Go binding with golangci-lint"
+    cmds:
+      - golangci-lint run ./...
+    dir: packages/go
+
+  ruby:format:
+    desc: "Format Ruby binding with rubocop"
+    cmds:
+      - bundle exec rubocop --autocorrect
+    dir: packages/ruby
+
+  ruby:lint:
+    desc: "Lint Ruby binding with rubocop and steep"
+    cmds:
+      - bundle exec rubocop
+      - bundle exec steep check
+    dir: packages/ruby
+
+  php:format:
+    desc: "Format PHP binding with php-cs-fixer"
+    cmds:
+      - php-cs-fixer fix
+    dir: packages/php
+
+  php:lint:
+    desc: "Lint PHP binding with phpstan and php-cs-fixer"
+    cmds:
+      - php-cs-fixer fix --dry-run --diff
+      - phpstan analyse
+    dir: packages/php
+
   # === Clean ===
   clean:
     desc: "Remove build artifacts across all languages"

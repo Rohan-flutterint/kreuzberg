@@ -11,10 +11,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * RAKE-specific parameters.
  */
 public record RakeParams(
-		/** Minimum word length to consider (default: 1). */
-		@JsonProperty("min_word_length") long minWordLength, /** Maximum words in a keyword phrase (default: 3). */
-		@JsonProperty("max_words_per_phrase") long maxWordsPerPhrase) {
-	public static RakeParamsBuilder builder() {
-		return new RakeParamsBuilder();
-	}
+    /** Minimum word length to consider (default: 1). */
+    @JsonProperty("min_word_length") long minWordLength,
+    /** Maximum words in a keyword phrase (default: 3). */
+    @JsonProperty("max_words_per_phrase") long maxWordsPerPhrase
+) {
+    public static RakeParamsBuilder builder() {
+        return new RakeParamsBuilder();
+    }
 }

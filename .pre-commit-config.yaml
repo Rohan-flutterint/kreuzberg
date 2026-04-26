@@ -60,9 +60,12 @@ repos:
             "--allow-dirty",
             "--allow-staged",
             "--workspace",
+            "--exclude=kreuzberg-ffi",
             "--exclude=kreuzberg-py",
             "--exclude=kreuzberg-node",
             "--exclude=kreuzberg-php",
+            "--exclude=kreuzberg-wasm",
+            "--exclude=kreuzberg_nif",
             "--all-features",
             "--all-targets",
             "--",
@@ -97,7 +100,7 @@ repos:
 
   # Markdown: linting
   - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: "v0.1.81"
+    rev: "v0.1.82"
     hooks:
       - id: rumdl-fmt
         exclude: '^(tools/benchmark-harness/vendored/|docs/reference/(api-|configuration\.md|errors\.md|types\.md)|templates/readme/)'

@@ -5,7 +5,7 @@
 use crate::plugins::DocumentExtractor;
 use crate::types::{ErrorMetadata, ExtractionResult, Metadata};
 #[cfg(test)]
-use crate::utils::{PoolSizeHint, estimate_pool_size};
+use crate::utils::pool_sizing::{PoolSizeHint, estimate_pool_size};
 use crate::{KreuzbergError, Result};
 use std::borrow::Cow;
 use std::sync::Arc;

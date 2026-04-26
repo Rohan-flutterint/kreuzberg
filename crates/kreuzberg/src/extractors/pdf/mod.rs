@@ -19,9 +19,6 @@ use std::path::Path;
 #[cfg(feature = "pdf")]
 use crate::pdf::error::PdfError;
 
-#[cfg(feature = "ocr")]
-use ocr::evaluate_per_page_ocr;
-
 #[cfg(feature = "pdf")]
 use pdfium_render::prelude::{PdfDocument, Pdfium};
 
@@ -1252,7 +1249,7 @@ impl PdfExtractor {
             (ocr_text, true)
         } else if let Some(ocr_config) = config.ocr.as_ref() {
             let thresholds = ocr_config.effective_thresholds();
-            let decision = evaluate_per_page_ocr(
+            let decision = ocr::evaluate_per_page_ocr(
                 &native_text,
                 boundaries.as_deref(),
                 pdf_metadata.pdf_specific.page_count,

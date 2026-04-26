@@ -5,6 +5,7 @@
 // Issues & docs: https://github.com/kreuzberg-dev/alef
 package dev.kreuzberg;
 
+
 /**
  * Bounding box for an OCR-detected table in pixel coordinates.
  */

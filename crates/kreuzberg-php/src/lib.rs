@@ -7973,15 +7973,14 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
         image_bytes: &[u8],
         config: &kreuzberg::OcrConfig,
     ) -> std::result::Result<kreuzberg::ExtractionResult, kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let image_bytes = image_bytes;
         let config = config;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(ext_php_rs::types::Zval::try_from(format!("{:?}", image_bytes)).unwrap_or_default());
             args.push(
@@ -8006,7 +8005,8 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 
     async fn process_image_file(
@@ -8014,15 +8014,14 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
         path: &std::path::Path,
         config: &kreuzberg::OcrConfig,
     ) -> std::result::Result<kreuzberg::ExtractionResult, kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let path = path;
         let config = config;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(ext_php_rs::types::Zval::try_from(path.to_string_lossy().to_string()).unwrap_or_default());
             args.push(
@@ -8047,7 +8046,8 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 
     fn supports_language(&self, lang: &str) -> bool {
@@ -8124,15 +8124,14 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
         _path: &std::path::Path,
         _config: &kreuzberg::OcrConfig,
     ) -> std::result::Result<kreuzberg::ExtractionResult, kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let _path = _path;
         let _config = _config;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(ext_php_rs::types::Zval::try_from(_path.to_string_lossy().to_string()).unwrap_or_default());
             args.push(
@@ -8157,29 +8156,33 @@ impl kreuzberg::plugins::OcrBackend for PhpOcrBackendBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 }
 
 #[php_function]
 pub fn register_ocr_backend(backend: &mut ext_php_rs::types::ZendObject) -> ext_php_rs::prelude::PhpResult<()> {
-    if backend.try_call_method("process_image", vec![]).is_err() {
+    if backend.try_call_method("process_image".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "process_image"
-        )));
+        ))
+        .into());
     }
-    if backend.try_call_method("supports_language", vec![]).is_err() {
+    if backend.try_call_method("supports_language".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "supports_language"
-        )));
+        ))
+        .into());
     }
-    if backend.try_call_method("backend_type", vec![]).is_err() {
+    if backend.try_call_method("backend_type".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "backend_type"
-        )));
+        ))
+        .into());
     }
 
     let wrapper = PhpOcrBackendBridge::new(backend);
@@ -8267,15 +8270,14 @@ impl kreuzberg::plugins::PostProcessor for PhpPostProcessorBridge {
         result: &mut kreuzberg::ExtractionResult,
         config: &kreuzberg::ExtractionConfig,
     ) -> std::result::Result<(), kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let result = result;
         let config = config;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(
                 ext_php_rs::types::Zval::try_from(serde_json::to_string(&result).unwrap_or_default())
@@ -8303,7 +8305,8 @@ impl kreuzberg::plugins::PostProcessor for PhpPostProcessorBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 
     fn processing_stage(&self) -> kreuzberg::plugins::ProcessingStage {
@@ -8370,17 +8373,19 @@ impl kreuzberg::plugins::PostProcessor for PhpPostProcessorBridge {
 
 #[php_function]
 pub fn register_post_processor(backend: &mut ext_php_rs::types::ZendObject) -> ext_php_rs::prelude::PhpResult<()> {
-    if backend.try_call_method("process", vec![]).is_err() {
+    if backend.try_call_method("process".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "process"
-        )));
+        ))
+        .into());
     }
-    if backend.try_call_method("processing_stage", vec![]).is_err() {
+    if backend.try_call_method("processing_stage".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "processing_stage"
-        )));
+        ))
+        .into());
     }
 
     let wrapper = PhpPostProcessorBridge::new(backend);
@@ -8468,15 +8473,14 @@ impl kreuzberg::plugins::Validator for PhpValidatorBridge {
         result: &kreuzberg::ExtractionResult,
         config: &kreuzberg::ExtractionConfig,
     ) -> std::result::Result<(), kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let result = result;
         let config = config;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(
                 ext_php_rs::types::Zval::try_from(serde_json::to_string(&result).unwrap_or_default())
@@ -8504,7 +8508,8 @@ impl kreuzberg::plugins::Validator for PhpValidatorBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 
     fn should_validate(&self, _result: &kreuzberg::ExtractionResult, _config: &kreuzberg::ExtractionConfig) -> bool {
@@ -8548,11 +8553,12 @@ impl kreuzberg::plugins::Validator for PhpValidatorBridge {
 
 #[php_function]
 pub fn register_validator(backend: &mut ext_php_rs::types::ZendObject) -> ext_php_rs::prelude::PhpResult<()> {
-    if backend.try_call_method("validate", vec![]).is_err() {
+    if backend.try_call_method("validate".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "validate"
-        )));
+        ))
+        .into());
     }
 
     let wrapper = PhpValidatorBridge::new(backend);
@@ -8648,14 +8654,13 @@ impl kreuzberg::plugins::EmbeddingBackend for PhpEmbeddingBackendBridge {
     }
 
     async fn embed(&self, texts: Vec<String>) -> std::result::Result<Vec<Vec<f32>>, kreuzberg::KreuzbergError> {
-        let inner_obj = self.inner;
+        let inner_obj = self.inner.clone();
         let cached_name = self.cached_name.clone();
         let texts = texts;
 
         // SAFETY: PHP objects are single-threaded within a request.
         // The block_on executes within the async runtime.
-        
-        WORKER_RUNTIME.block_on(async {
+        let result = WORKER_RUNTIME.block_on(async {
             let mut args: Vec<ext_php_rs::types::Zval> = Vec::new();
             args.push(ext_php_rs::types::Zval::try_from(format!("{:?}", texts)).unwrap_or_default());
             match unsafe {
@@ -8676,23 +8681,26 @@ impl kreuzberg::plugins::EmbeddingBackend for PhpEmbeddingBackendBridge {
                     plugin_name: cached_name.clone(),
                 }),
             }
-        })
+        });
+        result
     }
 }
 
 #[php_function]
 pub fn register_embedding_backend(backend: &mut ext_php_rs::types::ZendObject) -> ext_php_rs::prelude::PhpResult<()> {
-    if backend.try_call_method("dimensions", vec![]).is_err() {
+    if backend.try_call_method("dimensions".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "dimensions"
-        )));
+        ))
+        .into());
     }
-    if backend.try_call_method("embed", vec![]).is_err() {
+    if backend.try_call_method("embed".into(), vec![]).is_err() {
         return Err(ext_php_rs::exception::PhpException::default(format!(
             "Backend missing required method: {}",
             "embed"
-        )));
+        ))
+        .into());
     }
 
     let wrapper = PhpEmbeddingBackendBridge::new(backend);

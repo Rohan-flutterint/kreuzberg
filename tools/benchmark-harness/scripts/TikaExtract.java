@@ -113,7 +113,8 @@ public final class TikaExtract {
         System.out.print(json);
     }
 
-    private static void processBatchMode(List<String> positionalArgs, boolean ocrEnabled, boolean debug) throws Exception {
+    private static void processBatchMode(
+            List<String> positionalArgs, boolean ocrEnabled, boolean debug) throws Exception {
         List<String> filePaths = new ArrayList<>();
         for (int i = 1; i < positionalArgs.size(); i++) {
             filePaths.add(positionalArgs.get(i));
@@ -205,7 +206,9 @@ public final class TikaExtract {
                 System.out.println(json);
                 System.out.flush();
             } catch (Exception e) {
-                String errorJson = String.format("{\"error\":%s,\"_extraction_time_ms\":0,\"_ocr_used\":false}", quote(e.getMessage()));
+                String errorJson = String.format(
+                        "{\"error\":%s,\"_extraction_time_ms\":0,\"_ocr_used\":false}",
+                        quote(e.getMessage()));
                 System.out.println(errorJson);
                 System.out.flush();
             }
@@ -294,7 +297,8 @@ public final class TikaExtract {
         return builder.toString();
     }
 
-    private static String toJsonWithBatch(ExtractionData data, double elapsedMs, double batchTotalMs, boolean ocrEnabled) {
+    private static String toJsonWithBatch(
+            ExtractionData data, double elapsedMs, double batchTotalMs, boolean ocrEnabled) {
         StringBuilder builder = new StringBuilder();
         builder.append('{');
         builder.append("\"content\":").append(quote(data.getContent())).append(',');

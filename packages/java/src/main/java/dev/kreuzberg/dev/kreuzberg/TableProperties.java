@@ -11,10 +11,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Table-level properties from {@code <w:tblPr>}.
  */
-public record TableProperties(@JsonProperty("style_id") Optional<String> styleId, Optional<String> width,
-		Optional<String> alignment, Optional<String> layout, Optional<String> look, Optional<String> borders,
-		@JsonProperty("cell_margins") Optional<String> cellMargins, Optional<String> indent, Optional<String> caption) {
-	public static TablePropertiesBuilder builder() {
-		return new TablePropertiesBuilder();
-	}
+public record TableProperties(
+    @JsonProperty("style_id") Optional<String> styleId,
+    Optional<String> width,
+    Optional<String> alignment,
+    Optional<String> layout,
+    Optional<String> look,
+    Optional<String> borders,
+    @JsonProperty("cell_margins") Optional<String> cellMargins,
+    Optional<String> indent,
+    Optional<String> caption
+) {
+    public static TablePropertiesBuilder builder() {
+        return new TablePropertiesBuilder();
+    }
 }

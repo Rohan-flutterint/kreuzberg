@@ -12,10 +12,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Citation file metadata (RIS, PubMed, EndNote).
  */
-public record CitationMetadata(@JsonProperty("citation_count") long citationCount, Optional<String> format,
-		List<String> authors, @JsonProperty("year_range") Optional<YearRange> yearRange, List<String> dois,
-		List<String> keywords) {
-	public static CitationMetadataBuilder builder() {
-		return new CitationMetadataBuilder();
-	}
+public record CitationMetadata(
+    @JsonProperty("citation_count") long citationCount,
+    Optional<String> format,
+    List<String> authors,
+    @JsonProperty("year_range") Optional<YearRange> yearRange,
+    List<String> dois,
+    List<String> keywords
+) {
+    public static CitationMetadataBuilder builder() {
+        return new CitationMetadataBuilder();
+    }
 }

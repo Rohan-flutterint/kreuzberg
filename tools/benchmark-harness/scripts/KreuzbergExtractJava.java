@@ -207,7 +207,9 @@ public final class KreuzbergExtractJava {
                 if (debug) {
                     debugLog("File extraction failed: " + path, e.getClass().getName() + ": " + e.getMessage());
                 }
-                jsonResults.add("{\"error\":\"" + e.getMessage().replace("\"", "\\\"") + "\",\"_extraction_time_ms\":" + fileMs + ",\"_ocr_used\":false}");
+                jsonResults.add("{\"error\":\""
+                        + e.getMessage().replace("\"", "\\\"")
+                        + "\",\"_extraction_time_ms\":" + fileMs + ",\"_ocr_used\":false}");
             }
         }
         double totalMs = (System.nanoTime() - start) / NANOS_IN_MILLISECOND;
@@ -309,7 +311,8 @@ public final class KreuzbergExtractJava {
         return builder.toString();
     }
 
-    private static String toJsonWithBatch(ExtractionResult result, double perFileMs, double batchTotalMs, boolean ocrEnabled) {
+    private static String toJsonWithBatch(
+            ExtractionResult result, double perFileMs, double batchTotalMs, boolean ocrEnabled) {
         StringBuilder builder = new StringBuilder();
         builder.append('{');
         builder.append("\"content\":").append(quote(result.getContent())).append(',');
