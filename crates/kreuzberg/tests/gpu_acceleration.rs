@@ -281,7 +281,7 @@ mod layout_detection_cuda {
         let has_table = detections
             .detections
             .iter()
-            .any(|d| d.class() == kreuzberg::layout::LayoutClass::Table);
+            .any(|d| d.class_name == kreuzberg::layout::LayoutClass::Table);
         println!(
             "CUDA layout: {} regions, table detected: {}",
             detections.detections.len(),

@@ -7707,7 +7707,7 @@ pub fn clean_extracted_text(text: String) -> String {
 pub fn reduce_tokens(text: String, config: TokenReductionConfig, language_hint: Option<String>) -> Result<String> {
     let config_json = serde_json::to_string(&config).map_err(|e| e.to_string())?;
     let config_core: kreuzberg::TokenReductionConfig = serde_json::from_str(&config_json).map_err(|e| e.to_string())?;
-    kreuzberg::text::reduce_tokens(&text, &config_core, language_hint.as_deref()).map(Into::into).map_err(|e| e.to_string())
+    kreuzberg::text::reduce_tokens(&text, &config_core, language_hint.as_deref()).map_err(|e| e.to_string())
 }
 
 #[allow(clippy::missing_errors_doc)]
@@ -7937,7 +7937,7 @@ pub fn extract_text_from_pdf(pdf_bytes: Vec<u8>) -> Result<String> {
 pub fn serialize_to_toon(result: ExtractionResult) -> Result<String> {
     let result_json = serde_json::to_string(&result).map_err(|e| e.to_string())?;
     let result_core: kreuzberg::ExtractionResult = serde_json::from_str(&result_json).map_err(|e| e.to_string())?;
-    kreuzberg::serialize_to_toon(&result_core).map(Into::into).map_err(|e| e.to_string())
+    kreuzberg::serialize_to_toon(&result_core).map_err(|e| e.to_string())
 }
 
 #[allow(clippy::missing_errors_doc)]
@@ -7945,7 +7945,7 @@ pub fn serialize_to_toon(result: ExtractionResult) -> Result<String> {
 pub fn serialize_to_json(result: ExtractionResult) -> Result<String> {
     let result_json = serde_json::to_string(&result).map_err(|e| e.to_string())?;
     let result_core: kreuzberg::ExtractionResult = serde_json::from_str(&result_json).map_err(|e| e.to_string())?;
-    kreuzberg::serialize_to_json(&result_core).map(Into::into).map_err(|e| e.to_string())
+    kreuzberg::serialize_to_json(&result_core).map_err(|e| e.to_string())
 }
 
 /// Wrapper that bridges a foreign R object to the `OcrBackend` trait.

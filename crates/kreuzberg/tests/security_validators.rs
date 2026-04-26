@@ -35,9 +35,10 @@ fn tight_limits() -> SecurityLimits {
 }
 
 fn config_with_tight_limits() -> ExtractionConfig {
-    let mut cfg = ExtractionConfig::default();
-    cfg.security_limits = Some(tight_limits());
-    cfg
+    ExtractionConfig {
+        security_limits: Some(tight_limits()),
+        ..ExtractionConfig::default()
+    }
 }
 
 /// Plain XML body: 1000 nested `<a>` elements should trip `max_xml_depth = 16`.

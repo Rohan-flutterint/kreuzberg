@@ -309,9 +309,12 @@ impl DocumentStructureBuilder {
     ///
     /// Subsequent body nodes will be parented under this admonition until
     /// [`exit_container`](Self::exit_container) is called.
-    #[expect(
-        dead_code,
-        reason = "called from docbook/rst extractors behind the office and xml feature gates"
+    #[cfg_attr(
+        not(any(feature = "office", feature = "xml")),
+        allow(
+            dead_code,
+            reason = "called from docbook/rst extractors behind the office and xml feature gates"
+        )
     )]
     pub(crate) fn push_admonition(&mut self, kind: &str, title: Option<&str>, page: Option<u32>) -> NodeIndex {
         let content = NodeContent::Admonition {

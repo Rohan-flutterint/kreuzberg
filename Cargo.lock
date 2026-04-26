@@ -3666,7 +3666,7 @@ dependencies = [
 name = "kreuzberg-wasm"
 version = "4.9.5"
 dependencies = [
- "async-trait",
+ "futures-util",
  "js-sys",
  "kreuzberg",
  "serde-wasm-bindgen",

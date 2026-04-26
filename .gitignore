@@ -153,6 +153,10 @@ docs/build/
 docs/benchmarks/charts/
 site/
 
+# Elixir build artifacts
+packages/elixir/_build/
+packages/elixir/deps/
+
 # Tests
 test_report.json
 tests/e2e/logs/
