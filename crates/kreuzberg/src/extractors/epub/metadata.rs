@@ -4,6 +4,7 @@
 //! Dublin Core metadata following EPUB2 and EPUB3 standards.
 
 use crate::Result;
+use crate::extractors::security::SecurityBudget;
 use crate::types::ProcessingWarning;
 use roxmltree;
 use std::collections::{BTreeMap, BTreeSet};
@@ -110,7 +111,11 @@ fn has_renderable_extension(href: &str) -> bool {
 }
 
 /// Parse OPF file and extract metadata and spine order
-pub(super) fn parse_opf(xml: &str, opf_dir: &str) -> Result<(EpubPackageDocument, Vec<ProcessingWarning>)> {
+pub(super) fn parse_opf(
+    xml: &str,
+    opf_dir: &str,
+    budget: &mut SecurityBudget,
+) -> Result<(EpubPackageDocument, Vec<ProcessingWarning>)> {
     match roxmltree::Document::parse(xml) {
         Ok(doc) => {
             let root = doc.root();
@@ -125,74 +130,109 @@ pub(super) fn parse_opf(xml: &str, opf_dir: &str) -> Result<(EpubPackageDocument
             let mut manifest: BTreeMap<String, ManifestItem> = BTreeMap::new();
 
             for node in root.descendants() {
+                budget.step()?;
+                if node.is_element() {
+                    budget.enter()?;
+                    for attr in node.attributes() {
+                        budget.check_attr(attr.name(), attr.value())?;
+                    }
+                }
                 match node.tag_name().name() {
                     "title" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.title = Some(text.trim().to_string());
                         }
                     }
                     "creator" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.creator = Some(text.trim().to_string());
                         }
                     }
                     "date" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.date = Some(text.trim().to_string());
                         }
                     }
                     "language" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.language = Some(text.trim().to_string());
                         }
                     }
                     "identifier" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.identifier = Some(text.trim().to_string());
                         }
                     }
                     "publisher" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.publisher = Some(text.trim().to_string());
                         }
                     }
                     "subject" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.subject = Some(text.trim().to_string());
                         }
                     }
                     "description" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.description = Some(text.trim().to_string());
                         }
                     }
                     "rights" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.rights = Some(text.trim().to_string());
                         }
                     }
                     "coverage" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.coverage = Some(text.trim().to_string());
                         }
                     }
                     "format" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.format = Some(text.trim().to_string());
                         }
                     }
                     "relation" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.relation = Some(text.trim().to_string());
                         }
                     }
                     "source" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.source = Some(text.trim().to_string());
                         }
                     }
                     "type" => {
                         if let Some(text) = node.text() {
+                            budget.check_entity(text)?;
+                            budget.account_text(text.len())?;
                             package.metadata.dc_type = Some(text.trim().to_string());
                         }
                     }

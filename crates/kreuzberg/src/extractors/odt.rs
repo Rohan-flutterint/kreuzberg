@@ -5,6 +5,7 @@
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extraction::office_metadata;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::ExtractedImage;
 use crate::types::Metadata;
@@ -371,7 +372,13 @@ fn extract_frame_description(frame: roxmltree::Node) -> Option<String> {
 /// Walks the XML tree and emits flat elements through `InternalDocumentBuilder`.
 /// Captures headings, paragraphs, lists, tables, images, formulas, footnotes
 /// (with inline markers), and headers/footers with appropriate content layers.
-fn build_internal_document(archive: &mut zip::ZipArchive<Cursor<Vec<u8>>>) -> crate::error::Result<InternalDocument> {
+///
+/// `budget` enforces hostile-input limits (iteration count, cumulative content
+/// size). Any limit violation is converted into `KreuzbergError::Security` via `?`.
+fn build_internal_document(
+    archive: &mut zip::ZipArchive<Cursor<Vec<u8>>>,
+    budget: &mut SecurityBudget,
+) -> crate::error::Result<InternalDocument> {
     // Pre-extract images so we don't need the archive borrow during XML walking
     let image_data = pre_extract_images(archive);
     let formula_data = pre_extract_formulas(archive);
@@ -400,7 +407,7 @@ fn build_internal_document(archive: &mut zip::ZipArchive<Cursor<Vec<u8>>>) -> cr
         if body_child.tag_name().name() == "body" {
             for text_elem in body_child.children() {
                 if text_elem.tag_name().name() == "text" {
-                    build_internal_elements(text_elem, &mut builder, &style_map, &image_data, &formula_data);
+                    build_internal_elements(text_elem, &mut builder, &style_map, &image_data, &formula_data, budget)?;
                 }
             }
         }
@@ -413,19 +420,25 @@ fn build_internal_document(archive: &mut zip::ZipArchive<Cursor<Vec<u8>>>) -> cr
 }
 
 /// Recursively walk ODT XML elements and populate the `InternalDocumentBuilder`.
+///
+/// Returns `Err` when any `SecurityBudget` limit is violated. Each top-level
+/// child element consumes one `budget.step()` and emitted text bytes are
+/// charged to `budget.account_text()`.
 fn build_internal_elements(
     parent: roxmltree::Node,
     builder: &mut InternalDocumentBuilder,
     style_map: &AHashMap<String, OdtStyleProps>,
     image_data: &AHashMap<String, (Vec<u8>, String)>,
     formula_data: &AHashMap<String, String>,
-) {
+    budget: &mut SecurityBudget,
+) -> crate::error::Result<()> {
     use crate::types::document_structure::ContentLayer;
     use crate::types::internal::{ElementKind, InternalElement};
 
     let mut footnote_counter = 0u32;
 
     for node in parent.children() {
+        budget.step()?;
         match node.tag_name().name() {
             "h" => {
                 let (text, _annotations, uris) = collect_odt_annotations(node, style_map);
@@ -434,6 +447,7 @@ fn build_internal_elements(
                 }
                 let trimmed = text.trim();
                 if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     let level = node
                         .attribute(("urn:oasis:names:tc:opendocument:xmlns:text:1.0", "outline-level"))
                         .and_then(|v| v.parse::<u8>().ok())
@@ -608,12 +622,16 @@ fn build_internal_elements(
 
                 let trimmed = text.trim();
                 if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     builder.push_paragraph(trimmed, annotations, None, None);
                 }
             }
             "table" => {
                 let cells = extract_table_cells(node);
                 if !cells.is_empty() {
+                    // Account cells × estimated average cell length for the budget
+                    let cell_count: usize = cells.iter().map(|r| r.len()).sum();
+                    budget.add_cells(cell_count)?;
                     builder.push_table_from_cells(&cells, None, None);
                 }
             }
@@ -621,11 +639,12 @@ fn build_internal_elements(
                 build_internal_list(node, builder);
             }
             "section" => {
-                build_internal_elements(node, builder, style_map, image_data, formula_data);
+                build_internal_elements(node, builder, style_map, image_data, formula_data, budget)?;
             }
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Build list structure from an ODT `text:list` element for InternalDocumentBuilder.
@@ -922,7 +941,8 @@ impl DocumentExtractor for OdtExtractor {
         let mut archive = zip::ZipArchive::new(cursor)
             .map_err(|e| crate::error::KreuzbergError::parsing(format!("Failed to open ZIP archive: {}", e)))?;
 
-        let mut doc = build_internal_document(&mut archive)?;
+        let mut budget = SecurityBudget::from_config(config);
+        let mut doc = build_internal_document(&mut archive, &mut budget)?;
         doc.mime_type = Cow::Owned(mime_type.to_string());
 
         // Extract metadata from meta.xml

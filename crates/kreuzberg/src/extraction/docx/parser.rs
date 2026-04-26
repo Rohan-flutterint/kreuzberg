@@ -10,6 +10,7 @@
 //! - Added markdown rendering and formatting support (fixes #376)
 
 use ahash::AHashMap;
+use crate::extractors::security::{SecurityBudget, SecurityError};
 use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Read, Seek};
 
@@ -1216,7 +1217,7 @@ impl<R: Read + Seek> DocxParser<R> {
         })
     }
 
-    fn parse(mut self) -> Result<Document, DocxParseError> {
+    fn parse(mut self, budget: &mut SecurityBudget) -> Result<Document, DocxParseError> {
         let mut document = Document::new();
 
         // Parse relationships first for hyperlink URL resolution
@@ -1225,21 +1226,21 @@ impl<R: Read + Seek> DocxParser<R> {
         }
 
         let document_xml = self.read_file("word/document.xml")?;
-        self.parse_document_xml(&document_xml, &mut document)?;
+        self.parse_document_xml(&document_xml, &mut document, budget)?;
 
         if let Ok(numbering_xml) = self.read_file("word/numbering.xml") {
-            let numbering_defs = self.parse_numbering(&numbering_xml)?;
+            let numbering_defs = self.parse_numbering(&numbering_xml, budget)?;
             document.numbering_defs = numbering_defs;
         }
 
-        self.parse_headers_footers(&mut document)?;
+        self.parse_headers_footers(&mut document, budget)?;
 
         if let Ok(footnotes_xml) = self.read_file("word/footnotes.xml") {
-            self.parse_notes(&footnotes_xml, &mut document.footnotes, NoteType::Footnote)?;
+            self.parse_notes(&footnotes_xml, &mut document.footnotes, NoteType::Footnote, budget)?;
         }
 
         if let Ok(endnotes_xml) = self.read_file("word/endnotes.xml") {
-            self.parse_notes(&endnotes_xml, &mut document.endnotes, NoteType::Endnote)?;
+            self.parse_notes(&endnotes_xml, &mut document.endnotes, NoteType::Endnote, budget)?;
         }
 
         document.style_catalog = self.styles.take();
@@ -1314,7 +1315,12 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(contents)
     }
 
-    fn parse_document_xml(&self, xml: &str, document: &mut Document) -> Result<(), DocxParseError> {
+    fn parse_document_xml(
+        &self,
+        xml: &str,
+        document: &mut Document,
+        budget: &mut SecurityBudget,
+    ) -> Result<(), DocxParseError> {
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(false);
 
@@ -1327,8 +1333,11 @@ impl<R: Read + Seek> DocxParser<R> {
         let mut table_stack: Vec<TableContext> = Vec::new();
 
         loop {
+            budget.step()?;
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::Start(ref e)) => {
+                    budget.enter()?;
+                    match e.name().as_ref() as &[u8] {
                     b"w:p" => {
                         if let Some(ctx) = table_stack.last_mut() {
                             ctx.paragraph = Some(Paragraph::new());
@@ -1362,7 +1371,7 @@ impl<R: Read + Seek> DocxParser<R> {
                     }
                     // OMML display math — delegate to math.rs
                     b"m:oMathPara" => {
-                        let latex = super::math::collect_and_convert_omath_para(&mut reader);
+                        let latex = super::math::collect_and_convert_omath_para(&mut reader, budget)?;
                         if !latex.is_empty() {
                             let run = Run {
                                 math_latex: Some((latex, true)),
@@ -1386,7 +1395,7 @@ impl<R: Read + Seek> DocxParser<R> {
                     }
                     // OMML inline math — delegate to math.rs
                     b"m:oMath" => {
-                        let latex = super::math::collect_and_convert_omath(&mut reader);
+                        let latex = super::math::collect_and_convert_omath(&mut reader, budget)?;
                         if !latex.is_empty() {
                             let run = Run {
                                 math_latex: Some((latex, false)),
@@ -1491,6 +1500,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         document.sections.push(sect_props);
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Empty(ref e)) => match e.name().as_ref() as &[u8] {
                     b"w:fldChar" => {
@@ -1578,10 +1588,14 @@ impl<R: Read + Seek> DocxParser<R> {
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
                         let text = e.decode()?;
+                        budget.check_entity(&text)?;
+                        budget.account_text(text.len())?;
                         run.text.push_str(&text);
                     }
                 }
-                Ok(Event::End(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::End(ref e)) => {
+                    budget.leave();
+                    match e.name().as_ref() as &[u8] {
                     b"w:t" => {
                         in_text = false;
                     }
@@ -1621,6 +1635,7 @@ impl<R: Read + Seek> DocxParser<R> {
                             && let Some(cell) = ctx.current_cell.take()
                             && let Some(ref mut row) = ctx.current_row
                         {
+                            budget.add_cells(1)?;
                             row.cells.push(cell);
                         }
                     }
@@ -1657,6 +1672,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         current_hyperlink_url = None;
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Eof) => break,
                 Err(e) => return Err(e.into()),
@@ -1668,7 +1684,11 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(())
     }
 
-    fn parse_numbering(&self, xml: &str) -> Result<AHashMap<(i64, i64), ListType>, DocxParseError> {
+    fn parse_numbering(
+        &self,
+        xml: &str,
+        budget: &mut SecurityBudget,
+    ) -> Result<AHashMap<(i64, i64), ListType>, DocxParseError> {
         let mut numbering_defs: AHashMap<(i64, i64), ListType> = AHashMap::new();
         let mut abstract_num_formats: AHashMap<i64, AHashMap<i64, ListType>> = AHashMap::new();
         let mut num_to_abstract: AHashMap<i64, i64> = AHashMap::new();
@@ -1682,8 +1702,11 @@ impl<R: Read + Seek> DocxParser<R> {
         let mut current_lvl: Option<i64> = None;
 
         loop {
+            budget.step()?;
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::Start(ref e)) => {
+                    budget.enter()?;
+                    match e.name().as_ref() as &[u8] {
                     b"w:abstractNum" => {
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"w:abstractNumId"
@@ -1726,6 +1749,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Empty(ref e)) => match e.name().as_ref() as &[u8] {
                     b"w:abstractNumId" => {
@@ -1751,7 +1775,9 @@ impl<R: Read + Seek> DocxParser<R> {
                     }
                     _ => {}
                 },
-                Ok(Event::End(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::End(ref e)) => {
+                    budget.leave();
+                    match e.name().as_ref() as &[u8] {
                     b"w:abstractNum" => {
                         current_abstract_num_id = None;
                         current_lvl = None;
@@ -1763,6 +1789,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         current_num_id = None;
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Eof) => break,
                 _ => {}
@@ -1782,19 +1809,23 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(numbering_defs)
     }
 
-    fn parse_headers_footers(&mut self, document: &mut Document) -> Result<(), DocxParseError> {
+    fn parse_headers_footers(
+        &mut self,
+        document: &mut Document,
+        budget: &mut SecurityBudget,
+    ) -> Result<(), DocxParseError> {
         for i in 1..=3 {
             let header_path = format!("word/header{}.xml", i);
             if let Ok(header_xml) = self.read_file(&header_path) {
                 let mut header = HeaderFooter::default();
-                self.parse_header_footer_content(&header_xml, &mut header)?;
+                self.parse_header_footer_content(&header_xml, &mut header, budget)?;
                 document.headers.push(header);
             }
 
             let footer_path = format!("word/footer{}.xml", i);
             if let Ok(footer_xml) = self.read_file(&footer_path) {
                 let mut footer = HeaderFooter::default();
-                self.parse_header_footer_content(&footer_xml, &mut footer)?;
+                self.parse_header_footer_content(&footer_xml, &mut footer, budget)?;
                 document.footers.push(footer);
             }
         }
@@ -1802,7 +1833,12 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(())
     }
 
-    fn parse_header_footer_content(&self, xml: &str, header_footer: &mut HeaderFooter) -> Result<(), DocxParseError> {
+    fn parse_header_footer_content(
+        &self,
+        xml: &str,
+        header_footer: &mut HeaderFooter,
+        budget: &mut SecurityBudget,
+    ) -> Result<(), DocxParseError> {
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(false);
 
@@ -1812,8 +1848,11 @@ impl<R: Read + Seek> DocxParser<R> {
         let mut in_text = false;
 
         loop {
+            budget.step()?;
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::Start(ref e)) => {
+                    budget.enter()?;
+                    match e.name().as_ref() as &[u8] {
                     b"w:p" => current_paragraph = Some(Paragraph::new()),
                     b"w:r" => current_run = Some(Run::default()),
                     b"w:t" => in_text = true,
@@ -1822,6 +1861,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         apply_run_formatting(e, &mut current_run);
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Empty(ref e)) => match e.name().as_ref() as &[u8] {
                     b"w:b" | b"w:i" | b"w:u" | b"w:strike" | b"w:dstrike" | b"w:vertAlign" | b"w:sz" | b"w:color"
@@ -1833,10 +1873,14 @@ impl<R: Read + Seek> DocxParser<R> {
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
                         let text = e.decode()?;
+                        budget.check_entity(&text)?;
+                        budget.account_text(text.len())?;
                         run.text.push_str(&text);
                     }
                 }
-                Ok(Event::End(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::End(ref e)) => {
+                    budget.leave();
+                    match e.name().as_ref() as &[u8] {
                     b"w:t" => in_text = false,
                     b"w:r" => {
                         if let Some(run) = current_run.take()
@@ -1851,6 +1895,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Eof) => break,
                 _ => {}
@@ -1861,7 +1906,13 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(())
     }
 
-    fn parse_notes(&self, xml: &str, notes: &mut Vec<Note>, note_type: NoteType) -> Result<(), DocxParseError> {
+    fn parse_notes(
+        &self,
+        xml: &str,
+        notes: &mut Vec<Note>,
+        note_type: NoteType,
+        budget: &mut SecurityBudget,
+    ) -> Result<(), DocxParseError> {
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(false);
 
@@ -1872,8 +1923,11 @@ impl<R: Read + Seek> DocxParser<R> {
         let mut in_text = false;
 
         loop {
+            budget.step()?;
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::Start(ref e)) => {
+                    budget.enter()?;
+                    match e.name().as_ref() as &[u8] {
                     b"w:footnote" | b"w:endnote" => {
                         let mut id = String::new();
                         for attr in e.attributes().flatten() {
@@ -1901,6 +1955,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Empty(ref e)) => match e.name().as_ref() as &[u8] {
                     b"w:b" => {
@@ -1918,10 +1973,14 @@ impl<R: Read + Seek> DocxParser<R> {
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
                         let text = e.decode()?;
+                        budget.check_entity(&text)?;
+                        budget.account_text(text.len())?;
                         run.text.push_str(&text);
                     }
                 }
-                Ok(Event::End(ref e)) => match e.name().as_ref() as &[u8] {
+                Ok(Event::End(ref e)) => {
+                    budget.leave();
+                    match e.name().as_ref() as &[u8] {
                     b"w:t" => in_text = false,
                     b"w:r" => {
                         if let Some(run) = current_run.take()
@@ -1948,6 +2007,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     _ => {}
+                    }
                 },
                 Ok(Event::Eof) => break,
                 _ => {}
@@ -1986,28 +2046,36 @@ impl From<quick_xml::encoding::EncodingError> for DocxParseError {
     }
 }
 
+impl From<SecurityError> for DocxParseError {
+    fn from(e: SecurityError) -> Self {
+        DocxParseError::SecurityLimit(e.to_string())
+    }
+}
+
 // --- Public API ---
 
 /// Parse a DOCX document from bytes and return the structured document.
-pub(crate) fn parse_document(bytes: &[u8]) -> crate::error::Result<Document> {
+pub(crate) fn parse_document(bytes: &[u8], budget: &mut SecurityBudget) -> crate::error::Result<Document> {
     let cursor = Cursor::new(bytes);
     let parser = DocxParser::new(cursor)
         .map_err(|e| crate::error::KreuzbergError::parsing(format!("DOCX parsing failed: {}", e)))?;
     parser
-        .parse()
+        .parse(budget)
         .map_err(|e| crate::error::KreuzbergError::parsing(format!("DOCX parsing failed: {}", e)))
 }
 
 /// Extract text from DOCX bytes.
 #[cfg(test)]
 pub(crate) fn extract_text_from_bytes(bytes: &[u8]) -> crate::error::Result<String> {
-    let doc = parse_document(bytes)?;
+    let mut budget = SecurityBudget::with_defaults();
+    let doc = parse_document(bytes, &mut budget)?;
     Ok(doc.extract_text())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::extractors::security::SecurityBudget;
 
     /// Runs are concatenated directly; whitespace comes from the XML text content.
     #[test]
@@ -2416,7 +2484,10 @@ mod tests {
             theme: None,
         };
         let mut document = Document::new();
-        parser_struct.parse_document_xml(xml, &mut document).unwrap();
+        {
+            let mut budget = crate::extractors::security::SecurityBudget::with_defaults();
+            parser_struct.parse_document_xml(xml, &mut document, &mut budget).unwrap();
+        }
 
         assert_eq!(document.paragraphs.len(), 1);
         // The second run should contain the footnote reference marker
@@ -2450,7 +2521,10 @@ mod tests {
             theme: None,
         };
         let mut notes = Vec::new();
-        parser_struct.parse_notes(xml, &mut notes, NoteType::Footnote).unwrap();
+        {
+            let mut budget = crate::extractors::security::SecurityBudget::with_defaults();
+            parser_struct.parse_notes(xml, &mut notes, NoteType::Footnote, &mut budget).unwrap();
+        }
 
         assert_eq!(notes.len(), 1, "Only actual footnote should remain");
         assert_eq!(notes[0].id, "2");
@@ -2655,7 +2729,8 @@ mod tests {
 </w:document>"#;
 
         let bytes = create_test_docx(xml);
-        let doc = parse_document(&bytes).expect("parse_document should succeed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = parse_document(&bytes, &mut budget).expect("parse_document should succeed");
 
         // Only the outer table is stored; nested table content is flattened.
         assert_eq!(doc.tables.len(), 1, "Expected exactly 1 (outer) table");
@@ -2728,7 +2803,8 @@ mod tests {
         let cursor = zip.finish().unwrap();
         let bytes = cursor.into_inner();
 
-        let doc = parse_document(&bytes).expect("should parse");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = parse_document(&bytes, &mut budget).expect("should parse");
 
         // Verify styles were loaded
         assert!(doc.style_catalog.is_some(), "Style catalog should be loaded");
@@ -2793,7 +2869,8 @@ mod tests {
 </w:document>"#;
 
         let bytes = create_test_docx(xml);
-        let doc = parse_document(&bytes).expect("parse should succeed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = parse_document(&bytes, &mut budget).expect("parse should succeed");
 
         assert_eq!(doc.tables.len(), 1);
         let table = &doc.tables[0];
@@ -2859,7 +2936,8 @@ mod tests {
 </w:document>"#;
 
         let bytes = create_test_docx(xml);
-        let doc = parse_document(&bytes).expect("parse should succeed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = parse_document(&bytes, &mut budget).expect("parse should succeed");
 
         assert_eq!(doc.tables.len(), 1);
         let table = &doc.tables[0];
@@ -2917,7 +2995,8 @@ mod tests {
 </w:document>"#;
 
         let bytes = create_test_docx(xml);
-        let doc = parse_document(&bytes).expect("parse should succeed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = parse_document(&bytes, &mut budget).expect("parse should succeed");
 
         assert_eq!(doc.tables.len(), 1);
         let table = &doc.tables[0];
@@ -2954,7 +3033,10 @@ mod tests {
             theme: None,
         };
         let mut document = Document::new();
-        parser_struct.parse_document_xml(xml, &mut document).unwrap();
+        {
+            let mut budget = crate::extractors::security::SecurityBudget::with_defaults();
+            parser_struct.parse_document_xml(xml, &mut document, &mut budget).unwrap();
+        }
         document
     }
 
@@ -2967,7 +3049,10 @@ mod tests {
             theme: None,
         };
         let mut document = Document::new();
-        parser_struct.parse_document_xml(xml, &mut document).unwrap();
+        {
+            let mut budget = crate::extractors::security::SecurityBudget::with_defaults();
+            parser_struct.parse_document_xml(xml, &mut document, &mut budget).unwrap();
+        }
         document
     }
 
@@ -3666,7 +3751,8 @@ mod tests {
     fn test_textbox_no_spurious_bold_markers() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/docx/textbox.docx");
         if let Ok(bytes) = std::fs::read(&path) {
-            let doc = super::parse_document(&bytes).unwrap();
+            let mut budget = SecurityBudget::with_defaults();
+            let doc = super::parse_document(&bytes, &mut budget).unwrap();
             let md = doc.to_markdown(true);
             assert!(
                 !md.contains("****"),

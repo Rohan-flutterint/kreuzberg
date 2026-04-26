@@ -18,6 +18,7 @@
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extraction::{cells_to_markdown, cells_to_text};
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::text::utf8_validation;
 use crate::types::internal::InternalDocument;
@@ -131,7 +132,11 @@ fn ensure_root_element(content: &str) -> std::borrow::Cow<'_, str> {
 }
 
 /// Build an `InternalDocument` from DocBook XML content.
-fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> Result<InternalDocument> {
+fn build_docbook_internal_document(
+    content: &str,
+    inject_placeholders: bool,
+    budget: &mut SecurityBudget,
+) -> Result<InternalDocument> {
     let wrapped = ensure_root_element(content);
     let mut reader = Reader::from_str(&wrapped);
     let mut builder = InternalDocumentBuilder::new("docbook");
@@ -152,11 +157,19 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
     let mut list_ordered = false;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
+
+                for attr in e.attributes().flatten() {
+                    let key = String::from_utf8_lossy(attr.key.as_ref());
+                    let val = String::from_utf8_lossy(attr.value.as_ref());
+                    budget.check_attr(&key, &val)?;
+                }
 
                 match tag {
                     "info" | "articleinfo" | "bookinfo" | "chapterinfo" => {
@@ -166,7 +179,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         section_depth = section_depth.saturating_add(1);
                     }
                     "title" if !title_extracted && in_info => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_heading(1, &text, None, None);
                             title_depth = section_depth;
@@ -174,7 +187,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "title" if !title_extracted => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_heading(1, &text, None, None);
                             title_depth = section_depth;
@@ -182,7 +195,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "title" if title_extracted => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             // Compute heading level relative to the depth where the document
                             // title was extracted, so the first nested section starts at level 2.
@@ -192,7 +205,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "para" => {
-                        let (text, annotations) = extract_para_with_annotations(&mut reader)?;
+                        let (text, annotations) = extract_para_with_annotations(&mut reader, budget)?;
                         if !text.is_empty() {
                             // Extract URIs from link annotations
                             for ann in &annotations {
@@ -207,7 +220,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "programlisting" | "screen" => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_code(&text, None, None, None);
                         }
@@ -223,13 +236,13 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         builder.push_list(true);
                     }
                     "listitem" if in_list => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_list_item(&text, list_ordered, vec![], None, None);
                         }
                     }
                     "blockquote" => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_quote_start();
                             builder.push_paragraph(&text, vec![], None, None);
@@ -237,14 +250,14 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "note" | "warning" | "tip" | "caution" | "important" => {
-                        let admonition_text = extract_element_text(&mut reader)?;
+                        let admonition_text = extract_element_text(&mut reader, budget)?;
                         if !admonition_text.is_empty() {
                             builder.push_admonition(tag, None, None);
                             builder.push_paragraph(&admonition_text, vec![], None, None);
                         }
                     }
                     "figure" => {
-                        let caption = extract_figure_with_caption(&mut reader)?;
+                        let caption = extract_figure_with_caption(&mut reader, budget)?;
                         if inject_placeholders {
                             if !caption.is_empty() {
                                 builder.push_paragraph(&format!("[Figure: {}]", caption), vec![], None, None);
@@ -254,7 +267,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         }
                     }
                     "footnote" => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             footnote_counter += 1;
                             let key = format!("fn-{}", footnote_counter);
@@ -279,13 +292,14 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                         current_row.clear();
                     }
                     "entry" if in_row => {
-                        let text = extract_element_text(&mut reader)?;
+                        let text = extract_element_text(&mut reader, budget)?;
                         current_row.push(text);
                     }
                     _ => {}
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
@@ -326,6 +340,16 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
                     _ => {}
                 }
             }
+            Ok(Event::Text(t)) => {
+                let s = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&s)?;
+                budget.account_text(s.trim().len())?;
+            }
+            Ok(Event::CData(t)) => {
+                let s = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&s)?;
+                budget.account_text(s.trim().len())?;
+            }
             Ok(Event::Eof) => break,
             Err(e) => {
                 return Err(crate::error::KreuzbergError::parsing(format!(
@@ -342,7 +366,7 @@ fn build_docbook_internal_document(content: &str, inject_placeholders: bool) -> 
 
 /// Single-pass DocBook parser that extracts all content in one document traversal.
 /// Returns: (content, title, author, date, tables, publisher, copyright)
-fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseResult> {
+fn parse_docbook_single_pass(content: &str, plain: bool, budget: &mut SecurityBudget) -> Result<DocBookParseResult> {
     let wrapped = ensure_root_element(content);
     let mut reader = Reader::from_str(&wrapped);
     let mut output = String::new();
@@ -371,26 +395,34 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
     let mut list_type = "";
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
+
+                for attr in e.attributes().flatten() {
+                    let key = String::from_utf8_lossy(attr.key.as_ref());
+                    let val = String::from_utf8_lossy(attr.value.as_ref());
+                    budget.check_attr(&key, &val)?;
+                }
 
                 match tag {
                     "info" | "articleinfo" | "bookinfo" | "chapterinfo" => {
                         state.in_info = true;
                     }
                     "title" if !title_extracted && state.in_info => {
-                        title = extract_element_text(&mut reader)?;
+                        title = extract_element_text(&mut reader, budget)?;
                         title_extracted = true;
                     }
                     "title" if !title_extracted => {
-                        title = extract_element_text(&mut reader)?;
+                        title = extract_element_text(&mut reader, budget)?;
                         title_extracted = true;
                     }
                     "title" if title_extracted => {
-                        let section_title = extract_element_text(&mut reader)?;
+                        let section_title = extract_element_text(&mut reader, budget)?;
                         if !section_title.is_empty() {
                             if !plain {
                                 output.push_str("## ");
@@ -400,35 +432,35 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                         }
                     }
                     "author" | "personname" if state.in_info && author.is_none() => {
-                        author = Some(extract_element_text(&mut reader)?);
+                        author = Some(extract_element_text(&mut reader, budget)?);
                     }
                     "date" if state.in_info && date.is_none() => {
-                        let date_text = extract_element_text(&mut reader)?;
+                        let date_text = extract_element_text(&mut reader, budget)?;
                         if !date_text.is_empty() {
                             date = Some(date_text);
                         }
                     }
                     "publishername" if state.in_info && publisher.is_none() => {
-                        let pub_text = extract_element_text(&mut reader)?;
+                        let pub_text = extract_element_text(&mut reader, budget)?;
                         if !pub_text.is_empty() {
                             publisher = Some(pub_text);
                         }
                     }
                     "publisher" if state.in_info && publisher.is_none() => {
-                        let pub_text = extract_element_text(&mut reader)?;
+                        let pub_text = extract_element_text(&mut reader, budget)?;
                         if !pub_text.is_empty() {
                             publisher = Some(pub_text);
                         }
                     }
                     "copyright" if state.in_info && copyright.is_none() => {
-                        let cr_text = extract_element_text(&mut reader)?;
+                        let cr_text = extract_element_text(&mut reader, budget)?;
                         if !cr_text.is_empty() {
                             copyright = Some(cr_text);
                         }
                     }
 
                     "para" => {
-                        let para_text = extract_element_text_with_inline(&mut reader, plain)?;
+                        let para_text = extract_element_text_with_inline(&mut reader, plain, budget)?;
                         if !para_text.is_empty() {
                             output.push_str(&para_text);
                             output.push_str("\n\n");
@@ -436,7 +468,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                     }
 
                     "programlisting" | "screen" => {
-                        let code_text = extract_element_text(&mut reader)?;
+                        let code_text = extract_element_text(&mut reader, budget)?;
                         if !code_text.is_empty() {
                             if !plain {
                                 output.push_str("```\n");
@@ -463,7 +495,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                             let prefix = if list_type == "ordered" { "1. " } else { "- " };
                             output.push_str(prefix);
                         }
-                        let item_text = extract_element_text(&mut reader)?;
+                        let item_text = extract_element_text(&mut reader, budget)?;
                         if !item_text.is_empty() {
                             output.push_str(&item_text);
                         }
@@ -475,7 +507,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                         if !plain {
                             output.push_str("> ");
                         }
-                        let quote_text = extract_element_text(&mut reader)?;
+                        let quote_text = extract_element_text(&mut reader, budget)?;
                         if !quote_text.is_empty() {
                             output.push_str(&quote_text);
                         }
@@ -485,7 +517,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                     // Admonitions
                     "note" | "warning" | "tip" | "caution" | "important" => {
                         let admonition_type = tag.to_string();
-                        let admonition_text = extract_element_text(&mut reader)?;
+                        let admonition_text = extract_element_text(&mut reader, budget)?;
                         if !admonition_text.is_empty() {
                             if !plain {
                                 let label = admonition_type[..1].to_uppercase() + &admonition_type[1..];
@@ -497,7 +529,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                     }
 
                     "figure" => {
-                        let figure_text = extract_figure_with_caption(&mut reader)?;
+                        let figure_text = extract_figure_with_caption(&mut reader, budget)?;
                         if !figure_text.is_empty() {
                             if !plain {
                                 output.push_str("**Figure:** ");
@@ -511,7 +543,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
 
                     "footnote" => {
                         output.push('[');
-                        let footnote_text = extract_element_text(&mut reader)?;
+                        let footnote_text = extract_element_text(&mut reader, budget)?;
                         if !footnote_text.is_empty() {
                             output.push_str(&footnote_text);
                         }
@@ -536,7 +568,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                         current_row.clear();
                     }
                     "entry" if state.in_row => {
-                        let entry_text = extract_element_text(&mut reader)?;
+                        let entry_text = extract_element_text(&mut reader, budget)?;
                         current_row.push(entry_text);
                     }
 
@@ -544,6 +576,7 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
@@ -593,6 +626,16 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
                     _ => {}
                 }
             }
+            Ok(Event::Text(t)) => {
+                let s = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&s)?;
+                budget.account_text(s.trim().len())?;
+            }
+            Ok(Event::CData(t)) => {
+                let s = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&s)?;
+                budget.account_text(s.trim().len())?;
+            }
             Ok(Event::Eof) => break,
             Err(e) => {
                 return Err(crate::error::KreuzbergError::parsing(format!(
@@ -623,15 +666,21 @@ fn parse_docbook_single_pass(content: &str, plain: bool) -> Result<DocBookParseR
 /// Extract text content with inline formatting from a DocBook element.
 /// Handles `<emphasis>`, `<emphasis role="bold">`, `<literal>`, `<command>`,
 /// `<link>`, and `<ulink>` elements.
-fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> Result<String> {
+fn extract_element_text_with_inline(
+    reader: &mut Reader<&[u8]>,
+    plain: bool,
+    budget: &mut SecurityBudget,
+) -> Result<String> {
     let mut text = String::new();
     let mut depth = 0;
     // Track emphasis type (bold vs italic) per nesting level
     let mut emphasis_bold_stack: Vec<bool> = Vec::new();
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
@@ -642,11 +691,10 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
                             let mut is_bold = false;
                             for attr in e.attributes().flatten() {
                                 let attr_name = String::from_utf8_lossy(attr.key.as_ref());
-                                if attr_name == "role" {
-                                    let val = String::from_utf8_lossy(attr.value.as_ref());
-                                    if val == "bold" || val == "strong" {
-                                        is_bold = true;
-                                    }
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&attr_name, &val)?;
+                                if attr_name == "role" && (val == "bold" || val == "strong") {
+                                    is_bold = true;
                                 }
                             }
                             emphasis_bold_stack.push(is_bold);
@@ -657,12 +705,34 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
                             }
                         }
                         "literal" | "command" => {
+                            for attr in e.attributes().flatten() {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                            }
                             text.push('`');
                         }
                         "link" | "ulink" => {
+                            for attr in e.attributes().flatten() {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                            }
                             text.push('[');
                         }
-                        _ => {}
+                        _ => {
+                            for attr in e.attributes().flatten() {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                            }
+                        }
+                    }
+                } else {
+                    for attr in e.attributes().flatten() {
+                        let key = String::from_utf8_lossy(attr.key.as_ref());
+                        let val = String::from_utf8_lossy(attr.value.as_ref());
+                        budget.check_attr(&key, &val)?;
                     }
                 }
                 depth += 1;
@@ -671,6 +741,7 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
                 if depth == 0 {
                     break;
                 }
+                budget.leave();
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
@@ -697,8 +768,11 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
                 depth -= 1;
             }
             Ok(Event::Text(t)) => {
-                let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
-                if !decoded.trim().is_empty() {
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
+                let trimmed = decoded.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty()
                         && !text.ends_with(' ')
                         && !text.ends_with('\n')
@@ -708,16 +782,19 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
                     {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::CData(t)) => {
-                let decoded = utf8_validation::from_utf8(t.as_ref()).unwrap_or("").to_string();
-                if !decoded.trim().is_empty() {
+                let decoded_str = utf8_validation::from_utf8(t.as_ref()).unwrap_or("");
+                budget.check_entity(decoded_str)?;
+                let trimmed = decoded_str.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty() {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::Eof) => break,
@@ -735,24 +812,33 @@ fn extract_element_text_with_inline(reader: &mut Reader<&[u8]>, plain: bool) -> 
 }
 
 /// Extract figure element, capturing the `<title>` as the caption.
-fn extract_figure_with_caption(reader: &mut Reader<&[u8]>) -> Result<String> {
+fn extract_figure_with_caption(reader: &mut Reader<&[u8]>, budget: &mut SecurityBudget) -> Result<String> {
     let mut caption = String::new();
     let mut depth = 0;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
 
+                for attr in e.attributes().flatten() {
+                    let key = String::from_utf8_lossy(attr.key.as_ref());
+                    let val = String::from_utf8_lossy(attr.value.as_ref());
+                    budget.check_attr(&key, &val)?;
+                }
+
                 if tag == "title" && depth == 0 {
-                    caption = extract_element_text(reader)?;
+                    caption = extract_element_text(reader, budget)?;
                 } else {
                     depth += 1;
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 let name = e.name();
                 let tag_cow = crate::utils::xml_tag_name(name.as_ref());
                 let tag = strip_namespace(&tag_cow);
@@ -765,11 +851,23 @@ fn extract_figure_with_caption(reader: &mut Reader<&[u8]>) -> Result<String> {
                 }
             }
             Ok(Event::Text(t)) if caption.is_empty() => {
-                let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
                 let trimmed = decoded.trim();
                 if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     caption.push_str(trimmed);
                 }
+            }
+            Ok(Event::Text(t)) => {
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
+                budget.account_text(decoded.trim().len())?;
+            }
+            Ok(Event::CData(t)) => {
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
+                budget.account_text(decoded.trim().len())?;
             }
             Ok(Event::Eof) => break,
             Err(e) => {
@@ -795,6 +893,7 @@ fn extract_figure_with_caption(reader: &mut Reader<&[u8]>) -> Result<String> {
 /// - `<superscript>` → superscript
 fn extract_para_with_annotations(
     reader: &mut Reader<&[u8]>,
+    budget: &mut SecurityBudget,
 ) -> Result<(String, Vec<crate::types::document_structure::TextAnnotation>)> {
     use crate::types::builder;
 
@@ -806,8 +905,10 @@ fn extract_para_with_annotations(
     let mut inline_stack: Vec<(&'static str, u32, u32, Option<String>)> = Vec::new();
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 depth += 1;
 
                 let name = e.name();
@@ -818,8 +919,11 @@ fn extract_para_with_annotations(
                     "emphasis" => {
                         let mut role = String::new();
                         for attr in e.attributes().flatten() {
-                            if String::from_utf8_lossy(attr.key.as_ref()) == "role" {
-                                role = String::from_utf8_lossy(attr.value.as_ref()).to_string();
+                            let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
+                            if key == "role" {
+                                role = val.to_string();
                             }
                         }
                         let kind = if role == "bold" || role == "strong" {
@@ -830,31 +934,55 @@ fn extract_para_with_annotations(
                         inline_stack.push((kind, depth, text.len() as u32, None));
                     }
                     "literal" | "command" => {
+                        for attr in e.attributes().flatten() {
+                            let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
+                        }
                         inline_stack.push(("code", depth, text.len() as u32, None));
                     }
                     "link" | "ulink" => {
                         let mut href = None;
                         for attr in e.attributes().flatten() {
                             let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
                             if key == "url" || key == "href" || key.ends_with(":href") || key == "linkend" {
-                                href = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string());
+                                href = Some(val.to_string());
                             }
                         }
                         inline_stack.push(("link", depth, text.len() as u32, href));
                     }
                     "subscript" => {
+                        for attr in e.attributes().flatten() {
+                            let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
+                        }
                         inline_stack.push(("subscript", depth, text.len() as u32, None));
                     }
                     "superscript" => {
+                        for attr in e.attributes().flatten() {
+                            let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
+                        }
                         inline_stack.push(("superscript", depth, text.len() as u32, None));
                     }
-                    _ => {}
+                    _ => {
+                        for attr in e.attributes().flatten() {
+                            let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
+                        }
+                    }
                 }
             }
             Ok(Event::End(_)) => {
                 if depth == 0 {
                     break;
                 }
+                budget.leave();
 
                 // Check if this closes an inline element on our stack
                 if let Some(&(kind, open_depth, start, ref href)) = inline_stack.last()
@@ -891,21 +1019,27 @@ fn extract_para_with_annotations(
                 depth -= 1;
             }
             Ok(Event::Text(t)) => {
-                let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
-                if !decoded.trim().is_empty() {
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
+                let trimmed = decoded.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty() && !text.ends_with(' ') && !text.ends_with('\n') {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::CData(t)) => {
-                let decoded = utf8_validation::from_utf8(t.as_ref()).unwrap_or("").to_string();
-                if !decoded.trim().is_empty() {
+                let decoded_str = utf8_validation::from_utf8(t.as_ref()).unwrap_or("");
+                budget.check_entity(decoded_str)?;
+                let trimmed = decoded_str.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty() {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::Eof) => break,
@@ -924,37 +1058,51 @@ fn extract_para_with_annotations(
 
 /// Extract text content from a DocBook element and its children.
 /// Used for extracting nested content within elements.
-fn extract_element_text(reader: &mut Reader<&[u8]>) -> Result<String> {
+fn extract_element_text(reader: &mut Reader<&[u8]>, budget: &mut SecurityBudget) -> Result<String> {
     let mut text = String::new();
     let mut depth = 0;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
-            Ok(Event::Start(_)) => {
+            Ok(Event::Start(e)) => {
+                budget.enter()?;
+                for attr in e.attributes().flatten() {
+                    let key = String::from_utf8_lossy(attr.key.as_ref());
+                    let val = String::from_utf8_lossy(attr.value.as_ref());
+                    budget.check_attr(&key, &val)?;
+                }
                 depth += 1;
             }
             Ok(Event::End(_)) => {
                 if depth == 0 {
                     break;
                 }
+                budget.leave();
                 depth -= 1;
             }
             Ok(Event::Text(t)) => {
-                let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
-                if !decoded.trim().is_empty() {
+                let decoded = String::from_utf8_lossy(t.as_ref());
+                budget.check_entity(&decoded)?;
+                let trimmed = decoded.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty() && !text.ends_with(' ') && !text.ends_with('\n') {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::CData(t)) => {
-                let decoded = utf8_validation::from_utf8(t.as_ref()).unwrap_or("").to_string();
-                if !decoded.trim().is_empty() {
+                let decoded_str = utf8_validation::from_utf8(t.as_ref()).unwrap_or("");
+                budget.check_entity(decoded_str)?;
+                let trimmed = decoded_str.trim();
+                if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     if !text.is_empty() {
                         text.push(' ');
                     }
-                    text.push_str(decoded.trim());
+                    text.push_str(trimmed);
                 }
             }
             Ok(Event::Eof) => break,
@@ -1013,8 +1161,9 @@ impl DocumentExtractor for DocbookExtractor {
             .unwrap_or_else(|_| String::from_utf8_lossy(content).into_owned());
 
         // Extract metadata via single pass for the metadata fields
+        let mut budget = SecurityBudget::from_config(config);
         let (_extracted_content, title, author, date, _tables, publisher, copyright) =
-            parse_docbook_single_pass(&docbook_content, true)?;
+            parse_docbook_single_pass(&docbook_content, true, &mut budget)?;
 
         let mut metadata = Metadata::default();
         let mut subject_parts = Vec::new();
@@ -1053,7 +1202,8 @@ impl DocumentExtractor for DocbookExtractor {
             .as_ref()
             .map(|img| img.inject_placeholders)
             .unwrap_or(true);
-        let mut doc = build_docbook_internal_document(&docbook_content, inject_placeholders)?;
+        let mut budget2 = SecurityBudget::from_config(config);
+        let mut doc = build_docbook_internal_document(&docbook_content, inject_placeholders, &mut budget2)?;
         doc.mime_type = std::borrow::Cow::Owned(mime_type.to_string());
         doc.metadata = metadata;
 
@@ -1120,7 +1270,8 @@ mod tests {
   <para>Test content.</para>
 </article>"#;
 
-        let (content, title, _, _, _, _, _) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (content, title, _, _, _, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert_eq!(title, "Test Article");
         assert!(content.contains("Test content"));
     }
@@ -1147,7 +1298,8 @@ mod tests {
   </table>
 </article>"#;
 
-        let (_, _, _, _, tables, _, _) = parse_docbook_single_pass(docbook, false).expect("Table extraction failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (_, _, _, _, tables, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Table extraction failed");
         assert_eq!(tables.len(), 1);
         assert_eq!(tables[0].cells.len(), 2);
         assert_eq!(tables[0].cells[0], vec!["Col1", "Col2"]);
@@ -1162,7 +1314,8 @@ mod tests {
   <para>Use <literal>code_here</literal> and <command>ls -la</command> commands.</para>
 </article>"#;
 
-        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert!(content.contains("*italic*"), "expected italic markup, got: {content}");
         assert!(content.contains("**bold**"), "expected bold markup, got: {content}");
         assert!(content.contains("`code_here`"), "expected code markup, got: {content}");
@@ -1179,7 +1332,8 @@ mod tests {
   <tip><para>This is a tip.</para></tip>
 </article>"#;
 
-        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert!(
             content.contains("**Note:**"),
             "expected note admonition, got: {content}"
@@ -1204,7 +1358,8 @@ mod tests {
   <para>Content.</para>
 </article>"#;
 
-        let (_, _, _, _, _, publisher, copyright) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (_, _, _, _, _, publisher, copyright) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert_eq!(publisher, Some("O'Reilly Media".to_string()));
         assert!(copyright.is_some());
         assert!(copyright.unwrap().contains("2024"));
@@ -1221,7 +1376,8 @@ mod tests {
   </figure>
 </article>"#;
 
-        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert!(
             content.contains("Architecture Diagram"),
             "expected figure caption, got: {content}"
@@ -1236,7 +1392,8 @@ mod tests {
   <para>Visit <ulink url="http://example.com">the site</ulink> for details.</para>
 </article>"#;
 
-        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false).expect("Parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let (content, _, _, _, _, _, _) = parse_docbook_single_pass(docbook, false, &mut budget).expect("Parse failed");
         assert!(content.contains("[the site]"), "expected link markup, got: {content}");
     }
 
@@ -1248,7 +1405,8 @@ mod tests {
     <mediaobject><imageobject><imagedata fileref="arch.png"/></imageobject></mediaobject>
   </figure>
 </article>"#;
-        let doc = build_docbook_internal_document(docbook, true).expect("parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = build_docbook_internal_document(docbook, true, &mut budget).expect("parse failed");
         let has_figure = doc.elements.iter().any(|e| e.text.contains("[Figure"));
         assert!(has_figure, "expected figure placeholder with inject_placeholders=true");
     }
@@ -1261,7 +1419,8 @@ mod tests {
     <mediaobject><imageobject><imagedata fileref="arch.png"/></imageobject></mediaobject>
   </figure>
 </article>"#;
-        let doc = build_docbook_internal_document(docbook, false).expect("parse failed");
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = build_docbook_internal_document(docbook, false, &mut budget).expect("parse failed");
         let has_figure = doc.elements.iter().any(|e| e.text.contains("[Figure"));
         assert!(
             !has_figure,

@@ -6,6 +6,7 @@
 //! For `OutputFormat::Markdown` / `OutputFormat::Djot`, this converts XHTML through the HTML
 //! conversion pipeline so structural elements (like headings) are preserved.
 
+use crate::extractors::security::SecurityBudget;
 use crate::types::ProcessingWarning;
 use ahash::AHashSet;
 use std::cmp::Ordering;
@@ -308,9 +309,23 @@ const SKIP_ELEMENTS: &[&str] = &[
 /// previously stripped underscores, asterisks, and numeric content. Instead,
 /// text nodes are collected verbatim from the parse tree, with newlines inserted
 /// at block-level element boundaries.
+///
+/// When `budget` is provided, entity and growth limits are enforced during traversal.
 pub(super) fn extract_text_from_xhtml(xhtml: &str) -> String {
+    extract_text_from_xhtml_with_budget(xhtml, None)
+}
+
+pub(super) fn extract_text_from_xhtml_budgeted(xhtml: &str, budget: &mut SecurityBudget) -> String {
+    extract_text_from_xhtml_with_budget(xhtml, Some(budget))
+}
+
+fn extract_text_from_xhtml_with_budget(xhtml: &str, budget: Option<&mut SecurityBudget>) -> String {
     // Try direct XML tree traversal first (lossless path).
-    if let Some(text) = try_extract_via_roxmltree(xhtml) {
+    let result = match budget {
+        Some(b) => try_extract_via_roxmltree_budgeted(xhtml, b),
+        None => try_extract_via_roxmltree_unbounded(xhtml),
+    };
+    if let Some(text) = result {
         return text;
     }
 
@@ -319,23 +334,39 @@ pub(super) fn extract_text_from_xhtml(xhtml: &str) -> String {
     strip_html_tags(&normalized)
 }
 
-/// Attempt to extract plain text via `roxmltree` XML parsing.
+/// Attempt to extract plain text via `roxmltree` XML parsing (no security budget).
 ///
 /// Returns `None` if the document cannot be parsed as XML/XHTML.
-fn try_extract_via_roxmltree(xhtml: &str) -> Option<String> {
+fn try_extract_via_roxmltree_unbounded(xhtml: &str) -> Option<String> {
     let sanitized = normalize_xhtml(xhtml);
 
     match roxmltree::Document::parse(&sanitized) {
         Ok(doc) => {
             let root = doc.root();
-
             let mut output = String::with_capacity(xhtml.len() / 2);
-            visit_node(root, &mut output);
-
-            // Normalise multiple consecutive blank lines to a single blank line.
+            visit_node_unbounded(root, &mut output);
             let result = collapse_blank_lines(&output);
             let result = result.trim().to_string();
+            if result.is_empty() { None } else { Some(result) }
+        }
+        Err(_) => None,
+    }
+}
 
+/// Attempt to extract plain text via `roxmltree` XML parsing with a security budget.
+///
+/// Entity and growth violations stop traversal early; partial output is returned.
+/// Returns `None` if the document cannot be parsed as XML/XHTML.
+fn try_extract_via_roxmltree_budgeted(xhtml: &str, budget: &mut SecurityBudget) -> Option<String> {
+    let sanitized = normalize_xhtml(xhtml);
+
+    match roxmltree::Document::parse(&sanitized) {
+        Ok(doc) => {
+            let root = doc.root();
+            let mut output = String::with_capacity(xhtml.len() / 2);
+            visit_node_budgeted(root, &mut output, budget);
+            let result = collapse_blank_lines(&output);
+            let result = result.trim().to_string();
             if result.is_empty() { None } else { Some(result) }
         }
         Err(_) => None,
@@ -394,18 +425,13 @@ fn find_doctype_end(tail: &str) -> Option<usize> {
     None
 }
 
-/// Recursively visit an XML node and append its text to `output`.
-fn visit_node(node: roxmltree::Node<'_, '_>, output: &mut String) {
+/// Recursively visit an XML node and append its text to `output` (no security budget).
+fn visit_node_unbounded(node: roxmltree::Node<'_, '_>, output: &mut String) {
     match node.node_type() {
         roxmltree::NodeType::Text => {
             let text = node.text().unwrap_or("");
-            // Normalise whitespace within a text run (collapse runs of
-            // whitespace to single spaces) but keep the text itself intact.
             let normalised = normalise_inline_whitespace(text);
             if !normalised.is_empty() {
-                // If the output already ends with a newline (or is empty),
-                // trim leading spaces from this fragment to avoid spurious
-                // indentation; otherwise append as-is.
                 let fragment = if output.is_empty() || output.ends_with('\n') {
                     normalised.trim_start().to_string()
                 } else {
@@ -418,13 +444,9 @@ fn visit_node(node: roxmltree::Node<'_, '_>, output: &mut String) {
         }
         roxmltree::NodeType::Element => {
             let tag = node.tag_name().name().to_ascii_lowercase();
-
-            // Skip elements whose content should never appear in plain text.
             if SKIP_ELEMENTS.iter().any(|&s| s == tag) {
                 return;
             }
-
-            // Self-closing elements that produce whitespace.
             if tag == "br" {
                 output.push('\n');
                 return;
@@ -435,35 +457,83 @@ fn visit_node(node: roxmltree::Node<'_, '_>, output: &mut String) {
                 }
                 return;
             }
-
             let is_block = BLOCK_ELEMENTS.iter().any(|&s| s == tag);
-
-            if is_block {
-                // Ensure block starts on a new line.
-                if !output.is_empty() && !output.ends_with('\n') {
-                    output.push('\n');
-                }
+            if is_block && !output.is_empty() && !output.ends_with('\n') {
+                output.push('\n');
             }
-
-            // Recurse into children.
             for child in node.children() {
-                visit_node(child, output);
+                visit_node_unbounded(child, output);
             }
-
-            if is_block {
-                // Ensure block ends on a new line.
-                if !output.is_empty() && !output.ends_with('\n') {
-                    output.push('\n');
-                }
+            if is_block && !output.is_empty() && !output.ends_with('\n') {
+                output.push('\n');
             }
         }
         roxmltree::NodeType::Root => {
-            // Visit all children of the document root.
             for child in node.children() {
-                visit_node(child, output);
+                visit_node_unbounded(child, output);
             }
         }
-        // Ignore PI, Comment, CDATA, etc.
+        _ => {}
+    }
+}
+
+/// Recursively visit an XML node and append its text to `output`, enforcing `budget`.
+///
+/// Entity expansion and text growth violations stop recursion early; partial output is returned.
+fn visit_node_budgeted(node: roxmltree::Node<'_, '_>, output: &mut String, budget: &mut SecurityBudget) {
+    match node.node_type() {
+        roxmltree::NodeType::Text => {
+            let text = node.text().unwrap_or("");
+            // Entity / billion-laughs check on raw text node value.
+            if budget.check_entity(text).is_err() {
+                return;
+            }
+            let normalised = normalise_inline_whitespace(text);
+            if !normalised.is_empty() {
+                let fragment = if output.is_empty() || output.ends_with('\n') {
+                    normalised.trim_start().to_string()
+                } else {
+                    normalised
+                };
+                if !fragment.is_empty() {
+                    if budget.account_text(fragment.len()).is_err() {
+                        return;
+                    }
+                    output.push_str(&fragment);
+                }
+            }
+        }
+        roxmltree::NodeType::Element => {
+            let tag = node.tag_name().name().to_ascii_lowercase();
+            if SKIP_ELEMENTS.iter().any(|&s| s == tag) {
+                return;
+            }
+            if tag == "br" {
+                output.push('\n');
+                return;
+            }
+            if tag == "hr" {
+                if !output.is_empty() && !output.ends_with('\n') {
+                    output.push('\n');
+                }
+                return;
+            }
+            let is_block = BLOCK_ELEMENTS.iter().any(|&s| s == tag);
+            if is_block && !output.is_empty() && !output.ends_with('\n') {
+                output.push('\n');
+            }
+            for child in node.children() {
+                visit_node_budgeted(child, output, budget);
+            }
+            if is_block && !output.is_empty() && !output.ends_with('\n') {
+                output.push('\n');
+            }
+        }
+        roxmltree::NodeType::Root => {
+            for child in node.children() {
+                visit_node_budgeted(child, output, budget);
+            }
+        }
         _ => {}
     }
 }

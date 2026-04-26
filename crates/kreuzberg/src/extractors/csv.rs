@@ -8,6 +8,7 @@ use std::sync::LazyLock;
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::text::utf8_validation;
 use crate::types::Table;
@@ -71,9 +72,10 @@ impl DocumentExtractor for CsvExtractor {
         &self,
         content: &[u8],
         mime_type: &str,
-        _config: &ExtractionConfig,
+        config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "csv", size_bytes = content.len(), "extraction starting");
+        let mut budget = SecurityBudget::from_config(config);
         let text = decode_csv_bytes(content);
         let delimiter = if mime_type == "text/tab-separated-values" {
             '\t'
@@ -82,6 +84,17 @@ impl DocumentExtractor for CsvExtractor {
         };
 
         let rows = parse_csv(&text, delimiter);
+
+        // Enforce security limits: one step per row, cell count, entity length,
+        // and cumulative content size.
+        for row in &rows {
+            budget.step()?;
+            budget.add_cells(row.len())?;
+            for cell in row {
+                budget.check_entity(cell)?;
+                budget.account_text(cell.len())?;
+            }
+        }
 
         let row_count = rows.len();
         let col_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);

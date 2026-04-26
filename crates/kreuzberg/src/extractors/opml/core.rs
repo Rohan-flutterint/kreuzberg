@@ -5,6 +5,7 @@
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::InternalDocument;
 use crate::types::metadata::Metadata;
@@ -64,7 +65,7 @@ impl DocumentExtractor for OpmlExtractor {
     #[cfg_attr(
         feature = "otel",
         tracing::instrument(
-            skip(self, content, _config),
+            skip(self, content, config),
             fields(
                 extractor.name = self.name(),
                 content.size_bytes = content.len(),
@@ -75,10 +76,11 @@ impl DocumentExtractor for OpmlExtractor {
         &self,
         content: &[u8],
         mime_type: &str,
-        _config: &ExtractionConfig,
+        config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "opml", size_bytes = content.len(), "extraction starting");
-        let (_extracted_content, mut metadata_map) = parser::extract_content_and_metadata(content)?;
+        let mut budget = SecurityBudget::from_config(config);
+        let (_extracted_content, mut metadata_map) = parser::extract_content_and_metadata(content, &mut budget)?;
 
         // Map standard OPML metadata to typed Metadata fields
         let meta_title = metadata_map
@@ -94,7 +96,7 @@ impl DocumentExtractor for OpmlExtractor {
             .remove("dateModified")
             .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-        let mut doc = parser::build_internal_document(content)?;
+        let mut doc = parser::build_internal_document(content, &mut budget)?;
         doc.mime_type = std::borrow::Cow::Owned(mime_type.to_string());
         doc.metadata = Metadata {
             title: meta_title,

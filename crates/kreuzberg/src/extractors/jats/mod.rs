@@ -19,6 +19,7 @@ mod parser;
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::text::utf8_validation;
 use crate::types::Metadata;
@@ -47,6 +48,7 @@ use parser::extract_text_content as jats_extract_text;
 /// - `<ext-link>` → link (with xlink:href)
 fn extract_para_with_annotations_jats(
     reader: &mut Reader<&[u8]>,
+    budget: &mut SecurityBudget,
 ) -> crate::Result<(String, Vec<crate::types::document_structure::TextAnnotation>)> {
     use crate::types::builder;
 
@@ -58,8 +60,10 @@ fn extract_para_with_annotations_jats(
     let mut inline_stack: Vec<(&'static str, u32, u32, Option<String>)> = Vec::new();
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 depth += 1;
 
                 let name = e.name();
@@ -85,8 +89,10 @@ fn extract_para_with_annotations_jats(
                         let mut href = None;
                         for attr in e.attributes().flatten() {
                             let key = String::from_utf8_lossy(attr.key.as_ref());
+                            let val = String::from_utf8_lossy(attr.value.as_ref());
+                            budget.check_attr(&key, &val)?;
                             if key == "xlink:href" || key.ends_with(":href") || key == "href" {
-                                href = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string());
+                                href = Some(val.to_string());
                             }
                         }
                         inline_stack.push(("link", depth, text.len() as u32, href));
@@ -95,6 +101,7 @@ fn extract_para_with_annotations_jats(
                 }
             }
             Ok(Event::End(_)) => {
+                budget.leave();
                 if depth == 0 {
                     break;
                 }
@@ -136,6 +143,8 @@ fn extract_para_with_annotations_jats(
             Ok(Event::Text(t)) => {
                 let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
                 if !decoded.trim().is_empty() {
+                    budget.check_entity(decoded.trim())?;
+                    budget.account_text(decoded.trim().len())?;
                     if !text.is_empty() && !text.ends_with(' ') && !text.ends_with('\n') {
                         text.push(' ');
                     }
@@ -145,6 +154,8 @@ fn extract_para_with_annotations_jats(
             Ok(Event::CData(t)) => {
                 let decoded = utf8_validation::from_utf8(t.as_ref()).unwrap_or("").to_string();
                 if !decoded.trim().is_empty() {
+                    budget.check_entity(decoded.trim())?;
+                    budget.account_text(decoded.trim().len())?;
                     if !text.is_empty() {
                         text.push(' ');
                     }
@@ -166,7 +177,7 @@ fn extract_para_with_annotations_jats(
 }
 
 /// Build an `InternalDocument` from JATS XML content.
-fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument> {
+fn build_jats_internal_document(content: &str, budget: &mut SecurityBudget) -> crate::Result<InternalDocument> {
     let mut reader = Reader::from_str(content);
     let mut builder = InternalDocumentBuilder::new("jats");
 
@@ -188,8 +199,10 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
     let mut ref_list_opened = false;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name = e.name();
                 let tag = crate::utils::xml_tag_name(name.as_ref());
 
@@ -198,7 +211,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         in_article_meta = true;
                     }
                     "article-title" if in_article_meta && !in_abstract => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_heading(1, &text, None, None);
                         }
@@ -213,7 +226,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         // Nested sections inside abstract
                     }
                     "title" if in_abstract => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             // Abstract sub-sections are rendered at level 3
                             builder.push_heading(3, &text, None, None);
@@ -221,7 +234,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         continue;
                     }
                     "p" if in_abstract => {
-                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader)?;
+                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_paragraph(&text, annotations, None, None);
                         }
@@ -236,7 +249,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         sec_depth += 1;
                     }
                     "title" if in_body && !in_article_meta && !in_ref_list => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             // Heading level: top-level sections = 2, nested = 3, etc.
                             let level = (sec_depth + 1).min(6) as u8;
@@ -245,7 +258,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         continue;
                     }
                     "p" if in_body => {
-                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader)?;
+                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader, budget)?;
                         if !text.is_empty() {
                             // Extract URIs from link annotations
                             for ann in &annotations {
@@ -262,11 +275,11 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                     }
                     "fig" if in_body => {
                         // Skip figures in internal representation (no image data available)
-                        let _ = jats_extract_text(&mut reader)?;
+                        let _ = jats_extract_text(&mut reader, budget)?;
                         continue;
                     }
                     "disp-formula" | "inline-formula" if in_body => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_formula(&text, None, None);
                         }
@@ -281,18 +294,18 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                     }
                     "supplementary-material" if in_back => {
                         // Skip supplementary material content
-                        let _ = jats_extract_text(&mut reader)?;
+                        let _ = jats_extract_text(&mut reader, budget)?;
                         continue;
                     }
                     "title" if in_back && !in_ref_list => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_heading(2, &text, None, None);
                         }
                         continue;
                     }
                     "p" if in_back && !in_ref_list => {
-                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader)?;
+                        let (text, annotations) = extract_para_with_annotations_jats(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_paragraph(&text, annotations, None, None);
                         }
@@ -314,7 +327,8 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         current_row.clear();
                     }
                     "td" | "th" if in_row => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
+                        budget.add_cells(1)?;
                         current_row.push(text);
                         continue;
                     }
@@ -323,14 +337,14 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                         in_ref_list = true;
                     }
                     "title" if in_ref_list => {
-                        let text = jats_extract_text(&mut reader)?;
+                        let text = jats_extract_text(&mut reader, budget)?;
                         if !text.is_empty() {
                             builder.push_heading(2, &text, None, None);
                         }
                         continue;
                     }
                     "ref" if in_ref_list => {
-                        let text = jats_extract_citation(&mut reader)?;
+                        let text = jats_extract_citation(&mut reader, budget)?;
                         if !text.is_empty() {
                             if !ref_list_opened {
                                 builder.push_list(true);
@@ -344,6 +358,7 @@ fn build_jats_internal_document(content: &str) -> crate::Result<InternalDocument
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 let name = e.name();
                 let tag = crate::utils::xml_tag_name(name.as_ref());
 
@@ -448,7 +463,7 @@ impl DocumentExtractor for JatsExtractor {
     #[cfg_attr(
         feature = "otel",
         tracing::instrument(
-            skip(self, content, _config),
+            skip(self, content, config),
             fields(
                 extractor.name = self.name(),
                 content.size_bytes = content.len(),
@@ -459,7 +474,7 @@ impl DocumentExtractor for JatsExtractor {
         &self,
         content: &[u8],
         mime_type: &str,
-        _config: &ExtractionConfig,
+        config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "jats", size_bytes = content.len(), "extraction starting");
         let jats_content = utf8_validation::from_utf8(content)
@@ -581,7 +596,8 @@ impl DocumentExtractor for JatsExtractor {
             metadata.subject = Some(subject_parts.join(" | "));
         }
 
-        let mut doc = build_jats_internal_document(&jats_content)?;
+        let mut budget = SecurityBudget::from_config(config);
+        let mut doc = build_jats_internal_document(&jats_content, &mut budget)?;
         doc.mime_type = std::borrow::Cow::Owned(mime_type.to_string());
         doc.metadata = metadata;
 

@@ -5,6 +5,7 @@
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extraction::{cells_to_markdown, office_metadata};
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::ExtractedImage;
 use crate::types::internal::InternalDocument;
@@ -798,8 +799,9 @@ fn parse_docx_core(
     content: &[u8],
     include_doc_structure: bool,
     output_format: crate::core::config::OutputFormat,
+    mut budget: SecurityBudget,
 ) -> crate::error::Result<DocxParseResult> {
-    let doc = crate::extraction::docx::parser::parse_document(content)?;
+    let doc = crate::extraction::docx::parser::parse_document(content, &mut budget)?;
     let (text, page_boundaries) =
         doc.extract_text_with_boundaries(matches!(output_format, crate::core::config::OutputFormat::Markdown));
 
@@ -945,6 +947,7 @@ impl DocumentExtractor for DocxExtractor {
         };
 
         let include_doc_structure = config.include_document_structure;
+        let budget = SecurityBudget::from_config(config);
         let (text, tables, page_boundaries, drawings, image_rels, _doc_structure, mut internal_doc) = {
             #[cfg(feature = "tokio-runtime")]
             if crate::core::batch_mode::is_batch_mode() {
@@ -955,16 +958,16 @@ impl DocumentExtractor for DocxExtractor {
                 let span = tracing::Span::current();
                 tokio::task::spawn_blocking(move || {
                     let _guard = span.entered();
-                    parse_docx_core(&content_owned, include_doc_structure, output_format)
+                    parse_docx_core(&content_owned, include_doc_structure, output_format, budget)
                 })
                 .await
                 .map_err(|e| crate::error::KreuzbergError::parsing(format!("DOCX extraction task failed: {}", e)))??
             } else {
-                parse_docx_core(content, include_doc_structure, output_format)?
+                parse_docx_core(content, include_doc_structure, output_format, budget)?
             }
 
             #[cfg(not(feature = "tokio-runtime"))]
-            parse_docx_core(content, include_doc_structure, output_format)?
+            parse_docx_core(content, include_doc_structure, output_format, budget)?
         };
 
         let mut archive = {

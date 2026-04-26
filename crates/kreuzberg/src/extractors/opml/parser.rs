@@ -4,6 +4,7 @@
 //! and recursive processing of `<outline>` elements in the `<body>` section.
 
 use crate::Result;
+use crate::extractors::security::SecurityBudget;
 use crate::text::utf8_validation;
 use crate::types::uri::Uri;
 use ahash::AHashMap;
@@ -26,6 +27,7 @@ use serde_json;
 #[cfg(feature = "office")]
 pub(crate) fn extract_content_and_metadata(
     content: &[u8],
+    budget: &mut SecurityBudget,
 ) -> Result<(String, AHashMap<Cow<'static, str>, serde_json::Value>)> {
     let doc = roxmltree::Document::parse(
         utf8_validation::from_utf8(content)
@@ -37,12 +39,17 @@ pub(crate) fn extract_content_and_metadata(
     let mut metadata = AHashMap::new();
 
     if let Some(opml) = doc.root().children().find(|n| n.tag_name().name() == "opml") {
+        budget.enter()?;
         if let Some(head) = opml.children().find(|n| n.tag_name().name() == "head") {
-            extract_metadata_from_head(head, &mut metadata);
+            budget.enter()?;
+            extract_metadata_from_head(head, &mut metadata, budget)?;
+            budget.leave();
         }
 
         if let Some(body) = opml.children().find(|n| n.tag_name().name() == "body") {
+            budget.enter()?;
             if let Some(title) = metadata.get("title").and_then(|v| v.as_str()) {
+                budget.account_text(title.len())?;
                 extracted_content.push_str(title);
                 extracted_content.push('\n');
                 extracted_content.push('\n');
@@ -51,14 +58,17 @@ pub(crate) fn extract_content_and_metadata(
             // Collect feed URLs from outline attributes
             let mut feed_urls = Vec::new();
             for outline in body.children().filter(|n| n.tag_name().name() == "outline") {
-                process_outline(outline, 0, &mut extracted_content);
-                collect_feed_urls(outline, &mut feed_urls);
+                budget.step()?;
+                process_outline(outline, 0, &mut extracted_content, budget)?;
+                collect_feed_urls(outline, &mut feed_urls, budget)?;
             }
 
             if !feed_urls.is_empty() {
                 metadata.insert(Cow::Borrowed("feed_urls"), serde_json::json!(feed_urls));
             }
+            budget.leave();
         }
+        budget.leave();
     }
 
     Ok((extracted_content.trim().to_string(), metadata))
@@ -73,14 +83,22 @@ pub(crate) fn extract_content_and_metadata(
 /// - ownerName: Document owner's name
 /// - ownerEmail: Document owner's email
 #[cfg(feature = "office")]
-fn extract_metadata_from_head(head: Node, metadata: &mut AHashMap<Cow<'static, str>, serde_json::Value>) {
+fn extract_metadata_from_head(
+    head: Node,
+    metadata: &mut AHashMap<Cow<'static, str>, serde_json::Value>,
+    budget: &mut SecurityBudget,
+) -> Result<()> {
     for child in head.children().filter(|n| n.is_element()) {
+        budget.step()?;
         let tag = child.tag_name().name();
         let text = child.text().unwrap_or("").trim();
 
         if text.is_empty() {
             continue;
         }
+
+        budget.check_entity(text)?;
+        budget.account_text(text.len())?;
 
         match tag {
             "title" => {
@@ -101,6 +119,7 @@ fn extract_metadata_from_head(head: Node, metadata: &mut AHashMap<Cow<'static, s
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Process outline elements recursively.
@@ -114,10 +133,18 @@ fn extract_metadata_from_head(head: Node, metadata: &mut AHashMap<Cow<'static, s
 /// * `depth` - Current nesting depth (for indentation)
 /// * `output` - Output string buffer to append content to
 #[cfg(feature = "office")]
-pub(crate) fn process_outline(node: Node, depth: usize, output: &mut String) {
+pub(crate) fn process_outline(
+    node: Node,
+    depth: usize,
+    output: &mut String,
+    budget: &mut SecurityBudget,
+) -> Result<()> {
+    budget.enter()?;
     let text = node.attribute("text").unwrap_or("").trim();
 
     if !text.is_empty() {
+        budget.check_entity(text)?;
+        budget.account_text(text.len())?;
         let indent = "  ".repeat(depth);
         output.push_str(&indent);
         output.push_str(text);
@@ -125,27 +152,33 @@ pub(crate) fn process_outline(node: Node, depth: usize, output: &mut String) {
     }
 
     for child in node.children().filter(|n| n.tag_name().name() == "outline") {
-        process_outline(child, depth + 1, output);
+        budget.step()?;
+        process_outline(child, depth + 1, output, budget)?;
     }
+    budget.leave();
+    Ok(())
 }
 
 /// Recursively collect feed URLs (xmlUrl) from outline elements into metadata.
 #[cfg(feature = "office")]
-fn collect_feed_urls(node: Node, urls: &mut Vec<serde_json::Value>) {
+fn collect_feed_urls(node: Node, urls: &mut Vec<serde_json::Value>, budget: &mut SecurityBudget) -> Result<()> {
     if let Some(xml_url) = node.attribute("xmlUrl") {
         let trimmed = xml_url.trim();
         if !trimmed.is_empty() {
+            budget.check_attr("xmlUrl", trimmed)?;
             let mut entry = serde_json::Map::new();
             entry.insert("xmlUrl".to_string(), serde_json::json!(trimmed));
             if let Some(text) = node.attribute("text") {
                 let t = text.trim();
                 if !t.is_empty() {
+                    budget.check_attr("text", t)?;
                     entry.insert("text".to_string(), serde_json::json!(t));
                 }
             }
             if let Some(html_url) = node.attribute("htmlUrl") {
                 let h = html_url.trim();
                 if !h.is_empty() {
+                    budget.check_attr("htmlUrl", h)?;
                     entry.insert("htmlUrl".to_string(), serde_json::json!(h));
                 }
             }
@@ -159,8 +192,10 @@ fn collect_feed_urls(node: Node, urls: &mut Vec<serde_json::Value>) {
         }
     }
     for child in node.children().filter(|n| n.tag_name().name() == "outline") {
-        collect_feed_urls(child, urls);
+        budget.step()?;
+        collect_feed_urls(child, urls, budget)?;
     }
+    Ok(())
 }
 
 /// Extract OPML outline attributes (xmlUrl, htmlUrl, type, description) into a HashMap.
@@ -214,7 +249,10 @@ fn convert_inline_html(text: &str) -> String {
 /// Maps the outline hierarchy to headings and paragraphs, mirroring
 /// `build_document_structure`.
 #[cfg(feature = "office")]
-pub(crate) fn build_internal_document(content: &[u8]) -> Result<crate::types::internal::InternalDocument> {
+pub(crate) fn build_internal_document(
+    content: &[u8],
+    budget: &mut SecurityBudget,
+) -> Result<crate::types::internal::InternalDocument> {
     use crate::types::internal_builder::InternalDocumentBuilder;
 
     let doc = roxmltree::Document::parse(
@@ -229,7 +267,8 @@ pub(crate) fn build_internal_document(content: &[u8]) -> Result<crate::types::in
         && let Some(body) = opml.children().find(|n| n.tag_name().name() == "body")
     {
         for outline in body.children().filter(|n| n.tag_name().name() == "outline") {
-            build_outline_internal(outline, 1, &mut builder);
+            budget.step()?;
+            build_outline_internal(outline, 1, &mut builder, budget)?;
         }
     }
 
@@ -242,17 +281,24 @@ fn build_outline_internal(
     node: Node,
     depth: u8,
     builder: &mut crate::types::internal_builder::InternalDocumentBuilder,
-) {
+    budget: &mut SecurityBudget,
+) -> Result<()> {
+    budget.enter()?;
     let text = node.attribute("text").unwrap_or("").trim();
 
     let child_outlines: Vec<Node> = node.children().filter(|n| n.tag_name().name() == "outline").collect();
 
     if text.is_empty() {
         for child in child_outlines {
-            build_outline_internal(child, depth, builder);
+            budget.step()?;
+            build_outline_internal(child, depth, builder, budget)?;
         }
-        return;
+        budget.leave();
+        return Ok(());
     }
+
+    budget.check_entity(text)?;
+    budget.account_text(text.len())?;
 
     let attrs = extract_outline_attributes(node);
 
@@ -261,12 +307,14 @@ fn build_outline_internal(
     if let Some(xml_url) = node.attribute("xmlUrl") {
         let trimmed = xml_url.trim();
         if !trimmed.is_empty() {
+            budget.check_attr("xmlUrl", trimmed)?;
             builder.push_uri(Uri::hyperlink(trimmed, label.clone()));
         }
     }
     if let Some(html_url) = node.attribute("htmlUrl") {
         let trimmed = html_url.trim();
         if !trimmed.is_empty() {
+            budget.check_attr("htmlUrl", trimmed)?;
             builder.push_uri(Uri::hyperlink(trimmed, label));
         }
     }
@@ -278,8 +326,11 @@ fn build_outline_internal(
         builder.set_attributes(idx, attrs);
     }
     for child in child_outlines {
-        build_outline_internal(child, depth + 1, builder);
+        budget.step()?;
+        build_outline_internal(child, depth + 1, builder, budget)?;
     }
+    budget.leave();
+    Ok(())
 }
 
 #[cfg(all(test, feature = "office"))]
@@ -299,7 +350,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should parse simple OPML");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should parse simple OPML");
 
         assert!(content.contains("Item 1"), "Should extract first item");
         assert!(content.contains("Item 2"), "Should extract second item");
@@ -326,7 +377,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) = extract_content_and_metadata(opml).expect("Should parse nested OPML");
+        let (content, _) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should parse nested OPML");
 
         assert!(content.contains("Category"), "Should contain top level");
         assert!(content.contains("Subcategory"), "Should contain nested level");
@@ -349,7 +400,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) = extract_content_and_metadata(opml).expect("Should parse RSS OPML");
+        let (content, _) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should parse RSS OPML");
 
         assert!(content.contains("Hacker News"), "Should extract feed title");
         assert!(
@@ -375,7 +426,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (_content, metadata) = extract_content_and_metadata(opml).expect("Should extract metadata");
+        let (_content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should extract metadata");
 
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("My Feeds"));
         assert_eq!(metadata.get("ownerName").and_then(|v| v.as_str()), Some("John Doe"));
@@ -400,7 +451,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle special characters");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle special characters");
 
         assert!(
             content.contains("Business") && content.contains("Startups"),
@@ -421,7 +472,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (_content, metadata) = extract_content_and_metadata(opml).expect("Should handle empty body");
+        let (_content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle empty body");
 
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("Empty"));
     }
@@ -438,7 +489,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let result = extract_content_and_metadata(opml);
+        let result = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults());
         assert!(result.is_err(), "Should fail to parse OPML with missing closing tags");
     }
 
@@ -453,7 +504,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let result = extract_content_and_metadata(opml);
+        let result = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults());
         assert!(result.is_err(), "Should fail to parse OPML with invalid nesting");
     }
 
@@ -474,7 +525,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle empty outline elements");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle empty outline elements");
 
         assert!(content.contains("Valid Item"), "Should extract valid items");
         assert!(content.contains("Another Valid"), "Should extract nested valid items");
@@ -505,7 +556,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) = extract_content_and_metadata(opml).expect("Should handle deeply nested structures");
+        let (content, _) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle deeply nested structures");
 
         assert!(content.contains("Level 1"), "Should extract top-level item");
         assert!(content.contains("Deep Item"), "Should extract deeply nested item");
@@ -527,7 +578,7 @@ mod tests {
 </opml>"#;
 
         let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle outline with missing text attribute");
+            extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle outline with missing text attribute");
 
         assert!(content.contains("Valid Item"), "Should extract item with text");
         assert!(!content.contains("https://"), "Should not extract URLs");
@@ -553,7 +604,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) = extract_content_and_metadata(opml).expect("Should handle whitespace-only text");
+        let (content, _) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle whitespace-only text");
 
         assert!(
             content.contains("Real Content"),
@@ -579,7 +630,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle HTML entities");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle HTML entities");
 
         assert!(
             content.contains("News") && content.contains("Updates"),
@@ -607,7 +658,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle single outline");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle single outline");
 
         assert!(content.contains("Only Item"), "Should extract single item");
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("Single"));
@@ -622,7 +673,7 @@ mod tests {
   </head>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle OPML without body");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle OPML without body");
 
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("No Body"));
         assert!(content.is_empty() || content.trim() == "No Body");
@@ -643,7 +694,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (_content, metadata) = extract_content_and_metadata(opml).expect("Should parse RSS OPML");
+        let (_content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should parse RSS OPML");
 
         let feed_urls = metadata.get("feed_urls");
         assert!(feed_urls.is_some(), "Should have feed_urls metadata");
@@ -697,7 +748,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle OPML without head");
+        let (content, metadata) = extract_content_and_metadata(opml, &mut SecurityBudget::with_defaults()).expect("Should handle OPML without head");
 
         assert!(content.contains("Item"), "Should extract body content");
         assert!(metadata.is_empty(), "Should have no metadata without head");

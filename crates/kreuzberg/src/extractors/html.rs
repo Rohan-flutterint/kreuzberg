@@ -3,6 +3,7 @@
 use crate::Result;
 use crate::core::config::{ExtractionConfig, OutputFormat};
 use crate::extractors::SyncExtractor;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::text::utf8_validation;
 use crate::types::document_structure::TextAnnotation;
@@ -39,10 +40,15 @@ impl HtmlExtractor {
     /// Walks the flat node array from html-to-markdown and uses `InternalDocumentBuilder`
     /// to construct the equivalent kreuzberg representation. Skips `RawBlock` nodes
     /// (script/style content) and `MetadataBlock` nodes (handled by metadata extraction).
+    ///
+    /// `budget` enforces hostile-input limits (iteration count, nesting depth, entity
+    /// length, cumulative content size, table cells). Any limit violation is converted
+    /// into a `KreuzbergError::Security` via the `?` operator.
     fn map_document_structure(
         doc_structure: &html_to_markdown_rs::types::DocumentStructure,
         inject_placeholders: bool,
-    ) -> InternalDocument {
+        budget: &mut SecurityBudget,
+    ) -> crate::Result<InternalDocument> {
         let mut b = InternalDocumentBuilder::new("html");
 
         // Track which nodes are list containers so we can manage open/close
@@ -58,27 +64,33 @@ impl HtmlExtractor {
             .map(|(i, _)| i)
             .collect();
 
-        Self::walk_nodes(doc_structure, &root_indices, &mut b, inject_placeholders);
+        Self::walk_nodes(doc_structure, &root_indices, &mut b, inject_placeholders, budget)?;
 
-        b.build()
+        Ok(b.build())
     }
 
     /// Recursively walk document nodes and push them into the builder.
+    ///
+    /// Calls `budget` validators on each node visited to enforce hostile-input limits.
     fn walk_nodes(
         doc: &html_to_markdown_rs::types::DocumentStructure,
         indices: &[usize],
         b: &mut InternalDocumentBuilder,
         inject_placeholders: bool,
-    ) {
+        budget: &mut SecurityBudget,
+    ) -> crate::Result<()> {
         use html_to_markdown_rs::types::NodeContent as HC;
 
         for &idx in indices {
+            budget.step()?;
+
             let Some(node) = doc.nodes.get(idx) else {
                 continue;
             };
 
             match &node.content {
                 HC::Heading { level, text } => {
+                    budget.account_text(text.len())?;
                     let elem_idx = b.push_heading(*level, text, None, None);
                     let annotations = map_annotations(&node.annotations);
                     push_link_uris_from_annotations(&annotations, text, b);
@@ -87,17 +99,21 @@ impl HtmlExtractor {
                     }
                 }
                 HC::Paragraph { text } => {
+                    budget.account_text(text.len())?;
                     let annotations = map_annotations(&node.annotations);
                     push_link_uris_from_annotations(&annotations, text, b);
                     b.push_paragraph(text, annotations, None, None);
                 }
                 HC::List { ordered } => {
+                    budget.enter()?;
                     b.push_list(*ordered);
                     let child_indices: Vec<usize> = node.children.iter().map(|&i| i as usize).collect();
-                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders);
+                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders, budget)?;
                     b.end_list();
+                    budget.leave();
                 }
                 HC::ListItem { text } => {
+                    budget.enter()?;
                     // Determine if parent is ordered
                     let ordered = node
                         .parent
@@ -106,15 +122,19 @@ impl HtmlExtractor {
                         .unwrap_or(false);
                     let annotations = map_annotations(&node.annotations);
                     push_link_uris_from_annotations(&annotations, text, b);
+                    budget.account_text(text.len())?;
                     b.push_list_item(text, ordered, annotations, None, None);
 
                     // Recurse into children (e.g. nested lists inside this item)
                     if !node.children.is_empty() {
                         let child_indices: Vec<usize> = node.children.iter().map(|&i| i as usize).collect();
-                        Self::walk_nodes(doc, &child_indices, b, inject_placeholders);
+                        Self::walk_nodes(doc, &child_indices, b, inject_placeholders, budget)?;
                     }
+                    budget.leave();
                 }
                 HC::Table { grid } => {
+                    let cell_count = grid.cells.len();
+                    budget.add_cells(cell_count)?;
                     // Convert grid to 2D cells for the builder
                     let mut cells = vec![vec![String::new(); grid.cols as usize]; grid.rows as usize];
                     for cell in &grid.cells {
@@ -136,6 +156,7 @@ impl HtmlExtractor {
                         } else {
                             text.to_string()
                         };
+                        budget.account_text(display.len())?;
                         b.push_paragraph(&display, vec![], None, None);
                     }
                     // Always collect image URI reference regardless of inject_placeholders
@@ -144,33 +165,44 @@ impl HtmlExtractor {
                     }
                 }
                 HC::Code { text, language } => {
+                    budget.account_text(text.len())?;
                     b.push_code(text, language.as_deref(), None, None);
                 }
                 HC::Quote => {
+                    budget.enter()?;
                     b.push_quote_start();
                     let child_indices: Vec<usize> = node.children.iter().map(|&i| i as usize).collect();
-                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders);
+                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders, budget)?;
                     b.push_quote_end();
+                    budget.leave();
                 }
                 HC::DefinitionList => {
+                    budget.enter()?;
                     // Walk children (DefinitionItem nodes)
                     let child_indices: Vec<usize> = node.children.iter().map(|&i| i as usize).collect();
-                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders);
+                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders, budget)?;
+                    budget.leave();
                 }
                 HC::DefinitionItem { term, definition } => {
+                    budget.account_text(term.len())?;
+                    budget.account_text(definition.len())?;
                     b.push_definition_term(term, None);
                     b.push_definition_description(definition, None);
                 }
                 HC::Group { label, .. } => {
+                    budget.enter()?;
                     b.push_group_start(label.as_deref(), None);
                     let child_indices: Vec<usize> = node.children.iter().map(|&i| i as usize).collect();
-                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders);
+                    Self::walk_nodes(doc, &child_indices, b, inject_placeholders, budget)?;
                     b.push_group_end();
+                    budget.leave();
                 }
                 // Skip RawBlock (script/style content) and MetadataBlock (handled by metadata extraction)
                 HC::RawBlock { .. } | HC::MetadataBlock { .. } => {}
             }
         }
+
+        Ok(())
     }
 }
 
@@ -382,25 +414,25 @@ impl SyncExtractor for HtmlExtractor {
                 Some(config.output_format.clone()),
             )?;
 
-        let tables: Vec<Table> = table_data
-            .into_iter()
-            .enumerate()
-            .map(|(i, t)| {
-                let grid = &t.grid;
-                let mut cells = vec![vec![String::new(); grid.cols as usize]; grid.rows as usize];
-                for cell in &grid.cells {
-                    if (cell.row as usize) < cells.len() && (cell.col as usize) < cells[0].len() {
-                        cells[cell.row as usize][cell.col as usize] = cell.content.clone();
-                    }
+        let mut budget = SecurityBudget::from_config(config);
+
+        let mut tables: Vec<Table> = Vec::with_capacity(table_data.len());
+        for (i, t) in table_data.into_iter().enumerate() {
+            let grid = &t.grid;
+            budget.add_cells(grid.cells.len())?;
+            let mut cells = vec![vec![String::new(); grid.cols as usize]; grid.rows as usize];
+            for cell in &grid.cells {
+                if (cell.row as usize) < cells.len() && (cell.col as usize) < cells[0].len() {
+                    cells[cell.row as usize][cell.col as usize] = cell.content.clone();
                 }
-                Table {
-                    cells,
-                    markdown: t.markdown,
-                    page_number: i + 1,
-                    bounding_box: None,
-                }
-            })
-            .collect();
+            }
+            tables.push(Table {
+                cells,
+                markdown: t.markdown,
+                page_number: i + 1,
+                bounding_box: None,
+            });
+        }
 
         // Extract standard metadata fields from HtmlMetadata before consuming into FormatMetadata
         let meta_title = html_metadata.as_ref().and_then(|m| m.title.clone());
@@ -442,7 +474,7 @@ impl SyncExtractor for HtmlExtractor {
             .unwrap_or(true);
 
         let mut doc = if let Some(ref structure) = doc_structure {
-            let mapped = Self::map_document_structure(structure, inject_placeholders);
+            let mapped = Self::map_document_structure(structure, inject_placeholders, &mut budget)?;
             if mapped.elements.is_empty() && !content_text.is_empty() {
                 // Structure collector didn't produce nodes (e.g. only images/lists which
                 // aren't collected yet). Use the converter's text as a paragraph.
@@ -865,7 +897,8 @@ mod tests {
         let (_, _, _, doc_structure) =
             crate::extraction::html::convert_html_to_markdown_with_tables(html, None, None).unwrap();
         let doc_structure = doc_structure.expect("should have document structure");
-        let doc = HtmlExtractor::map_document_structure(&doc_structure, true);
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = HtmlExtractor::map_document_structure(&doc_structure, true, &mut budget).unwrap();
         assert!(!doc.elements.is_empty(), "Should have elements");
     }
 
@@ -913,7 +946,8 @@ mod tests {
                 crate::extraction::html::convert_html_to_markdown_with_tables(html, None, None).unwrap();
             ds.expect("should have document structure")
         };
-        let doc = HtmlExtractor::map_document_structure(&doc_structure, true);
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = HtmlExtractor::map_document_structure(&doc_structure, true, &mut budget).unwrap();
 
         // Check that no element contains CSS or script content
         for elem in &doc.elements {
@@ -942,7 +976,8 @@ mod tests {
         let (_, _, _, doc_structure) =
             crate::extraction::html::convert_html_to_markdown_with_tables(html, None, None).unwrap();
         let doc_structure = doc_structure.expect("should have document structure");
-        let doc = HtmlExtractor::map_document_structure(&doc_structure, true);
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = HtmlExtractor::map_document_structure(&doc_structure, true, &mut budget).unwrap();
         let content = doc.content();
         assert!(
             content.contains("!["),
@@ -957,7 +992,8 @@ mod tests {
         let (_, _, _, doc_structure) =
             crate::extraction::html::convert_html_to_markdown_with_tables(html, None, None).unwrap();
         let doc_structure = doc_structure.expect("should have document structure");
-        let doc = HtmlExtractor::map_document_structure(&doc_structure, false);
+        let mut budget = SecurityBudget::with_defaults();
+        let doc = HtmlExtractor::map_document_structure(&doc_structure, false, &mut budget).unwrap();
         let content = doc.content();
         assert!(
             !content.contains("!["),

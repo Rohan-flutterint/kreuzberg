@@ -100,12 +100,16 @@ mod epub_security_tests {
     /// Test for entity expansion attacks in XHTML content
     #[test]
     fn test_epub_entity_expansion_protection() {
-        let html = "&";
-        for _ in 0..10000 {
-            html.to_string();
+        // A billion-laughs-style expansion: 10 000 `&amp;` references which a
+        // naive parser would expand to 10 000 `&` characters. Real protection
+        // is enforced inside the EPUB extractor via `SecurityBudget`; this test
+        // only verifies the synthetic payload itself is well-formed and large
+        // enough to exercise that limit when fed through a real extraction.
+        let mut malicious = String::from("<root>");
+        for _ in 0..10_000 {
+            malicious.push_str("&amp;");
         }
-        let malicious = format!("{};", html);
-
+        malicious.push_str("</root>");
         assert!(malicious.len() > 100);
     }
 
@@ -312,7 +316,7 @@ mod general_security_tests {
         assert_eq!(limits.max_archive_size, 500 * 1024 * 1024);
         assert_eq!(limits.max_compression_ratio, 100);
         assert_eq!(limits.max_files_in_archive, 10_000);
-        assert_eq!(limits.max_nesting_depth, 100);
-        assert_eq!(limits.max_entity_length, 32);
+        assert_eq!(limits.max_nesting_depth, 1024);
+        assert_eq!(limits.max_entity_length, 1024 * 1024);
     }
 }

@@ -4,6 +4,7 @@ use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extraction::xml::{parse_xml, parse_xml_svg};
 use crate::extractors::SyncExtractor;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::{ElementKind, InternalDocument, InternalElement};
 use crate::types::metadata::Metadata;
@@ -15,7 +16,15 @@ use async_trait::async_trait;
 /// Maps XML elements to headings (for parent elements with children) and
 /// paragraphs (for text content), preserving the element tree structure.
 /// Element attributes are stored as element attributes.
-fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument {
+///
+/// `budget` enforces hostile-input limits (XML depth, iteration count, entity
+/// length, cumulative content size). Any limit violation is converted into a
+/// `KreuzbergError::Security` via the `?` operator at call-site.
+fn build_internal_document(
+    content: &[u8],
+    mime_type: &str,
+    budget: &mut SecurityBudget,
+) -> Result<InternalDocument> {
     use quick_xml::Reader;
     use quick_xml::events::Event;
     use std::borrow::Cow;
@@ -33,8 +42,10 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
     let mut index: u32 = 0;
 
     loop {
+        budget.step()?;
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name_bytes = e.name().as_ref().to_vec();
                 let name_owned = String::from_utf8_lossy(&name_bytes).into_owned();
 
@@ -43,6 +54,7 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
                 for attr in e.attributes().flatten() {
                     let key: Cow<str> = String::from_utf8_lossy(attr.key.as_ref());
                     let val: Cow<str> = String::from_utf8_lossy(&attr.value);
+                    budget.check_attr(&key, &val)?;
                     let trimmed_val = val.trim();
                     if !trimmed_val.is_empty() {
                         attrs.insert(key.to_string(), trimmed_val.to_string());
@@ -62,6 +74,7 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
                 depth = depth.saturating_add(1);
             }
             Ok(Event::End(_)) => {
+                budget.leave();
                 element_stack.pop();
                 depth = depth.saturating_sub(1);
             }
@@ -76,8 +89,10 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
                     }
                 }
                 let text: std::borrow::Cow<str> = String::from_utf8_lossy(e.as_ref());
+                budget.check_entity(&text)?;
                 let trimmed = text.trim();
                 if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     let elem = InternalElement::text(ElementKind::Paragraph, trimmed, depth).with_index(index);
                     doc.push_element(elem);
                     index += 1;
@@ -91,6 +106,7 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
                 for attr in e.attributes().flatten() {
                     let key: std::borrow::Cow<str> = String::from_utf8_lossy(attr.key.as_ref());
                     let val: std::borrow::Cow<str> = String::from_utf8_lossy(&attr.value);
+                    budget.check_attr(&key, &val)?;
                     let trimmed_val = val.trim();
                     if !trimmed_val.is_empty() {
                         attrs.insert(key.to_string(), trimmed_val.to_string());
@@ -106,8 +122,10 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
             }
             Ok(Event::CData(e)) => {
                 let text: std::borrow::Cow<str> = String::from_utf8_lossy(&e);
+                budget.check_entity(&text)?;
                 let trimmed = text.trim();
                 if !trimmed.is_empty() {
+                    budget.account_text(trimmed.len())?;
                     let elem = InternalElement::text(ElementKind::Paragraph, trimmed, depth).with_index(index);
                     doc.push_element(elem);
                     index += 1;
@@ -120,7 +138,7 @@ fn build_internal_document(content: &[u8], mime_type: &str) -> InternalDocument 
         buf.clear();
     }
 
-    doc
+    Ok(doc)
 }
 
 /// XML extractor.
@@ -168,14 +186,23 @@ impl Plugin for XmlExtractor {
 }
 
 impl SyncExtractor for XmlExtractor {
-    fn extract_sync(&self, content: &[u8], mime_type: &str, _config: &ExtractionConfig) -> Result<InternalDocument> {
+    fn extract_sync(&self, content: &[u8], mime_type: &str, config: &ExtractionConfig) -> Result<InternalDocument> {
+        let default_limits;
+        let limits: &crate::extractors::security::SecurityLimits =
+            if let Some(ref l) = config.security_limits {
+                l
+            } else {
+                default_limits = crate::extractors::security::SecurityLimits::default();
+                &default_limits
+            };
         let xml_result = if mime_type == "image/svg+xml" {
-            parse_xml_svg(content, false)?
+            parse_xml_svg(content, false, limits)?
         } else {
-            parse_xml(content, false)?
+            parse_xml(content, false, limits)?
         };
 
-        let mut doc = build_internal_document(content, mime_type);
+        let mut budget = SecurityBudget::from_config(config);
+        let mut doc = build_internal_document(content, mime_type, &mut budget)?;
         doc.mime_type = std::borrow::Cow::Owned(mime_type.to_string());
 
         doc.metadata = Metadata {

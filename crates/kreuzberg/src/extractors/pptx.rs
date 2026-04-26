@@ -2,6 +2,7 @@
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::InternalDocument;
 use crate::types::internal_builder::InternalDocumentBuilder;
@@ -58,7 +59,7 @@ impl PptxExtractor {
         }
     }
 
-    fn build_internal_document(content: &str, slide_count: u32) -> InternalDocument {
+    fn build_internal_document(content: &str, slide_count: u32, budget: &mut SecurityBudget) -> Result<InternalDocument> {
         let mut builder = InternalDocumentBuilder::new("pptx");
         let mut slide_num: u32 = 0;
         let mut in_notes = false;
@@ -67,6 +68,7 @@ impl PptxExtractor {
         let blocks: Vec<&str> = content.split("\n\n").collect();
 
         for block in &blocks {
+            budget.step()?;
             let trimmed = block.trim();
             if trimmed.is_empty() {
                 continue;
@@ -86,6 +88,7 @@ impl PptxExtractor {
                 slide_num += 1;
                 let title = title_text.trim();
                 if !title.is_empty() {
+                    budget.account_text(title.len())?;
                     builder.push_heading(2, title, None, None);
                 }
                 continue;
@@ -148,6 +151,7 @@ impl PptxExtractor {
                         }
                         _ => {}
                     }
+                    budget.account_text(item_text.len())?;
                     builder.push_list_item(item_text, ordered, vec![], Some(slide_num), None);
                 } else {
                     // Close any open list before emitting a paragraph
@@ -155,6 +159,7 @@ impl PptxExtractor {
                         builder.end_list();
                         in_list = None;
                     }
+                    budget.account_text(lt.len())?;
                     builder.push_paragraph(lt, vec![], None, None);
                 }
             }
@@ -170,7 +175,7 @@ impl PptxExtractor {
             builder.push_slide(1, None, Some(1));
         }
 
-        builder.build()
+        Ok(builder.build())
     }
 
     /// Parse a markdown table block into a 2D cell grid.
@@ -202,11 +207,15 @@ impl PptxExtractor {
 impl PptxExtractor {
     /// Build an InternalDocument from a PptxExtractionResult, mapping office
     /// metadata to standard `Metadata` struct fields.
+    ///
+    /// `budget` is threaded into the internal document builder to enforce
+    /// hostile-input limits on the extracted content.
     fn build_document_from_result(
         pptx_result: crate::types::PptxExtractionResult,
         mime_type: &str,
         extract_images: bool,
-    ) -> InternalDocument {
+        budget: &mut SecurityBudget,
+    ) -> Result<InternalDocument> {
         let mut additional: AHashMap<Cow<'static, str>, serde_json::Value> = AHashMap::new();
 
         // Populate image_count and table_count on PptxMetadata struct
@@ -252,7 +261,7 @@ impl PptxExtractor {
             }
         }
 
-        let mut doc = Self::build_internal_document(&pptx_result.content, pptx_result.slide_count as u32);
+        let mut doc = Self::build_internal_document(&pptx_result.content, pptx_result.slide_count as u32, budget)?;
         doc.mime_type = Cow::Owned(mime_type.to_string());
 
         let mut metadata = Metadata {
@@ -285,7 +294,7 @@ impl PptxExtractor {
             doc.images = pptx_result.images;
         }
 
-        doc
+        Ok(doc)
     }
 }
 
@@ -374,7 +383,8 @@ impl DocumentExtractor for PptxExtractor {
             }
         };
 
-        let mut doc = Self::build_document_from_result(pptx_result, mime_type, extract_images);
+        let mut budget = SecurityBudget::from_config(config);
+        let mut doc = Self::build_document_from_result(pptx_result, mime_type, extract_images, &mut budget)?;
 
         // Recursively extract embedded objects from ppt/embeddings/
         if config.max_archive_depth > 0 {
@@ -427,7 +437,8 @@ impl DocumentExtractor for PptxExtractor {
         };
         let pptx_result = crate::extraction::pptx::extract_pptx_from_path(path_str, &options)?;
 
-        let doc = Self::build_document_from_result(pptx_result, mime_type, extract_images);
+        let mut budget = SecurityBudget::from_config(config);
+        let doc = Self::build_document_from_result(pptx_result, mime_type, extract_images, &mut budget)?;
         Ok(doc)
     }
 

@@ -23,6 +23,7 @@ pub(crate) use parser::{extract_rtf_formatting, extract_text_from_rtf, spans_to_
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::ExtractedImage;
 use crate::types::internal::InternalDocument;
@@ -309,6 +310,8 @@ impl DocumentExtractor for RtfExtractor {
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "rtf", size_bytes = content.len(), "extraction starting");
+        let mut budget = SecurityBudget::from_config(config);
+        budget.account_text(content.len())?;
         let rtf_content = String::from_utf8_lossy(content);
         let plain = true; // InternalDocument doesn't need markdown formatting
 

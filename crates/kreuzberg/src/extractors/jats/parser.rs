@@ -1,21 +1,25 @@
 //! XML parsing and document structure traversal for JATS documents.
 
 use crate::Result;
+use crate::extractors::security::SecurityBudget;
 use crate::text::utf8_validation;
 use quick_xml::Reader;
 use quick_xml::events::Event;
 
 /// Extract text content from a JATS element and its children.
-pub(super) fn extract_text_content(reader: &mut Reader<&[u8]>) -> Result<String> {
+pub(super) fn extract_text_content(reader: &mut Reader<&[u8]>, budget: &mut SecurityBudget) -> Result<String> {
     let mut text = String::new();
     let mut depth = 0;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(_)) => {
+                budget.enter()?;
                 depth += 1;
             }
             Ok(Event::End(_)) => {
+                budget.leave();
                 if depth == 0 {
                     break;
                 }
@@ -27,6 +31,8 @@ pub(super) fn extract_text_content(reader: &mut Reader<&[u8]>) -> Result<String>
             Ok(Event::Text(t)) => {
                 let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
                 if !decoded.trim().is_empty() {
+                    budget.check_entity(&decoded)?;
+                    budget.account_text(decoded.len())?;
                     text.push_str(&decoded);
                     text.push(' ');
                 }
@@ -34,6 +40,8 @@ pub(super) fn extract_text_content(reader: &mut Reader<&[u8]>) -> Result<String>
             Ok(Event::CData(t)) => {
                 let decoded = utf8_validation::from_utf8(t.as_ref()).unwrap_or("").to_string();
                 if !decoded.trim().is_empty() {
+                    budget.check_entity(&decoded)?;
+                    budget.account_text(decoded.len())?;
                     text.push_str(&decoded);
                     text.push('\n');
                 }
@@ -59,7 +67,7 @@ pub(super) fn extract_text_content(reader: &mut Reader<&[u8]>) -> Result<String>
 /// `Brown T, Davis K. Cognitive effects of caffeine. J Neurosci. 2002;15:234-241.`
 ///
 /// Falls back to plain text extraction for `<mixed-citation>` or unrecognized structures.
-pub(super) fn extract_citation_text(reader: &mut Reader<&[u8]>) -> Result<String> {
+pub(super) fn extract_citation_text(reader: &mut Reader<&[u8]>, budget: &mut SecurityBudget) -> Result<String> {
     let mut depth: u32 = 0;
     let mut in_element_citation = false;
     let mut in_mixed_citation = false;
@@ -84,8 +92,10 @@ pub(super) fn extract_citation_text(reader: &mut Reader<&[u8]>) -> Result<String
     let mut mixed_text = String::new();
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 depth += 1;
                 let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
 
@@ -113,6 +123,7 @@ pub(super) fn extract_citation_text(reader: &mut Reader<&[u8]>) -> Result<String
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 if depth == 0 {
                     break;
                 }
@@ -155,6 +166,8 @@ pub(super) fn extract_citation_text(reader: &mut Reader<&[u8]>) -> Result<String
                 let trimmed = decoded.trim();
 
                 if !trimmed.is_empty() {
+                    budget.check_entity(trimmed)?;
+                    budget.account_text(trimmed.len())?;
                     if in_mixed_citation {
                         if !mixed_text.is_empty() {
                             mixed_text.push(' ');

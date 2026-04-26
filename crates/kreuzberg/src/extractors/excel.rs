@@ -3,6 +3,7 @@
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extractors::SyncExtractor;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::InternalDocument;
 use crate::types::internal_builder::InternalDocumentBuilder;
@@ -11,6 +12,26 @@ use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
 use std::path::Path;
+
+/// Validate an Excel workbook against security limits.
+///
+/// Iterates sheets and their cells, enforcing `max_table_cells` and
+/// `max_content_size` via the provided [`SecurityBudget`].
+fn validate_workbook_budget(workbook: &crate::types::ExcelWorkbook, budget: &mut SecurityBudget) -> crate::Result<()> {
+    for sheet in &workbook.sheets {
+        if let Some(ref cells) = sheet.table_cells {
+            let row_count = cells.len();
+            let col_count = cells.iter().map(|r| r.len()).max().unwrap_or(0);
+            budget.add_cells(row_count.saturating_mul(col_count))?;
+            for row in cells {
+                for cell in row {
+                    budget.account_text(cell.len())?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
 
 /// Excel spreadsheet extractor using calamine.
 ///
@@ -136,7 +157,7 @@ impl ExcelExtractor {
 }
 
 impl SyncExtractor for ExcelExtractor {
-    fn extract_sync(&self, content: &[u8], mime_type: &str, _config: &ExtractionConfig) -> Result<InternalDocument> {
+    fn extract_sync(&self, content: &[u8], mime_type: &str, config: &ExtractionConfig) -> Result<InternalDocument> {
         let _span = tracing::debug_span!(
             "extract_excel",
             sheet_count = tracing::field::Empty,
@@ -157,6 +178,8 @@ impl SyncExtractor for ExcelExtractor {
         };
 
         let workbook = crate::extraction::excel::read_excel_bytes(content, extension)?;
+        let mut budget = SecurityBudget::from_config(config);
+        validate_workbook_budget(&workbook, &mut budget)?;
         let mut doc = Self::workbook_to_internal_document(&workbook);
         doc.mime_type = Cow::Owned(mime_type.to_string());
         Ok(doc)
@@ -222,6 +245,8 @@ impl DocumentExtractor for ExcelExtractor {
             }
         };
 
+        let mut budget = SecurityBudget::from_config(config);
+        validate_workbook_budget(&workbook, &mut budget)?;
         let mut doc = Self::workbook_to_internal_document(&workbook);
         doc.mime_type = Cow::Owned(mime_type.to_string());
         Ok(doc)

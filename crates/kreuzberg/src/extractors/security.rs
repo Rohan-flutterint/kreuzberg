@@ -29,7 +29,11 @@ pub struct SecurityLimits {
     /// Maximum nesting depth for structures (100)
     pub max_nesting_depth: usize,
 
-    /// Maximum entity/string length (32)
+    /// Maximum length of any single XML entity / attribute / token (1 MiB).
+    /// This is a per-token cap, NOT a cumulative cap — billion-laughs class
+    /// attacks where a single entity expands to hundreds of MB are caught
+    /// here, while normal long text content (a paragraph, a CDATA block) is
+    /// caught by `max_content_size` instead.
     pub max_entity_length: usize,
 
     /// Maximum string growth per document (100 MB)
@@ -51,11 +55,19 @@ impl Default for SecurityLimits {
             max_archive_size: 500 * 1024 * 1024,
             max_compression_ratio: 100,
             max_files_in_archive: 10_000,
-            max_nesting_depth: 100,
-            max_entity_length: 32,
+            // 1024 levels — generous headroom for legitimate DOCX/PPTX/EPUB
+            // documents (deeply nested tables-in-cells, OMath expressions,
+            // formatting wrappers) while still catching depth-bomb attacks
+            // (those typically have 5 000+ levels).
+            max_nesting_depth: 1024,
+            // 1 MiB — per-token cap that catches billion-laughs entity
+            // expansion (single entities ballooning to hundreds of MB) without
+            // false-positiving on legitimate long attributes / CDATA blocks.
+            // Cumulative content size is bounded separately by max_content_size.
+            max_entity_length: 1024 * 1024,
             max_content_size: 100 * 1024 * 1024,
             max_iterations: 10_000_000,
-            max_xml_depth: 100,
+            max_xml_depth: 1024,
             max_table_cells: 100_000,
         }
     }
@@ -455,6 +467,94 @@ impl TableValidator {
     }
 }
 
+/// Bundle of the four hostile-input validators tied to a single document
+/// extraction. Holds running counters (depth, iteration, content size) plus
+/// the stateless entity-length checker, so a single mutable reference threaded
+/// into a parser is enough to enforce every limit advertised by `SecurityLimits`.
+///
+/// The convenience constructors build the bundle from either a borrowed
+/// `SecurityLimits` or an `ExtractionConfig` (taking the `security_limits`
+/// override, falling back to defaults when `None`).
+#[derive(Debug, Clone)]
+pub(crate) struct SecurityBudget {
+    pub(crate) depth: DepthValidator,
+    pub(crate) iteration: IterationValidator,
+    pub(crate) entity: EntityValidator,
+    pub(crate) growth: StringGrowthValidator,
+    /// Cell counter for tabular extraction (CSV, XLSX, HTML tables).
+    /// Threaded alongside the per-event budget but only consumed by table-emitting paths.
+    pub(crate) table: TableValidator,
+}
+
+impl SecurityBudget {
+    /// Build a budget from a borrowed `SecurityLimits`.
+    pub(crate) fn from_limits(limits: &SecurityLimits) -> Self {
+        Self {
+            depth: DepthValidator::new(limits.max_xml_depth.max(limits.max_nesting_depth)),
+            iteration: IterationValidator::new(limits.max_iterations),
+            entity: EntityValidator::new(limits.max_entity_length),
+            growth: StringGrowthValidator::new(limits.max_content_size),
+            table: TableValidator::new(limits.max_table_cells),
+        }
+    }
+
+    /// Convenience: build from `ExtractionConfig.security_limits` falling back to defaults.
+    pub(crate) fn from_config(config: &crate::core::config::ExtractionConfig) -> Self {
+        let owned: SecurityLimits;
+        let limits: &SecurityLimits = match config.security_limits.as_ref() {
+            Some(l) => l,
+            None => {
+                owned = SecurityLimits::default();
+                &owned
+            }
+        };
+        Self::from_limits(limits)
+    }
+
+    /// Build with explicit defaults (no config available, e.g. internal call sites).
+    pub(crate) fn with_defaults() -> Self {
+        Self::from_limits(&SecurityLimits::default())
+    }
+
+    /// Apply the iteration cap. Call once per parser-loop turn before reading an event.
+    pub(crate) fn step(&mut self) -> Result<(), SecurityError> {
+        self.iteration.check_iteration()
+    }
+
+    /// Apply nesting on a Start event. Call this after `step()` when the parser
+    /// reaches an opening element / object / array / table / etc.
+    pub(crate) fn enter(&mut self) -> Result<(), SecurityError> {
+        self.depth.push()
+    }
+
+    /// Apply nesting on an End event. Saturates at zero on unbalanced input.
+    pub(crate) fn leave(&mut self) {
+        self.depth.pop();
+    }
+
+    /// Account for `len` bytes of emitted text. Returns `Err(ContentTooLarge)`
+    /// once cumulative output exceeds `max_content_size`.
+    pub(crate) fn account_text(&mut self, len: usize) -> Result<(), SecurityError> {
+        self.growth.check_append(len)
+    }
+
+    /// Validate an XML / HTML attribute value against `max_entity_length`.
+    pub(crate) fn check_attr(&self, name: &str, value: &str) -> Result<(), SecurityError> {
+        self.entity.check_attr(name, value)
+    }
+
+    /// Validate a single entity / token string against `max_entity_length`.
+    pub(crate) fn check_entity(&self, value: &str) -> Result<(), SecurityError> {
+        self.entity.validate(value)
+    }
+
+    /// Account for `count` more table cells. Returns `Err(TooManyCells)` once
+    /// cumulative cells exceed `max_table_cells`.
+    pub(crate) fn add_cells(&mut self, count: usize) -> Result<(), SecurityError> {
+        self.table.add_cells(count)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -463,8 +563,8 @@ mod tests {
     fn test_default_limits() {
         let limits = SecurityLimits::default();
         assert_eq!(limits.max_archive_size, 500 * 1024 * 1024);
-        assert_eq!(limits.max_nesting_depth, 100);
-        assert_eq!(limits.max_entity_length, 32);
+        assert_eq!(limits.max_nesting_depth, 1024);
+        assert_eq!(limits.max_entity_length, 1024 * 1024);
     }
 
     #[test]

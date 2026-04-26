@@ -4,6 +4,7 @@ use super::metadata::JatsMetadataExtracted;
 use super::parser::extract_text_content;
 use crate::Result;
 use crate::extraction::cells_to_markdown;
+use crate::extractors::security::SecurityBudget;
 use crate::types::Table;
 use quick_xml::Reader;
 use quick_xml::events::Event;
@@ -12,6 +13,7 @@ use quick_xml::events::Event;
 /// Combines metadata extraction, content parsing, and table extraction into one pass.
 pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtracted, String, String, Vec<Table>)> {
     let mut reader = Reader::from_str(content);
+    let mut budget = SecurityBudget::with_defaults();
     let mut metadata = JatsMetadataExtracted::default();
     let mut body_content = String::new();
     let mut title = String::new();
@@ -46,17 +48,22 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
     let mut table_index = 0;
 
     loop {
+        budget.step()?;
         match reader.read_event() {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
 
                 match tag.as_str() {
                     "article" => {
                         for attr in e.attributes() {
-                            if let Ok(attr) = attr
-                                && String::from_utf8_lossy(attr.key.as_ref()) == "article-type"
-                            {
-                                metadata.article_type = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string());
+                            if let Ok(attr) = attr {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                                if key == "article-type" {
+                                    metadata.article_type = Some(val.to_string());
+                                }
                             }
                         }
                     }
@@ -75,10 +82,13 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         current_contrib_type.clear();
                         // Extract contrib-type attribute
                         for attr in e.attributes() {
-                            if let Ok(attr) = attr
-                                && String::from_utf8_lossy(attr.key.as_ref()) == "contrib-type"
-                            {
-                                current_contrib_type = String::from_utf8_lossy(attr.value.as_ref()).to_string();
+                            if let Ok(attr) = attr {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                                if key == "contrib-type" {
+                                    current_contrib_type = val.to_string();
+                                }
                             }
                         }
                     }
@@ -92,14 +102,17 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                     "article-id" if in_article_meta => {
                         let mut id_type = String::new();
                         for attr in e.attributes() {
-                            if let Ok(attr) = attr
-                                && String::from_utf8_lossy(attr.key.as_ref()) == "pub-id-type"
-                            {
-                                id_type = String::from_utf8_lossy(attr.value.as_ref()).to_string();
+                            if let Ok(attr) = attr {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                                if key == "pub-id-type" {
+                                    id_type = val.to_string();
+                                }
                             }
                         }
 
-                        let id_text = extract_text_content(&mut reader)?;
+                        let id_text = extract_text_content(&mut reader, &mut budget)?;
                         match id_type.as_str() {
                             "doi" => metadata.doi = Some(id_text),
                             "pii" => metadata.pii = Some(id_text),
@@ -108,17 +121,17 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         continue;
                     }
                     "volume" if in_article_meta => {
-                        let vol_text = extract_text_content(&mut reader)?;
+                        let vol_text = extract_text_content(&mut reader, &mut budget)?;
                         metadata.volume = Some(vol_text);
                         continue;
                     }
                     "issue" if in_article_meta => {
-                        let issue_text = extract_text_content(&mut reader)?;
+                        let issue_text = extract_text_content(&mut reader, &mut budget)?;
                         metadata.issue = Some(issue_text);
                         continue;
                     }
                     "fpage" | "lpage" if in_article_meta => {
-                        let page_text = extract_text_content(&mut reader)?;
+                        let page_text = extract_text_content(&mut reader, &mut budget)?;
                         if let Some(pages) = &mut metadata.pages {
                             pages.push('-');
                             pages.push_str(&page_text);
@@ -128,14 +141,14 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         continue;
                     }
                     "pub-date" if in_article_meta => {
-                        let date_text = extract_text_content(&mut reader)?;
+                        let date_text = extract_text_content(&mut reader, &mut budget)?;
                         if metadata.publication_date.is_none() {
                             metadata.publication_date = Some(date_text);
                         }
                         continue;
                     }
                     "journal-title" if in_article_meta => {
-                        let journal_text = extract_text_content(&mut reader)?;
+                        let journal_text = extract_text_content(&mut reader, &mut budget)?;
                         if metadata.journal_title.is_none() {
                             metadata.journal_title = Some(journal_text);
                         }
@@ -152,7 +165,7 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         in_kwd = true;
                     }
                     "corresp" if in_article_meta => {
-                        let corresp_text = extract_text_content(&mut reader)?;
+                        let corresp_text = extract_text_content(&mut reader, &mut budget)?;
                         metadata.corresponding_author = Some(corresp_text);
                         continue;
                     }
@@ -163,13 +176,16 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         // Extract date-type attribute
                         let mut date_type = String::new();
                         for attr in e.attributes() {
-                            if let Ok(attr) = attr
-                                && String::from_utf8_lossy(attr.key.as_ref()) == "date-type"
-                            {
-                                date_type = String::from_utf8_lossy(attr.value.as_ref()).to_string();
+                            if let Ok(attr) = attr {
+                                let key = String::from_utf8_lossy(attr.key.as_ref());
+                                let val = String::from_utf8_lossy(attr.value.as_ref());
+                                budget.check_attr(&key, &val)?;
+                                if key == "date-type" {
+                                    date_type = val.to_string();
+                                }
                             }
                         }
-                        let date_text = extract_text_content(&mut reader)?;
+                        let date_text = extract_text_content(&mut reader, &mut budget)?;
                         if !date_text.is_empty() && !date_type.is_empty() {
                             metadata.history_dates.push((date_type, date_text));
                         }
@@ -179,14 +195,14 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         in_permissions = true;
                     }
                     "copyright-statement" if in_permissions => {
-                        let text = extract_text_content(&mut reader)?;
+                        let text = extract_text_content(&mut reader, &mut budget)?;
                         if !text.is_empty() {
                             metadata.copyright_statement = Some(text);
                         }
                         continue;
                     }
                     "license" if in_permissions => {
-                        let text = extract_text_content(&mut reader)?;
+                        let text = extract_text_content(&mut reader, &mut budget)?;
                         if !text.is_empty() {
                             metadata.license = Some(text);
                         }
@@ -199,7 +215,7 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         in_section = true;
                     }
                     "title" if (in_section || in_body) && !in_article_title => {
-                        let section_title = extract_text_content(&mut reader)?;
+                        let section_title = extract_text_content(&mut reader, &mut budget)?;
                         if !section_title.is_empty() {
                             body_content.push_str("## ");
                             body_content.push_str(&section_title);
@@ -211,7 +227,7 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         in_para = true;
                     }
                     "inline-formula" if in_body => {
-                        let formula_text = extract_text_content(&mut reader)?;
+                        let formula_text = extract_text_content(&mut reader, &mut budget)?;
                         if !formula_text.is_empty() {
                             body_content.push_str(&formula_text);
                             body_content.push(' ');
@@ -237,11 +253,14 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                         let mut cell_depth = 0;
 
                         loop {
+                            budget.step()?;
                             match reader.read_event() {
                                 Ok(Event::Start(_)) => {
+                                    budget.enter()?;
                                     cell_depth += 1;
                                 }
                                 Ok(Event::End(e)) => {
+                                    budget.leave();
                                     let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
                                     if (tag == "td" || tag == "th") && cell_depth == 0 {
                                         break;
@@ -253,6 +272,8 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                                 Ok(Event::Text(t)) => {
                                     let decoded = String::from_utf8_lossy(t.as_ref()).to_string();
                                     if !decoded.trim().is_empty() {
+                                        budget.check_entity(decoded.trim())?;
+                                        budget.account_text(decoded.trim().len())?;
                                         if !cell_text.is_empty() {
                                             cell_text.push(' ');
                                         }
@@ -270,12 +291,14 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                             }
                         }
 
+                        budget.add_cells(1)?;
                         current_row.push(cell_text);
                     }
                     _ => {}
                 }
             }
             Ok(Event::End(e)) => {
+                budget.leave();
                 let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
 
                 match tag.as_str() {
@@ -372,6 +395,8 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                 let trimmed = decoded.trim();
 
                 if !trimmed.is_empty() {
+                    budget.check_entity(trimmed)?;
+                    budget.account_text(trimmed.len())?;
                     if in_article_title && metadata.title.is_empty() {
                         metadata.title.push_str(trimmed);
                     } else if in_subtitle && metadata.subtitle.is_none() {

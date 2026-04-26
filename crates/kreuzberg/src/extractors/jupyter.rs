@@ -14,6 +14,8 @@ use crate::Result;
 #[cfg(feature = "office")]
 use crate::core::config::ExtractionConfig;
 #[cfg(feature = "office")]
+use crate::extractors::security::SecurityBudget;
+#[cfg(feature = "office")]
 use crate::plugins::{DocumentExtractor, Plugin};
 #[cfg(feature = "office")]
 use crate::types::internal::InternalDocument;
@@ -738,6 +740,8 @@ impl DocumentExtractor for JupyterExtractor {
         mime_type: &str,
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
+        let mut budget = SecurityBudget::from_config(config);
+        budget.account_text(content.len())?;
         let plain = matches!(
             config.output_format,
             crate::core::config::OutputFormat::Plain | crate::core::config::OutputFormat::Structured

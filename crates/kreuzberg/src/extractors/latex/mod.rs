@@ -21,6 +21,7 @@ mod utilities;
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::document_structure::{AnnotationKind, TextAnnotation};
 use crate::types::internal::InternalDocument;
@@ -1108,6 +1109,8 @@ impl DocumentExtractor for LatexExtractor {
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "latex", size_bytes = content.len(), "extraction starting");
+        let mut budget = SecurityBudget::from_config(config);
+        budget.account_text(content.len())?;
         let inject_placeholders = config
             .images
             .as_ref()

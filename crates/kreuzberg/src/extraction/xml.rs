@@ -14,10 +14,12 @@
 //!
 //! ```rust
 //! use kreuzberg::extraction::xml::parse_xml;
+//! use kreuzberg::extractors::security::SecurityLimits;
 //!
 //! # fn example() -> kreuzberg::Result<()> {
 //! let xml = b"<root><item>Hello</item><item>World</item></root>";
-//! let result = parse_xml(xml, false)?; // false = trim whitespace
+//! let limits = SecurityLimits::default();
+//! let result = parse_xml(xml, false, &limits)?; // false = trim whitespace
 //!
 //! // Content preserves element hierarchy through indentation
 //! assert!(result.content.contains("item\n  Hello"));
@@ -27,6 +29,7 @@
 //! # }
 //! ```
 use crate::error::{KreuzbergError, Result};
+use crate::extractors::security::{SecurityBudget, SecurityLimits};
 use crate::types::XmlExtractionResult;
 use ahash::AHashSet;
 use quick_xml::Reader;
@@ -41,15 +44,31 @@ const SVG_TEXT_ELEMENTS: &[&str] = &["text", "tspan", "title", "desc", "textPath
 /// In SVG mode, only text from SVG text-bearing elements (`<text>`, `<tspan>`,
 /// `<title>`, `<desc>`, `<textPath>`) is extracted, without element name prefixes.
 /// Attribute values are also omitted in SVG mode.
-pub(crate) fn parse_xml_svg(xml_bytes: &[u8], preserve_whitespace: bool) -> Result<XmlExtractionResult> {
-    parse_xml_inner(xml_bytes, preserve_whitespace, true)
+///
+/// Security limits are enforced on every event loop iteration, element depth,
+/// attribute values, and cumulative text output via `SecurityBudget`.
+pub(crate) fn parse_xml_svg(
+    xml_bytes: &[u8],
+    preserve_whitespace: bool,
+    limits: &SecurityLimits,
+) -> Result<XmlExtractionResult> {
+    parse_xml_inner(xml_bytes, preserve_whitespace, true, limits)
 }
 
-pub(crate) fn parse_xml(xml_bytes: &[u8], preserve_whitespace: bool) -> Result<XmlExtractionResult> {
-    parse_xml_inner(xml_bytes, preserve_whitespace, false)
+pub(crate) fn parse_xml(
+    xml_bytes: &[u8],
+    preserve_whitespace: bool,
+    limits: &SecurityLimits,
+) -> Result<XmlExtractionResult> {
+    parse_xml_inner(xml_bytes, preserve_whitespace, false, limits)
 }
 
-fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) -> Result<XmlExtractionResult> {
+fn parse_xml_inner(
+    xml_bytes: &[u8],
+    preserve_whitespace: bool,
+    svg_mode: bool,
+    limits: &SecurityLimits,
+) -> Result<XmlExtractionResult> {
     // Handle UTF-16 encoded XML by detecting BOM and transcoding to UTF-8
     let decoded_bytes;
     let effective_bytes = if xml_bytes.len() >= 2 {
@@ -72,6 +91,7 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
     reader.config_mut().trim_text(!preserve_whitespace);
     reader.config_mut().check_end_names = false;
 
+    let mut budget = SecurityBudget::from_limits(limits);
     let mut content = String::new();
     let mut element_count = 0usize;
     let mut unique_elements_set = AHashSet::new();
@@ -80,8 +100,10 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
     let mut had_depth1_element = false;
 
     loop {
+        budget.step()?;
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {
+                budget.enter()?;
                 let name_bytes = (e.name().as_ref() as &[u8]).to_vec();
                 let name: Cow<str> = String::from_utf8_lossy(&name_bytes);
                 let name_owned = name.into_owned();
@@ -90,6 +112,11 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
 
                 // In SVG mode, skip attribute extraction entirely
                 if !svg_mode {
+                    for attr in e.attributes().flatten() {
+                        let key: Cow<str> = String::from_utf8_lossy(attr.key.as_ref());
+                        let val: Cow<str> = String::from_utf8_lossy(&attr.value);
+                        budget.check_attr(&key, &val)?;
+                    }
                     let depth = element_stack.len();
                     let label = format_element_label(&name_owned, e.attributes());
                     write_element_line(&mut content, &label, depth, &mut had_depth1_element);
@@ -106,12 +133,18 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
 
                 // In SVG mode, skip self-closing tag output entirely
                 if !svg_mode {
+                    for attr in e.attributes().flatten() {
+                        let key: Cow<str> = String::from_utf8_lossy(attr.key.as_ref());
+                        let val: Cow<str> = String::from_utf8_lossy(&attr.value);
+                        budget.check_attr(&key, &val)?;
+                    }
                     let depth = element_stack.len();
                     let label = format_element_label(&name_owned, e.attributes());
                     write_element_line(&mut content, &label, depth, &mut had_depth1_element);
                 }
             }
             Ok(Event::End(_e)) => {
+                budget.leave();
                 // Pop matching element from stack
                 element_stack.pop();
             }
@@ -124,6 +157,8 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
                 };
 
                 if !trimmed.is_empty() {
+                    budget.check_entity(&trimmed)?;
+                    budget.account_text(trimmed.len())?;
                     // In SVG mode, only extract text from SVG text-bearing elements
                     if svg_mode {
                         let in_text_element = element_stack
@@ -152,6 +187,8 @@ fn parse_xml_inner(xml_bytes: &[u8], preserve_whitespace: bool, svg_mode: bool) 
                 }
 
                 let text_cow: Cow<str> = String::from_utf8_lossy(&e);
+                budget.check_entity(&text_cow)?;
+                budget.account_text(text_cow.len())?;
                 write_text_line(&mut content, &text_cow, element_stack.len());
             }
             Ok(Event::Eof) => break,
@@ -268,10 +305,14 @@ fn write_text_line(content: &mut String, text: &str, stack_len: usize) {
 mod tests {
     use super::*;
 
+    fn default_limits() -> SecurityLimits {
+        SecurityLimits::default()
+    }
+
     #[test]
     fn test_simple_xml() {
         let xml = b"<root><item>Hello</item><item>World</item></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         // Element names with text indented beneath
         assert!(result.content.contains("item\n  Hello"));
         assert!(result.content.contains("item\n  World"));
@@ -284,7 +325,7 @@ mod tests {
     #[test]
     fn test_xml_with_cdata() {
         let xml = b"<root><![CDATA[Special <characters> & data]]></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("Special <characters> & data"));
         assert_eq!(result.element_count, 1);
     }
@@ -292,7 +333,7 @@ mod tests {
     #[test]
     fn test_malformed_xml_lenient() {
         let xml = b"<root><item>Unclosed<item2>Content</root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(!result.content.is_empty());
         assert!(result.content.contains("Content"));
     }
@@ -300,7 +341,7 @@ mod tests {
     #[test]
     fn test_empty_xml() {
         let xml = b"<root></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.content, "root");
         assert_eq!(result.element_count, 1);
         assert_eq!(result.unique_elements.len(), 1);
@@ -309,15 +350,15 @@ mod tests {
     #[test]
     fn test_whitespace_handling() {
         let xml = b"<root>  <item>  Text  </item>  </root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("item\n  Text"));
     }
 
     #[test]
     fn test_preserve_whitespace() {
         let xml = b"<root>  Text with   spaces  </root>";
-        let result_trimmed = parse_xml(xml, false).unwrap();
-        let result_preserved = parse_xml(xml, true).unwrap();
+        let result_trimmed = parse_xml(xml, false, &default_limits()).unwrap();
+        let result_preserved = parse_xml(xml, true, &default_limits()).unwrap();
         assert!(result_trimmed.content.contains("Text with   spaces"));
         assert!(result_preserved.content.len() >= result_trimmed.content.len());
     }
@@ -325,7 +366,7 @@ mod tests {
     #[test]
     fn test_element_counting() {
         let xml = b"<root><a/><b/><c/><b/><d/></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.element_count, 6);
         assert_eq!(result.unique_elements.len(), 5);
         assert!(result.unique_elements.contains(&"b".to_string()));
@@ -334,7 +375,7 @@ mod tests {
     #[test]
     fn test_xml_with_attributes() {
         let xml = br#"<root id="1"><item type="test">Content</item></root>"#;
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("item (type: test)\n  Content"));
         assert_eq!(result.element_count, 2);
     }
@@ -342,7 +383,7 @@ mod tests {
     #[test]
     fn test_xml_with_namespaces() {
         let xml = b"<ns:root xmlns:ns=\"http://example.com\"><ns:item>Text</ns:item></ns:root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("Text"));
         assert!(result.element_count >= 2);
     }
@@ -350,7 +391,7 @@ mod tests {
     #[test]
     fn test_xml_with_comments() {
         let xml = b"<root><!-- Comment --><item>Text</item></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("item\n  Text"));
         assert_eq!(result.element_count, 2);
     }
@@ -358,7 +399,7 @@ mod tests {
     #[test]
     fn test_xml_with_processing_instructions() {
         let xml = b"<?xml version=\"1.0\"?><root><item>Text</item></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("item\n  Text"));
         assert_eq!(result.element_count, 2);
     }
@@ -366,7 +407,7 @@ mod tests {
     #[test]
     fn test_xml_with_mixed_content() {
         let xml = b"<root>Text before<item>nested</item>Text after</root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("Text before"));
         assert!(result.content.contains("item\n  nested"));
         assert!(result.content.contains("Text after"));
@@ -375,7 +416,7 @@ mod tests {
     #[test]
     fn test_xml_empty_bytes() {
         let xml = b"";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.content, "");
         assert_eq!(result.element_count, 0);
         assert!(result.unique_elements.is_empty());
@@ -384,7 +425,7 @@ mod tests {
     #[test]
     fn test_xml_only_whitespace() {
         let xml = b"   \n\t  ";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.content, "");
         assert_eq!(result.element_count, 0);
     }
@@ -392,7 +433,7 @@ mod tests {
     #[test]
     fn test_xml_with_nested_elements() {
         let xml = b"<root><parent><child><grandchild>Deep</grandchild></child></parent></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("    grandchild\n      Deep"));
         assert_eq!(result.element_count, 4);
         assert_eq!(result.unique_elements.len(), 4);
@@ -401,14 +442,14 @@ mod tests {
     #[test]
     fn test_xml_with_special_characters() {
         let xml = b"<root>&lt;&gt;&amp;&quot;&apos;</root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.element_count >= 1);
     }
 
     #[test]
     fn test_xml_self_closing_tags() {
         let xml = b"<root><item1/><item2/><item3/></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.element_count, 4);
         assert_eq!(result.unique_elements.len(), 4);
     }
@@ -416,7 +457,7 @@ mod tests {
     #[test]
     fn test_xml_multiple_text_nodes() {
         let xml = b"<root>First<a/>Second<b/>Third</root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("First"));
         assert!(result.content.contains("Second"));
         assert!(result.content.contains("Third"));
@@ -425,7 +466,7 @@ mod tests {
     #[test]
     fn test_xml_with_newlines() {
         let xml = b"<root>\n  <item>\n    Text\n  </item>\n</root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("item\n  Text"));
     }
 
@@ -433,14 +474,14 @@ mod tests {
     fn test_xml_large_cdata() {
         let large_text = "A".repeat(10000);
         let xml = format!("<root><![CDATA[{}]]></root>", large_text);
-        let result = parse_xml(xml.as_bytes(), false).unwrap();
+        let result = parse_xml(xml.as_bytes(), false, &default_limits()).unwrap();
         assert!(result.content.contains(&large_text));
     }
 
     #[test]
     fn test_xml_unique_elements_sorted() {
         let xml = b"<root><z/><a/><m/><b/></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         let expected = vec!["a", "b", "m", "root", "z"];
         assert_eq!(result.unique_elements, expected);
     }
@@ -448,7 +489,7 @@ mod tests {
     #[test]
     fn test_xml_result_structure() {
         let xml = b"<root><item>Test</item></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
 
         assert!(!result.content.is_empty());
         assert!(result.element_count > 0);
@@ -458,7 +499,7 @@ mod tests {
     #[test]
     fn test_xml_with_multiple_cdata_sections() {
         let xml = b"<root><![CDATA[First]]>Text<![CDATA[Second]]></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("First"));
         assert!(result.content.contains("Text"));
         assert!(result.content.contains("Second"));
@@ -467,8 +508,8 @@ mod tests {
     #[test]
     fn test_xml_preserve_whitespace_flag() {
         let xml = b"<root>  A  B  </root>";
-        let without_preserve = parse_xml(xml, false).unwrap();
-        let with_preserve = parse_xml(xml, true).unwrap();
+        let without_preserve = parse_xml(xml, false, &default_limits()).unwrap();
+        let with_preserve = parse_xml(xml, true, &default_limits()).unwrap();
 
         assert!(!without_preserve.content.starts_with(' '));
 
@@ -478,14 +519,14 @@ mod tests {
     #[test]
     fn test_xml_element_count_accuracy() {
         let xml = b"<root><a><b><c/></b></a><d/></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert_eq!(result.element_count, 5);
     }
 
     #[test]
     fn test_xml_with_invalid_utf8() {
         let xml = b"<root><item>Valid text \xFF invalid</item></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("Valid text"));
         assert_eq!(result.element_count, 2);
     }
@@ -493,7 +534,7 @@ mod tests {
     #[test]
     fn test_xml_cdata_with_invalid_utf8() {
         let xml = b"<root><![CDATA[Text \xFF more text]]></root>";
-        let result = parse_xml(xml, false).unwrap();
+        let result = parse_xml(xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("Text"));
         assert!(result.content.contains("more text"));
         assert_eq!(result.element_count, 1);
@@ -502,7 +543,7 @@ mod tests {
     #[test]
     fn test_xml_element_name_with_invalid_utf8() {
         let xml = b"<root><item\xFF>Content</item\xFF></root>";
-        let result = parse_xml(xml, false);
+        let result = parse_xml(xml, false, &default_limits());
         let _ = result;
     }
 
@@ -513,7 +554,7 @@ mod tests {
         for c in "<r>A</r>".encode_utf16() {
             xml.extend_from_slice(&c.to_le_bytes());
         }
-        let result = parse_xml(&xml, false).unwrap();
+        let result = parse_xml(&xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("A"));
     }
 
@@ -524,7 +565,7 @@ mod tests {
         for c in "<r>B</r>".encode_utf16() {
             xml.extend_from_slice(&c.to_be_bytes());
         }
-        let result = parse_xml(&xml, false).unwrap();
+        let result = parse_xml(&xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("B"));
     }
 
@@ -536,7 +577,7 @@ mod tests {
             xml.extend_from_slice(&c.to_le_bytes());
         }
         xml.push(0x0A); // trailing odd byte
-        let result = parse_xml(&xml, false).unwrap();
+        let result = parse_xml(&xml, false, &default_limits()).unwrap();
         assert!(result.content.contains("X"));
     }
 
@@ -547,7 +588,7 @@ mod tests {
             <text>Hello</text>
             <title>My Title</title>
         </svg>"#;
-        let result = parse_xml_svg(svg, false).unwrap();
+        let result = parse_xml_svg(svg, false, &default_limits()).unwrap();
         assert!(
             !result.content.contains("var x"),
             "script CDATA should not appear in SVG output"
@@ -572,7 +613,7 @@ mod tests {
             <style type="text/css"><![CDATA[ .cls { fill: red; } ]]></style>
             <text>Visible</text>
         </svg>"#;
-        let result = parse_xml_svg(svg, false).unwrap();
+        let result = parse_xml_svg(svg, false, &default_limits()).unwrap();
         assert!(
             !result.content.contains("fill"),
             "style CDATA should not appear in SVG output"
@@ -596,7 +637,7 @@ mod tests {
             <text><tspan>Span text</tspan></text>
             <rect width="100" height="50"/>
         </svg>"#;
-        let result = parse_xml_svg(svg, false).unwrap();
+        let result = parse_xml_svg(svg, false, &default_limits()).unwrap();
         assert!(result.content.contains("Chart Title"), "title text should be included");
         assert!(result.content.contains("A description"), "desc text should be included");
         assert!(
@@ -611,7 +652,7 @@ mod tests {
         let svg = br#"<svg xmlns="http://www.w3.org/2000/svg">
             <text><![CDATA[CDATA in text]]></text>
         </svg>"#;
-        let result = parse_xml_svg(svg, false).unwrap();
+        let result = parse_xml_svg(svg, false, &default_limits()).unwrap();
         assert!(
             result.content.contains("CDATA in text"),
             "CDATA inside text element should be included"
@@ -624,7 +665,7 @@ mod tests {
             .join("../../test_documents/vendored/unstructured/xml/factbook-utf-16.xml");
         if path.exists() {
             let xml = std::fs::read(&path).unwrap();
-            let result = parse_xml(&xml, false).unwrap();
+            let result = parse_xml(&xml, false, &default_limits()).unwrap();
             assert!(
                 !result.content.is_empty(),
                 "factbook-utf-16.xml should produce non-empty content"

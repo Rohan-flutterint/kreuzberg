@@ -1,7 +1,8 @@
-//! Structured data extractor (JSON, JSONL/NDJSON, YAML, TOML).
+//! Structured data extractor (JSON, JSONL, YAML, TOML).
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::InternalDocument;
 use crate::types::internal_builder::InternalDocumentBuilder;
@@ -16,10 +17,15 @@ use std::path::Path;
 ///
 /// For JSON objects: top-level keys become headings, nested objects become
 /// sub-headings, arrays become lists. Falls back to a code block for other formats.
+///
+/// `budget` enforces hostile-input limits (nesting depth, iteration count, entity
+/// length, cumulative content size). Any limit violation is converted into a
+/// `KreuzbergError::Security` via the `?` operator.
 fn build_internal_document(
     result: &crate::extraction::structured::StructuredDataResult,
     mime_type: &str,
-) -> InternalDocument {
+    budget: &mut SecurityBudget,
+) -> Result<InternalDocument> {
     let source_format = match mime_type {
         "application/json" | "text/json" | "application/csl+json" => "json",
         "application/x-ndjson" | "application/jsonl" | "application/x-jsonlines" => "jsonl",
@@ -42,65 +48,100 @@ fn build_internal_document(
         && let Ok(value) = serde_json::from_str::<serde_json::Value>(&result.content)
         && value.is_object()
     {
-        build_json_internal_structure(&value, &mut builder, 1);
-        return builder.build();
+        build_json_internal_structure(&value, &mut builder, 1, budget)?;
+        return Ok(builder.build());
     }
 
-    // Fallback: code block
+    // Fallback: code block — account for the full content size
+    budget.account_text(result.content.len())?;
     builder.push_code(&result.content, language, None, None);
-    builder.build()
+    Ok(builder.build())
 }
 
 /// Recursively build internal document structure from a JSON value.
-fn build_json_internal_structure(value: &serde_json::Value, builder: &mut InternalDocumentBuilder, depth: u8) {
+///
+/// `budget` enforces nesting depth, iteration count, entity length, and
+/// cumulative text size limits against hostile input.
+fn build_json_internal_structure(
+    value: &serde_json::Value,
+    builder: &mut InternalDocumentBuilder,
+    depth: u8,
+    budget: &mut SecurityBudget,
+) -> Result<()> {
     let level = depth.min(6);
     match value {
         serde_json::Value::Object(map) => {
+            budget.enter()?;
             for (key, val) in map {
+                budget.step()?;
+                budget.check_entity(key)?;
                 match val {
                     serde_json::Value::Object(_) => {
                         builder.push_heading(level, key, None, None);
-                        build_json_internal_structure(val, builder, depth + 1);
+                        build_json_internal_structure(val, builder, depth + 1, budget)?;
                     }
                     serde_json::Value::Array(arr) => {
                         builder.push_heading(level, key, None, None);
                         builder.push_list(false);
                         for item in arr {
+                            budget.step()?;
                             let text = match item {
-                                serde_json::Value::String(s) => s.clone(),
+                                serde_json::Value::String(s) => {
+                                    budget.check_entity(s)?;
+                                    s.clone()
+                                }
                                 other => other.to_string(),
                             };
+                            budget.account_text(text.len())?;
                             builder.push_list_item(&text, false, vec![], None, None);
                         }
                         builder.end_list();
                     }
                     serde_json::Value::String(s) => {
-                        builder.push_paragraph(&format!("{}: {}", key, s), vec![], None, None);
+                        budget.check_entity(s)?;
+                        let rendered = format!("{}: {}", key, s);
+                        budget.account_text(rendered.len())?;
+                        builder.push_paragraph(&rendered, vec![], None, None);
                     }
                     other => {
-                        builder.push_paragraph(&format!("{}: {}", key, other), vec![], None, None);
+                        let rendered = format!("{}: {}", key, other);
+                        budget.account_text(rendered.len())?;
+                        builder.push_paragraph(&rendered, vec![], None, None);
                     }
                 }
             }
+            budget.leave();
         }
         serde_json::Value::Array(arr) => {
+            budget.enter()?;
             builder.push_list(false);
             for item in arr {
+                budget.step()?;
                 let text = match item {
-                    serde_json::Value::String(s) => s.clone(),
+                    serde_json::Value::String(s) => {
+                        budget.check_entity(s)?;
+                        s.clone()
+                    }
                     other => other.to_string(),
                 };
+                budget.account_text(text.len())?;
                 builder.push_list_item(&text, false, vec![], None, None);
             }
             builder.end_list();
+            budget.leave();
         }
         serde_json::Value::String(s) => {
+            budget.check_entity(s)?;
+            budget.account_text(s.len())?;
             builder.push_paragraph(s, vec![], None, None);
         }
         other => {
-            builder.push_paragraph(&other.to_string(), vec![], None, None);
+            let rendered = other.to_string();
+            budget.account_text(rendered.len())?;
+            builder.push_paragraph(&rendered, vec![], None, None);
         }
     }
+    Ok(())
 }
 
 /// Structured data extractor supporting JSON, JSONL/NDJSON, YAML, and TOML.
@@ -140,7 +181,7 @@ impl Plugin for StructuredExtractor {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl DocumentExtractor for StructuredExtractor {
     #[cfg_attr(feature = "otel", tracing::instrument(
-        skip(self, content, _config),
+        skip(self, content, config),
         fields(
             extractor.name = self.name(),
             content.size_bytes = content.len(),
@@ -150,7 +191,7 @@ impl DocumentExtractor for StructuredExtractor {
         &self,
         content: &[u8],
         mime_type: &str,
-        _config: &ExtractionConfig,
+        config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         let structured_result = match mime_type {
             "application/json" | "text/json" | "application/csl+json" => {
@@ -180,7 +221,8 @@ impl DocumentExtractor for StructuredExtractor {
             additional.insert(Cow::Owned(key.clone()), serde_json::json!(value));
         }
 
-        let mut doc = build_internal_document(&structured_result, mime_type);
+        let mut budget = SecurityBudget::from_config(config);
+        let mut doc = build_internal_document(&structured_result, mime_type, &mut budget)?;
         doc.mime_type = Cow::Owned(mime_type.to_string());
 
         doc.metadata = Metadata {

@@ -19,6 +19,8 @@ use crate::Result;
 #[cfg(feature = "office")]
 use crate::core::config::ExtractionConfig;
 #[cfg(feature = "office")]
+use crate::extractors::security::SecurityBudget;
+#[cfg(feature = "office")]
 use crate::plugins::{DocumentExtractor, Plugin};
 #[cfg(feature = "office")]
 use crate::types::document_structure::{AnnotationKind, TextAnnotation};
@@ -1047,7 +1049,8 @@ impl DocumentExtractor for OrgModeExtractor {
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "orgmode", size_bytes = content.len(), "extraction starting");
-        let _ = config;
+        let mut budget = SecurityBudget::from_config(config);
+        budget.account_text(content.len())?;
         let org_text = String::from_utf8_lossy(content).into_owned();
 
         let lines: Vec<String> = org_text.lines().map(|s| s.to_string()).collect();

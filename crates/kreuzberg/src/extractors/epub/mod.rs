@@ -30,8 +30,10 @@ use std::borrow::Cow;
 use std::io::{Cursor, Read};
 use zip::ZipArchive;
 
+use crate::extractors::security::SecurityBudget;
 use content::{
-    extract_text_from_xhtml, looks_like_navigation_document, strip_document_head, strip_specialized_navigation_sections,
+    extract_text_from_xhtml, extract_text_from_xhtml_budgeted, looks_like_navigation_document, strip_document_head,
+    strip_specialized_navigation_sections,
 };
 use metadata::{build_additional_metadata, parse_opf};
 use parsing::{parse_container_xml, read_file_from_zip, resolve_path};
@@ -200,6 +202,7 @@ impl EpubExtractor {
         manifest_dir: &str,
         nav_hrefs: &AHashSet<String>,
         cover_image_path: Option<&str>,
+        budget: &mut SecurityBudget,
     ) -> Option<InternalDocument> {
         use crate::types::internal::{ElementKind, InternalElement};
 
@@ -245,6 +248,10 @@ impl EpubExtractor {
         }
 
         for (index, href) in spine_hrefs.iter().enumerate() {
+            if budget.step().is_err() {
+                break;
+            }
+
             let file_path = match resolve_path(manifest_dir, href) {
                 Ok(canonical) => canonical.path,
                 Err(_) => continue,
@@ -268,8 +275,11 @@ impl EpubExtractor {
                 continue;
             }
 
+            // Account for chapter content size
+            let _ = budget.account_text(sanitized.len());
+
             // Skip empty chapters
-            if extract_text_from_xhtml(&sanitized).is_empty() {
+            if extract_text_from_xhtml_budgeted(&sanitized, budget).is_empty() {
                 continue;
             }
 
@@ -281,7 +291,7 @@ impl EpubExtractor {
                     extract_title_from_xhtml(&xhtml_content).unwrap_or_else(|| format!("Chapter {}", index + 1));
                 builder.push_heading(1, &chapter_title, None, None);
 
-                let text = extract_text_from_xhtml(&xhtml_content);
+                let text = extract_text_from_xhtml_budgeted(&xhtml_content, budget);
                 for paragraph in text.split("\n\n") {
                     let trimmed = paragraph.trim();
                     if !trimmed.is_empty() {
@@ -333,6 +343,8 @@ impl EpubExtractor {
                                 })
                                 .collect();
                             if !cells.is_empty() {
+                                let cell_count: usize = cells.iter().map(|row| row.len()).sum();
+                                let _ = budget.add_cells(cell_count);
                                 builder.push_table_from_cells(&cells, None, None);
                             }
                         }
@@ -539,7 +551,7 @@ impl DocumentExtractor for EpubExtractor {
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "epub", size_bytes = content.len(), "extraction starting");
-        let _ = config; // conditionally used by ocr feature
+        let mut budget = SecurityBudget::from_config(config);
         let cursor = Cursor::new(content.to_vec());
 
         let mut archive = ZipArchive::new(cursor).map_err(|e| crate::KreuzbergError::Parsing {
@@ -557,7 +569,7 @@ impl DocumentExtractor for EpubExtractor {
         };
 
         let opf_xml = read_file_from_zip(&mut archive, &opf_path)?;
-        let (package, _processing_warnings) = parse_opf(&opf_xml, &manifest_dir)?;
+        let (package, _processing_warnings) = parse_opf(&opf_xml, &manifest_dir, &mut budget)?;
         let additional_metadata = build_additional_metadata(&package.metadata);
         let epub_format_metadata = FormatMetadata::Epub(EpubMetadata {
             coverage: package.metadata.coverage.clone(),
@@ -596,7 +608,7 @@ impl DocumentExtractor for EpubExtractor {
         // Build InternalDocument from spine chapters
         let cover_image_path = package.metadata.cover_image_href.as_deref();
         let mut doc =
-            Self::build_internal_document(&mut archive, &spine_hrefs, &manifest_dir, &nav_hrefs, cover_image_path)
+            Self::build_internal_document(&mut archive, &spine_hrefs, &manifest_dir, &nav_hrefs, cover_image_path, &mut budget)
                 .unwrap_or_else(|| InternalDocumentBuilder::new("epub").build());
         doc.mime_type = Cow::Owned(mime_type.to_string());
 
@@ -693,7 +705,8 @@ mod tests {
   </spine>
 </package>"#;
 
-        let (package, _warnings) = metadata::parse_opf(opf, "").expect("Metadata parse failed");
+        let mut budget = crate::extractors::security::SecurityBudget::with_defaults();
+        let (package, _warnings) = metadata::parse_opf(opf, "", &mut budget).expect("Metadata parse failed");
         let epub_meta = &package.metadata;
         assert_eq!(epub_meta.title, Some("Test Book".to_string()));
         assert_eq!(epub_meta.coverage, Some("Worldwide".to_string()));

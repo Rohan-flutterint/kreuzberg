@@ -15,6 +15,7 @@ use super::annotation_utils::adjust_annotations_for_trim;
 use super::frontmatter_utils::{extract_frontmatter, extract_metadata_from_yaml, extract_title_from_content};
 use crate::Result;
 use crate::core::config::ExtractionConfig;
+use crate::extractors::security::SecurityBudget;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::types::internal::InternalDocument;
 use crate::types::internal_builder::InternalDocumentBuilder;
@@ -576,7 +577,8 @@ impl DocumentExtractor for MarkdownExtractor {
         config: &ExtractionConfig,
     ) -> Result<InternalDocument> {
         tracing::debug!(format = "markdown", size_bytes = content.len(), "extraction starting");
-        let _ = config; // config is used by the pipeline for image OCR
+        let mut budget = SecurityBudget::from_config(config);
+        budget.account_text(content.len())?;
         let text = String::from_utf8_lossy(content).into_owned();
 
         let (yaml, remaining_content) = extract_frontmatter(&text);
