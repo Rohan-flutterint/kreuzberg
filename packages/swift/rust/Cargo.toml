@@ -3,6 +3,7 @@
 name = "kreuzberg-swift"
 version = "4.9.5"
 edition = "2024"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib", "staticlib"]
@@ -10,8 +11,8 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 kreuzberg = { path = "../../../crates/kreuzberg", features = ["full"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt", "macros"] }
 swift-bridge = "0.1.59"
+tokio = { version = "1", features = ["rt", "macros"] }
 
 [build-dependencies]
 swift-bridge-build = "0.1.59"

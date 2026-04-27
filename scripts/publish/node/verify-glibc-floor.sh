@@ -16,12 +16,12 @@ set -euo pipefail
 target="${TARGET:?TARGET not set}"
 
 case "$target" in
-  x86_64-unknown-linux-gnu) node_file="kreuzberg-node.linux-x64-gnu.node" ;;
-  aarch64-unknown-linux-gnu) node_file="kreuzberg-node.linux-arm64-gnu.node" ;;
-  *)
-    echo "verify-glibc-floor: target $target is not a linux-gnu prebuild — skipping" >&2
-    exit 0
-    ;;
+x86_64-unknown-linux-gnu) node_file="kreuzberg-node.linux-x64-gnu.node" ;;
+aarch64-unknown-linux-gnu) node_file="kreuzberg-node.linux-arm64-gnu.node" ;;
+*)
+  echo "verify-glibc-floor: target $target is not a linux-gnu prebuild — skipping" >&2
+  exit 0
+  ;;
 esac
 
 node_path="crates/kreuzberg-node/artifacts/${node_file}"
@@ -71,7 +71,7 @@ fi
 glibcxx=$(printf '%s\n' "$dynsyms" | grep -oE 'GLIBCXX_[0-9]+(\.[0-9]+)*' | sort -uV || true)
 if [ -n "$glibcxx" ]; then
   echo "  FAIL: ${node_file} references GLIBCXX symbols:"
-  echo "$glibcxx" | sed 's/^/    /'
+  while IFS= read -r line; do printf '    %s\n' "$line"; done <<<"$glibcxx"
   echo "  zig is supposed to bundle libstdc++ statically; this means the build"
   echo "  switched off zigbuild or zig's runtime is being shadowed by the host."
   failed=1
@@ -85,7 +85,7 @@ fi
 isoc23=$(printf '%s\n' "$dynsyms" | grep -E '__isoc23_' || true)
 if [ -n "$isoc23" ]; then
   echo "  FAIL: ${node_file} references C23 glibc helpers:"
-  echo "$isoc23" | sed 's/^/    /'
+  while IFS= read -r line; do printf '    %s\n' "$line"; done <<<"$isoc23"
   echo "  This requires glibc ≥ 2.38 and breaks the floor."
   failed=1
 else

@@ -29,9 +29,9 @@ if [ "$use_zigbuild" = "true" ]; then
   # picked up automatically, so the probe fails to find opensslconf.h. Symlink
   # the arch-specific headers into /usr/include/openssl/ so -I/usr/include works.
   case "$target" in
-    x86_64-unknown-linux-gnu) triplet=x86_64-linux-gnu ;;
-    aarch64-unknown-linux-gnu) triplet=aarch64-linux-gnu ;;
-    *) triplet="" ;;
+  x86_64-unknown-linux-gnu) triplet=x86_64-linux-gnu ;;
+  aarch64-unknown-linux-gnu) triplet=aarch64-linux-gnu ;;
+  *) triplet="" ;;
   esac
   if [ -n "$triplet" ]; then
     for h in opensslconf.h configuration.h; do

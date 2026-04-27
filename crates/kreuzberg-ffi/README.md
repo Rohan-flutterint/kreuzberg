@@ -88,18 +88,13 @@ Extract text, tables, images, and metadata from 91+ file formats and 248 program
 
 Extract text, metadata, and structure from any supported document format:
 
-<!-- snippet not found: api/extract_file_sync.md -->
+<!-- snippet not found:  -->
 
 ### Common Use Cases
 
 #### Extract with Custom Configuration
 
 Most use cases benefit from configuration to control extraction behavior:
-
-
-**With OCR (for scanned documents):**
-
-<!-- snippet not found: ocr/ocr_extraction.md -->
 
 
 
@@ -113,16 +108,6 @@ See [Table Extraction Guide](https://kreuzberg.dev/features/table-extraction/) f
 #### Processing Multiple Files
 
 
-<!-- snippet not found: api/batch_extract_files_sync.md -->
-
-
-
-
-#### Async Processing
-
-For non-blocking document processing:
-
-<!-- snippet not found: api/extract_file_async.md -->
 
 
 
@@ -243,15 +228,9 @@ Kreuzberg supports multiple OCR backends for extracting text from scanned docume
 
 
 
-- **Tesseract**
-
-
-- **Paddleocr**
-
-
 ### OCR Configuration Example
 
-<!-- snippet not found: ocr/ocr_extraction.md -->
+<!-- snippet not found:  -->
 
 
 
@@ -260,7 +239,7 @@ Kreuzberg supports multiple OCR backends for extracting text from scanned docume
 
 This binding provides full async/await support for non-blocking document processing:
 
-<!-- snippet not found: api/extract_file_async.md -->
+<!-- snippet not found:  -->
 
 
 
@@ -281,14 +260,6 @@ Generate vector embeddings for extracted text using the built-in ONNX Runtime su
 
 **[Embeddings Guide](https://kreuzberg.dev/features/#embeddings)**
 
-
-
-
-## Batch Processing
-
-Process multiple documents efficiently:
-
-<!-- snippet not found: api/batch_extract_files_sync.md -->
 
 
 

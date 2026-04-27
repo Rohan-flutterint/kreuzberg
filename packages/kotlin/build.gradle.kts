@@ -4,6 +4,7 @@ plugins {
     `java-library`
     kotlin("jvm") version "2.1.10"
     `maven-publish`
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
 }
 
 group = "dev.kreuzberg"
@@ -48,10 +49,17 @@ kotlin {
     }
 }
 
+// ktlint configuration — see .editorconfig for details
+ktlint {
+    version.set("1.4.1")
+    outputToConsole.set(true)
+    ignoreFailures.set(false)
+}
+
 // JNA needs the native lib on java.library.path; default to the workspace
 // `target/release` cargo output. Override with `-Pkb.lib.path=<dir>`.
 tasks.withType<Test>().configureEach {
-    val libPath = (project.findProperty("kb.lib.path") as String?) ?: "${rootDir}/../../target/release"
+    val libPath = (project.findProperty("kb.lib.path") as String?) ?: "$rootDir/../../target/release"
     systemProperty("jna.library.path", libPath)
     systemProperty("java.library.path", libPath)
     useJUnit()

@@ -272,7 +272,7 @@ tasks:
     desc: "Lint PHP binding with phpstan and php-cs-fixer"
     cmds:
       - php-cs-fixer fix --dry-run --diff
-      - phpstan analyse
+      - phpstan analyse --memory-limit=2G
     dir: packages/php
 
   csharp:format:
