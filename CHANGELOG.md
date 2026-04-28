@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.10.0-rc.4] - 2026-04-28
+
+Cycle 4 of the alef-backed publish-pipeline iteration. Cycle 3 surfaced fourteen build-stage publish failures across Elixir, Ruby, Python, PHP, Node, and C#; this RC bundles the targeted fixes for each.
+
+### Fixed
+
+- **Elixir native libs build now uses the actual NIF directory name (`kreuzberg_nif`).** The publish workflow had references to `packages/elixir/native/kreuzberg_rustler` that never existed in this repo (the crate is named `kreuzberg_nif`). All five Elixir matrix targets failed in cycle 3 with `start process … working directory … invalid`. Replaced 16 `kreuzberg_rustler` references in `.github/workflows/publish.yaml`.
+- **Ruby gem build now declares its `async-trait` dependency.** `packages/ruby/ext/kreuzberg_rb/src/lib.rs` (alef-generated) imports `async_trait::async_trait` for trait bridges, but the matching `Cargo.toml` was missing the dep. Both Ruby gem matrix targets failed in cycle 3 with `unresolved import async_trait`.
+- **Ruby `batch_reduce_tokens`, `chunk_text`, `chunk_texts_batch`, `chunk_semantic` are now excluded from the alef-generated Magnus binding.** alef's Magnus codegen referenced undeclared local bindings (`texts_refs`, `page_boundaries_core`) for these functions; the codegen fix is tracked upstream.
+- **`task php:build` now exists** (`cargo build --release -p kreuzberg-php`). The publish workflow invoked this task name; without it both PHP PIE matrix targets failed in cycle 3 with `task: Task "php:build" does not exist`.
+- **Python wheel build on `linux-aarch64` symlinks `aarch64-linux-gnu-gcc` to `gcc`** when running natively in the manylinux container. The repo's `.cargo/config.toml` pins `aarch64-unknown-linux-gnu`'s linker to the cross-compiler binary name, but that binary doesn't exist in the `manylinux_2_28` container on a native ARM runner. Added a symlink in the cibuildwheel `before-script-linux` step.
+- **C# native assets `linux-musl-arm64` build no longer trips on `packages/dart/rust`.** `docker/Dockerfile.musl-ffi`'s sed pattern was missing the dart/swift workspace-member exclusions (added in earlier cycles to other Dockerfiles); cargo failed with `failed to load manifest for workspace member /build/packages/dart/rust`.
+- **Node bindings build uses a path-based pnpm filter** (`pnpm --filter ./crates/kreuzberg-node`) instead of the never-resolved `pnpm --filter @kreuzberg/node`. `crates/kreuzberg-node/package.json`'s name is `kreuzberg`, so the scoped filter never matched. Updated three sites (workflow + two scripts).
+- **alef bumped to v0.11.7.** Carries two codegen fixes the regenerated bindings depend on: (1) optional `string`/`bytes` arguments in Rust e2e tests now bind to a typed `Option<String>`/`Option<Vec<u8>>` and pass via `.as_deref()` so signatures expecting `Option<&str>` no longer receive `&Option<_>`; (2) PHP backend correctly threads `data_enum_names` through the type mapper for tagged data enums.
+
 ## [4.10.0-rc.2] - 2026-04-28
 
 Cycle 2 of the alef-backed publish-pipeline iteration. RC1 surfaced two failures: the `actions/check-registry@v1` and `actions/prepare-release-metadata@v1` shims now require alef ≥ 0.11.0 for the `check-registry` and `release-metadata` subcommands, but `alef.toml`'s top-level `version` field still pinned 0.10.4 (which `install-alef@v1` resolves "latest" against). Bump the alef pin to 0.11.0 so all kreuzberg jobs install an alef binary that has the new subcommands. Also fix the `release-metadata.json` artifact upload that was being wiped by the `prepare` job's re-checkout step (stash to /tmp before re-checkout, restore after).

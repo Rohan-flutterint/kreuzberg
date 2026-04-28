@@ -46,8 +46,8 @@ if [ "$use_zigbuild" = "true" ]; then
   fi
 fi
 
-echo "Running: pnpm --filter @kreuzberg/node exec napi build ${args[*]}"
-pnpm --filter @kreuzberg/node exec napi build "${args[@]}"
+echo "Running: pnpm --filter ./crates/kreuzberg-node exec napi build ${args[*]}"
+pnpm --filter ./crates/kreuzberg-node exec napi build "${args[@]}"
 
 artifacts_dir="crates/kreuzberg-node/artifacts"
 echo ""

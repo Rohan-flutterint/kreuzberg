@@ -2026,24 +2026,24 @@ pub enum LayoutClass {
 
 /// Hash arbitrary bytes with blake3, returning a 32-char hex string.
 pub fn blake3_hash_bytes(data: Vec<u8>) -> String {
-    kreuzberg::cache::blake3_hash_bytes(&data).to_string()
+    kreuzberg::blake3_hash_bytes(&data).to_string()
 }
 
 /// Hash a file's content with blake3 using streaming 64 KiB reads.
 ///
 /// Returns a 32-char hex string (128 bits of blake3 output).
 pub fn blake3_hash_file(path: String) -> Result<String, String> {
-    kreuzberg::cache::blake3_hash_file(std::path::Path::new(&path))
+    kreuzberg::blake3_hash_file(std::path::Path::new(&path))
         .map(|v| v.to_string())
         .map_err(|e| e.to_string())
 }
 
 pub fn fast_hash(data: Vec<u8>) -> i64 {
-    kreuzberg::cache::fast_hash(&data) as i64
+    kreuzberg::fast_hash(&data) as i64
 }
 
 pub fn validate_cache_key(key: String) -> bool {
-    kreuzberg::cache::validate_cache_key(&key) as bool
+    kreuzberg::validate_cache_key(&key) as bool
 }
 
 /// Validate a port number for server configuration.
@@ -2055,7 +2055,7 @@ pub fn validate_cache_key(key: String) -> bool {
 ///
 /// `Ok(())` if the port is valid, or a `ValidationError` with details about valid ranges.
 pub fn validate_port(port: i64) -> Result<(), String> {
-    kreuzberg::core::config_validation::validate_port(port as u16)
+    kreuzberg::validate_port(port as u16)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2069,9 +2069,7 @@ pub fn validate_port(port: i64) -> Result<(), String> {
 ///
 /// `Ok(())` if the host is valid, or a `ValidationError` with details about valid formats.
 pub fn validate_host(host: String) -> Result<(), String> {
-    kreuzberg::core::config_validation::validate_host(&host)
-        .map(|v| v)
-        .map_err(|e| e.to_string())
+    kreuzberg::validate_host(&host).map(|v| v).map_err(|e| e.to_string())
 }
 
 /// Validate a CORS (Cross-Origin Resource Sharing) origin URL.
@@ -2107,7 +2105,7 @@ pub fn validate_upload_size(size: i64) -> Result<(), String> {
 ///
 /// `Ok(())` if the method is valid, or a `ValidationError` with details about valid options.
 pub fn validate_binarization_method(method: String) -> Result<(), String> {
-    kreuzberg::core::validate_binarization_method(&method)
+    kreuzberg::validate_binarization_method(&method)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2118,7 +2116,7 @@ pub fn validate_binarization_method(method: String) -> Result<(), String> {
 ///
 /// `Ok(())` if the level is valid, or a `ValidationError` with details about valid options.
 pub fn validate_token_reduction_level(level: String) -> Result<(), String> {
-    kreuzberg::core::validate_token_reduction_level(&level)
+    kreuzberg::validate_token_reduction_level(&level)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2129,7 +2127,7 @@ pub fn validate_token_reduction_level(level: String) -> Result<(), String> {
 ///
 /// `Ok(())` if the backend is valid, or a `ValidationError` with details about valid options.
 pub fn validate_ocr_backend(backend: String) -> Result<(), String> {
-    kreuzberg::core::validate_ocr_backend(&backend)
+    kreuzberg::validate_ocr_backend(&backend)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2143,7 +2141,7 @@ pub fn validate_ocr_backend(backend: String) -> Result<(), String> {
 ///
 /// `Ok(())` if the code is valid, or a `ValidationError` indicating an invalid language code.
 pub fn validate_language_code(code: String) -> Result<(), String> {
-    kreuzberg::core::validate_language_code(&code)
+    kreuzberg::validate_language_code(&code)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2154,7 +2152,7 @@ pub fn validate_language_code(code: String) -> Result<(), String> {
 ///
 /// `Ok(())` if the PSM is valid, or a `ValidationError` with details about valid ranges.
 pub fn validate_tesseract_psm(psm: i64) -> Result<(), String> {
-    kreuzberg::core::validate_tesseract_psm(psm as i32)
+    kreuzberg::validate_tesseract_psm(psm as i32)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2165,7 +2163,7 @@ pub fn validate_tesseract_psm(psm: i64) -> Result<(), String> {
 ///
 /// `Ok(())` if the OEM is valid, or a `ValidationError` with details about valid options.
 pub fn validate_tesseract_oem(oem: i64) -> Result<(), String> {
-    kreuzberg::core::validate_tesseract_oem(oem as i32)
+    kreuzberg::validate_tesseract_oem(oem as i32)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2182,7 +2180,7 @@ pub fn validate_tesseract_oem(oem: i64) -> Result<(), String> {
 ///
 /// `Ok(())` if the format is valid, or a `ValidationError` with details about valid options.
 pub fn validate_output_format(format: String) -> Result<(), String> {
-    kreuzberg::core::validate_output_format(&format)
+    kreuzberg::validate_output_format(&format)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2195,7 +2193,7 @@ pub fn validate_output_format(format: String) -> Result<(), String> {
 ///
 /// `Ok(())` if the confidence is valid, or a `ValidationError` with details about valid ranges.
 pub fn validate_confidence(confidence: f64) -> Result<(), String> {
-    kreuzberg::core::validate_confidence(confidence)
+    kreuzberg::validate_confidence(confidence)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2221,7 +2219,7 @@ pub fn validate_dpi(dpi: i64) -> Result<(), String> {
 ///
 /// `Ok(())` if the parameters are valid, or a `ValidationError` with details about constraints.
 pub fn validate_chunking_params(max_chars: i64, max_overlap: i64) -> Result<(), String> {
-    kreuzberg::core::validate_chunking_params(max_chars as usize, max_overlap as usize)
+    kreuzberg::validate_chunking_params(max_chars as usize, max_overlap as usize)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2513,7 +2511,7 @@ pub fn extract_email_content(
     mime_type: String,
     fallback_codepage: Option<i64>,
 ) -> Result<kreuzberg::EmailExtractionResult, String> {
-    kreuzberg::extraction::email::extract_email_content(&data, &mime_type, fallback_codepage.map(|v| v as u32))
+    kreuzberg::extract_email_content(&data, &mime_type, fallback_codepage.map(|v| v as u32))
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2545,11 +2543,11 @@ pub fn extract_email_content(
 ///
 /// A `String` containing the plain text table representation
 pub fn cells_to_text(cells: Vec<Vec<String>>) -> String {
-    kreuzberg::extraction::cells_to_text(&cells).to_string()
+    kreuzberg::cells_to_text(&cells).to_string()
 }
 
 pub fn cells_to_markdown(cells: Vec<Vec<String>>) -> String {
-    kreuzberg::extraction::cells_to_markdown(&cells).to_string()
+    kreuzberg::cells_to_markdown(&cells).to_string()
 }
 
 /// Render djot content to HTML.
@@ -2561,7 +2559,7 @@ pub fn cells_to_markdown(cells: Vec<Vec<String>>) -> String {
 ///
 /// A `Result` containing the rendered HTML string
 pub fn djot_to_html(djot_source: String) -> Result<String, String> {
-    kreuzberg::extractors::djot_format::djot_to_html(&djot_source)
+    kreuzberg::djot_to_html(&djot_source)
         .map(|v| v.to_string())
         .map_err(|e| e.to_string())
 }
@@ -2569,7 +2567,7 @@ pub fn djot_to_html(djot_source: String) -> Result<String, String> {
 /// Deduplicate a list of text strings while preserving order.
 /// Adjacent duplicates and near-duplicates are removed.
 pub fn dedup_text(texts: Vec<String>) -> Vec<String> {
-    kreuzberg::extractors::iwork::dedup_text(texts)
+    kreuzberg::dedup_text(texts)
         .into_iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
@@ -2642,7 +2640,7 @@ pub fn unregister_ocr_backend(name: String) -> Result<(), String> {
 ///
 /// A vector of OCR backend names.
 pub fn list_ocr_backends() -> Result<Vec<String>, String> {
-    kreuzberg::plugins::list_ocr_backends()
+    kreuzberg::list_ocr_backends()
         .map(|v| v.into_iter().map(|s| s.to_string()).collect::<Vec<_>>())
         .map_err(|e| e.to_string())
 }
@@ -2671,7 +2669,7 @@ pub fn clear_ocr_backends() -> Result<(), String> {
 /// - `Ok(Vec<String>)` - Vector of post-processor names
 /// - `Err(...)` if the registry lock is poisoned
 pub fn list_post_processors() -> Result<Vec<String>, String> {
-    kreuzberg::plugins::list_post_processors()
+    kreuzberg::list_post_processors()
         .map(|v| v.into_iter().map(|s| s.to_string()).collect::<Vec<_>>())
         .map_err(|e| e.to_string())
 }
@@ -2699,7 +2697,7 @@ pub fn clear_renderers() -> Result<(), String> {
 
 /// List names of all registered validators.
 pub fn list_validators() -> Result<Vec<String>, String> {
-    kreuzberg::plugins::list_validators()
+    kreuzberg::list_validators()
         .map(|v| v.into_iter().map(|s| s.to_string()).collect::<Vec<_>>())
         .map_err(|e| e.to_string())
 }
@@ -2715,7 +2713,7 @@ pub fn clear_validators() -> Result<(), String> {
 ///
 /// Prevents PII from appearing in traces.
 pub fn sanitize_filename(path: String) -> String {
-    kreuzberg::telemetry::conventions::sanitize_filename(std::path::Path::new(&path)).to_string()
+    kreuzberg::sanitize_filename(std::path::Path::new(&path)).to_string()
 }
 
 /// Sanitize a file path to return only the filename.
@@ -2723,7 +2721,7 @@ pub fn sanitize_filename(path: String) -> String {
 /// Prevents PII (personally identifiable information) from appearing in
 /// traces by only recording filenames instead of full paths.
 pub fn sanitize_path(path: String) -> String {
-    kreuzberg::telemetry::spans::sanitize_path(std::path::Path::new(&path)).to_string()
+    kreuzberg::sanitize_path(std::path::Path::new(&path)).to_string()
 }
 
 /// Validates bytes as UTF-8 without conversion to string slice.
@@ -2739,11 +2737,11 @@ pub fn sanitize_path(path: String) -> String {
 ///
 /// This function is optimized for early exit on invalid sequences.
 pub fn is_valid_utf8(bytes: Vec<u8>) -> bool {
-    kreuzberg::text::utf8_validation::is_valid_utf8(&bytes) as bool
+    kreuzberg::is_valid_utf8(&bytes) as bool
 }
 
 pub fn clean_extracted_text(text: String) -> String {
-    kreuzberg::text::quality::clean_extracted_text(&text).to_string()
+    kreuzberg::clean_extracted_text(&text).to_string()
 }
 
 /// Reduces token count in text while preserving meaning and structure.
@@ -2764,7 +2762,7 @@ pub fn reduce_tokens(
     config: kreuzberg::TokenReductionConfig,
     language_hint: Option<String>,
 ) -> Result<String, String> {
-    kreuzberg::text::reduce_tokens(&text, &config, language_hint.as_deref())
+    kreuzberg::reduce_tokens(&text, &config, language_hint.as_deref())
         .map(|v| v.to_string())
         .map_err(|e| e.to_string())
 }
@@ -2966,7 +2964,7 @@ pub fn chunk_texts_batch(
     texts: Vec<String>,
     config: kreuzberg::ChunkingConfig,
 ) -> Result<Vec<kreuzberg::chunking::ChunkingResult>, String> {
-    kreuzberg::chunking::core::chunk_texts_batch(&texts, &config)
+    kreuzberg::chunk_texts_batch(&texts, &config)
         .map(|v| v)
         .map_err(|e| e.to_string())
 }
@@ -2988,7 +2986,7 @@ pub fn chunk_semantic(
 
 /// L2-normalize a vector.
 pub fn normalize(v: Vec<f64>) -> Vec<f64> {
-    kreuzberg::embeddings::engine::normalize(v.iter().map(|x| *x as f32).collect::<Vec<_>>().as_slice())
+    kreuzberg::normalize(v.iter().map(|x| *x as f32).collect::<Vec<_>>().as_slice())
         .into_iter()
         .map(|x| x as f64)
         .collect::<Vec<_>>()
@@ -3092,7 +3090,7 @@ pub fn extract_keywords(text: String, config: kreuzberg::KeywordConfig) -> Resul
 ///
 /// Returns a 32-character hex string (128 bits of blake3 output).
 pub fn compute_hash(data: String) -> String {
-    kreuzberg::ocr::compute_hash(&data).to_string()
+    kreuzberg::compute_hash(&data).to_string()
 }
 
 /// Render a single PDF page to a PNG-encoded byte buffer.
@@ -3118,7 +3116,7 @@ pub fn render_pdf_page_to_png(
 }
 
 pub fn extract_text_from_pdf(pdf_bytes: Vec<u8>) -> Result<String, String> {
-    kreuzberg::pdf::extract_text_from_pdf(&pdf_bytes)
+    kreuzberg::extract_text_from_pdf(&pdf_bytes)
         .map(|v| v.to_string())
         .map_err(|e| e.to_string())
 }

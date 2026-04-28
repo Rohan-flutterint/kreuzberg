@@ -427,7 +427,7 @@ jobs:
           package: kreuzberg
           version: ${{ needs.prepare.outputs.version }}
           tag: ${{ needs.prepare.outputs.tag }}
-          asset-prefix: libkreuzberg_rustler-
+          asset-prefix: libkreuzberg_nif-
           repo: kreuzberg-dev/kreuzberg
 
   check-cratesio:
@@ -693,6 +693,12 @@ jobs:
             if command -v yum >/dev/null 2>&1; then
               # CentOS/RHEL (manylinux containers)
               yum install -y openssl openssl-devel pkgconfig
+              # The repo .cargo/config.toml pins the linker for aarch64-unknown-linux-gnu
+              # to aarch64-linux-gnu-gcc, which is the cross-compiler binary name even on
+              # native ARM. Install gcc-c++ so its 'cc' wrapper is on PATH, then symlink.
+              if [ "$(uname -m)" = "aarch64" ] && ! command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+                ln -sf "$(command -v gcc)" /usr/local/bin/aarch64-linux-gnu-gcc
+              fi
               export OPENSSL_LIB_DIR=/usr/lib64
               export OPENSSL_INCLUDE_DIR=/usr/include
             elif command -v apt-get >/dev/null 2>&1; then
@@ -985,7 +991,7 @@ jobs:
         run: Remove-Item -Recurse -Force crates/kreuzberg-node\npm -ErrorAction SilentlyContinue
 
       - name: Create npm package structure
-        run: pnpm --filter @kreuzberg/node exec napi create-npm-dirs
+        run: pnpm --filter ./crates/kreuzberg-node exec napi create-npm-dirs
 
       - name: Build native module
         if: runner.os != 'Windows'
@@ -2787,7 +2793,7 @@ jobs:
           prefix: elixir
 
       - name: Build Elixir native library
-        working-directory: packages/elixir/native/kreuzberg_rustler
+        working-directory: packages/elixir/native/kreuzberg_nif
         env:
           CARGO_BUILD_TARGET: ${{ matrix.settings.target }}
         run: cargo build --release --target ${{ matrix.settings.target }}
@@ -2800,7 +2806,7 @@ jobs:
           echo "=== Runner OS: ${{ runner.os }} ==="
           echo ""
           echo "=== All library files in workspace target ==="
-          find target -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "libkreuzberg*" -o -name "kreuzberg_rustler*" \) 2>/dev/null | head -30 || echo "No libraries found"
+          find target -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "libkreuzberg*" -o -name "kreuzberg_nif*" \) 2>/dev/null | head -30 || echo "No libraries found"
           echo ""
           echo "=== Expected location: target/${TARGET}/release/ ==="
           for f in target/"${TARGET}"/release/*kreuzberg*; do
@@ -2823,17 +2829,17 @@ jobs:
           # ARCHIVE_EXT is the extension used in tarball naming (rustler_precompiled expects .so for Unix)
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ARCHIVE_EXT="dll"
-            LIB_NAME="kreuzberg_rustler.dll"
+            LIB_NAME="kreuzberg_nif.dll"
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             ARCHIVE_EXT="so"  # rustler_precompiled expects .so for all Unix platforms
-            LIB_NAME="libkreuzberg_rustler.dylib"
+            LIB_NAME="libkreuzberg_nif.dylib"
           else
             ARCHIVE_EXT="so"
-            LIB_NAME="libkreuzberg_rustler.so"
+            LIB_NAME="libkreuzberg_nif.so"
           fi
 
           mkdir -p dist/elixir
-          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          ARTIFACT_NAME="libkreuzberg_nif-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
           TARBALL="${ARTIFACT_NAME}.tar.gz"
 
           # Try expected location first (workspace target dir), fallback to root release dir
@@ -2868,16 +2874,16 @@ jobs:
           # ARCHIVE_EXT is the extension used in tarball naming (rustler_precompiled expects .so for Unix)
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ARCHIVE_EXT="dll"
-            LIB_NAME="kreuzberg_rustler.dll"
+            LIB_NAME="kreuzberg_nif.dll"
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             ARCHIVE_EXT="so"  # rustler_precompiled expects .so for all Unix platforms
-            LIB_NAME="libkreuzberg_rustler.dylib"
+            LIB_NAME="libkreuzberg_nif.dylib"
           else
             ARCHIVE_EXT="so"
-            LIB_NAME="libkreuzberg_rustler.so"
+            LIB_NAME="libkreuzberg_nif.so"
           fi
 
-          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          ARTIFACT_NAME="libkreuzberg_nif-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
           TARBALL="${ARTIFACT_NAME}.tar.gz"
 
           # Try expected location first (workspace target dir), fallback to root release dir
@@ -2948,7 +2954,7 @@ jobs:
 
       - name: Verify musl library
         run: |
-          file dist/libkreuzberg_rustler.so
+          file dist/libkreuzberg_nif.so
           echo "Library built successfully for musl"
 
       - name: Package native libraries (NIF 2.16)
@@ -2960,10 +2966,10 @@ jobs:
           ARCHIVE_EXT="so"
 
           mkdir -p dist/elixir
-          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          ARTIFACT_NAME="libkreuzberg_nif-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
           TARBALL="${ARTIFACT_NAME}.tar.gz"
 
-          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          cp dist/libkreuzberg_nif.so "${ARTIFACT_NAME}"
           tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
           echo "Created: dist/elixir/${TARBALL}"
 
@@ -2975,10 +2981,10 @@ jobs:
           NIF_VERSION="2.17"
           ARCHIVE_EXT="so"
 
-          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          ARTIFACT_NAME="libkreuzberg_nif-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
           TARBALL="${ARTIFACT_NAME}.tar.gz"
 
-          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          cp dist/libkreuzberg_nif.so "${ARTIFACT_NAME}"
           tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
           echo "Created: dist/elixir/${TARBALL}"
 

@@ -23,11 +23,6 @@
 			"type": "min_length",
 			"field": "content",
 			"value": 20
-		},
-		{
-			"type": "equals",
-			"field": "metadata.format_type",
-			"value": "pdf"
 		}
 	],
 	"skip": {

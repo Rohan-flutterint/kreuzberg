@@ -262,6 +262,11 @@ tasks:
       - bundle exec steep check
     dir: packages/ruby
 
+  php:build:
+    desc: "Build the kreuzberg-php native extension (cdylib)"
+    cmds:
+      - cargo build --release -p kreuzberg-php
+
   php:format:
     desc: "Format PHP binding with php-cs-fixer"
     cmds:

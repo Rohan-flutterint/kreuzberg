@@ -20,12 +20,11 @@
 		{
 			"type": "contains_any",
 			"field": "content",
-			"values": ["machine learning", "algorithm", "training"]
-		},
-		{
-			"type": "equals",
-			"field": "metadata.format_type",
-			"value": "pdf"
+			"values": [
+				"machine learning",
+				"algorithm",
+				"training"
+			]
 		}
 	]
 }

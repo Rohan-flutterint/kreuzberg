@@ -20,12 +20,11 @@
 		{
 			"type": "contains_any",
 			"field": "content",
-			"values": ["assembly", "register", "instruction"]
-		},
-		{
-			"type": "equals",
-			"field": "metadata.format_type",
-			"value": "pdf"
+			"values": [
+				"assembly",
+				"register",
+				"instruction"
+			]
 		}
 	]
 }

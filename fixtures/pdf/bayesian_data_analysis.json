@@ -20,12 +20,11 @@
 		{
 			"type": "contains_any",
 			"field": "content",
-			"values": ["Bayesian", "probability", "distribution"]
-		},
-		{
-			"type": "equals",
-			"field": "metadata.format_type",
-			"value": "pdf"
+			"values": [
+				"Bayesian",
+				"probability",
+				"distribution"
+			]
 		}
 	]
 }
