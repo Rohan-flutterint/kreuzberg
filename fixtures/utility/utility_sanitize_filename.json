@@ -2,14 +2,20 @@
 	"id": "utility_sanitize_filename",
 	"category": "utility",
 	"description": "Sanitize filename removes invalid characters",
-	"tags": ["utility", "filename", "sanitization"],
+	"tags": [
+		"utility",
+		"filename",
+		"sanitization"
+	],
 	"call": "sanitize_filename",
 	"input": {
-		"args": ["file<>:name*.txt"]
+		"args": [
+			"file<>:name*.txt"
+		]
 	},
 	"skip": {
 		"languages": [],
-		"reason": "Requires sanitize_filename call config in alef.toml"
+		"reason": "Tests utility call surface that isn't re-exported at the kreuzberg crate root \u2014 skipped everywhere until Rust public API or codegen module path is updated."
 	},
 	"assertions": [
 		{

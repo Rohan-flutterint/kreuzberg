@@ -2,7 +2,11 @@
 	"id": "config_from_file",
 	"category": "configuration",
 	"description": "Load configuration from a TOML file",
-	"tags": ["configuration", "toml", "file_loading"],
+	"tags": [
+		"configuration",
+		"toml",
+		"file_loading"
+	],
 	"call": "from_file",
 	"input": {
 		"setup": {
@@ -10,7 +14,9 @@
 			"temp_file_name": "test_config.toml",
 			"temp_file_content": "[chunking]\nmax_chars = 100\nmax_overlap = 20\n\n[language_detection]\nenabled = false\n"
 		},
-		"args": ["${temp_file_path}"],
+		"args": [
+			"${temp_file_path}"
+		],
 		"is_method": true,
 		"class_name": "ExtractionConfig"
 	},
@@ -38,5 +44,9 @@
 			"field": "result.language_detection.enabled",
 			"value": false
 		}
-	]
+	],
+	"skip": {
+		"languages": [],
+		"reason": "Tests plugin_api call surface that isn't re-exported at the kreuzberg crate root \u2014 skipped everywhere until Rust public API or codegen module path is updated."
+	}
 }

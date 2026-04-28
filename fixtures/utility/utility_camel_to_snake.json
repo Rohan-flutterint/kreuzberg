@@ -2,14 +2,20 @@
 	"id": "utility_camel_to_snake",
 	"category": "utility",
 	"description": "Convert camelCase to snake_case",
-	"tags": ["utility", "string", "conversion"],
+	"tags": [
+		"utility",
+		"string",
+		"conversion"
+	],
 	"call": "camel_to_snake",
 	"input": {
-		"args": ["myVariableName"]
+		"args": [
+			"myVariableName"
+		]
 	},
 	"skip": {
 		"languages": [],
-		"reason": "Requires camel_to_snake call config in alef.toml"
+		"reason": "Tests utility call surface that isn't re-exported at the kreuzberg crate root \u2014 skipped everywhere until Rust public API or codegen module path is updated."
 	},
 	"assertions": [
 		{

@@ -2,7 +2,7 @@
 title: "Gleam API Reference"
 ---
 
-## Gleam API Reference <span class="version-badge">v4.10.0-rc.2</span>
+## Gleam API Reference <span class="version-badge">v4.10.0-rc.3</span>
 
 ### Functions
 

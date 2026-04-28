@@ -176,6 +176,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check PyPI for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -192,6 +197,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check npm for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -208,6 +218,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check npm for existing WASM package
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -224,6 +239,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check RubyGems for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -240,6 +260,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check Maven Central for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -256,6 +281,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check NuGet for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -272,6 +302,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check Packagist for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -379,6 +414,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check release for existing Elixir artifacts
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -388,6 +428,7 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           tag: ${{ needs.prepare.outputs.tag }}
           asset-prefix: libkreuzberg_rustler-
+          repo: kreuzberg-dev/kreuzberg
 
   check-cratesio:
     name: Check if Rust crate exists on crates.io
@@ -401,6 +442,11 @@ jobs:
       cli_exists: ${{ steps.check.outputs.cli_exists }}
       exists: ${{ steps.derive.outputs.all_exist }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check crates.io for existing versions
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -433,6 +479,11 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check Hex.pm for existing version
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1
@@ -452,6 +503,11 @@ jobs:
       formula_exists: ${{ steps.check.outputs.exists }}
       bottles_exist: ${{ steps.check-bottles.outputs.exists }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Check Homebrew tap for formula
         id: check
         uses: kreuzberg-dev/actions/check-registry@v1

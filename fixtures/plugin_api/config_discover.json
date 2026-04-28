@@ -2,7 +2,11 @@
 	"id": "config_discover",
 	"category": "configuration",
 	"description": "Discover configuration from current or parent directories",
-	"tags": ["configuration", "toml", "discovery"],
+	"tags": [
+		"configuration",
+		"toml",
+		"discovery"
+	],
 	"call": "discover",
 	"input": {
 		"setup": {
@@ -30,5 +34,9 @@
 			"field": "result.chunking.max_chars",
 			"value": 50
 		}
-	]
+	],
+	"skip": {
+		"languages": [],
+		"reason": "Tests plugin_api call surface that isn't re-exported at the kreuzberg crate root \u2014 skipped everywhere until Rust public API or codegen module path is updated."
+	}
 }

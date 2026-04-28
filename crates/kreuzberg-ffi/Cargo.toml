@@ -1,6 +1,6 @@
 [package]
 name = "kreuzberg-ffi"
-version = "4.10.0-rc.2"
+version = "4.10.0-rc.3"
 edition = "2021"
 license = "Elastic-2.0"
 description = "High-performance document intelligence library"
@@ -8,6 +8,9 @@ repository = "https://github.com/kreuzberg-dev/kreuzberg"
 
 [lib]
 crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = []
 
 [dependencies]
 async-trait = "0.1"

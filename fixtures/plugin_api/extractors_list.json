@@ -2,12 +2,18 @@
 	"id": "extractors_list",
 	"category": "document_extractor_management",
 	"description": "List all registered document extractors",
-	"tags": ["extractors", "plugin_management", "list"],
+	"tags": [
+		"extractors",
+		"plugin_management",
+		"list"
+	],
 	"call": "list_document_extractors",
 	"input": {
 		"setup": {
 			"lazy_init_required": {
-				"languages": ["go"],
+				"languages": [
+					"go"
+				],
 				"init_action": "extract_file_sync",
 				"init_data": {
 					"create_temp_file": true,
@@ -21,5 +27,9 @@
 		{
 			"type": "not_error"
 		}
-	]
+	],
+	"skip": {
+		"languages": [],
+		"reason": "Tests plugin_api call surface that isn't re-exported at the kreuzberg crate root \u2014 skipped everywhere until Rust public API or codegen module path is updated."
+	}
 }

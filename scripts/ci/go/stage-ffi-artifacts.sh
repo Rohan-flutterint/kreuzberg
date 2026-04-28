@@ -41,7 +41,7 @@ fi
 shopt -u nullglob
 
 # Stage header file
-cp crates/kreuzberg-ffi/kreuzberg.h "${STAGING_DIR}/include/"
+cp crates/kreuzberg-ffi/include/kreuzberg.h "${STAGING_DIR}/include/"
 echo "✓ Staged header: kreuzberg.h"
 
 # Stage pkg-config file

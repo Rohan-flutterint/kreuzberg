@@ -104,6 +104,12 @@ tasks:
     cmds:
       - cargo build --release --package kreuzberg-ffi {{.CARGO_ARGS | default ""}}
 
+  wasm:build:all:
+    desc: "Build all WASM targets (web/bundler/nodejs/deno) plus the TypeScript wrapper"
+    dir: crates/kreuzberg-wasm
+    cmds:
+      - pnpm run build:all
+
   test:
     desc: "Run all Rust tests"
     cmds:
