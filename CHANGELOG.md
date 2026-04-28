@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.10.0-rc.1] - 2026-04-28
+
+First release candidate of v4.10.0. The release pipeline itself is the headline feature: this RC kicks off the iteration loop that proves out the alef-backed publish workflow against real registry endpoints. Substantive functional changes from v4.9.5 are listed below.
+
+### Changed (release pipeline)
+
+- **The publish workflow now runs end-to-end on prerelease tags.** Previously, `if: !github.event.release.prerelease` on the `prepare` job blocked every RC tag from triggering CI. The gate is removed; RCs publish for real with prerelease dist-tags (npm `next`, gemspec `.pre.rc.N`, PyPI `rc{N}`). Homebrew formula updates remain gated on stable releases via a new `is_prerelease` metadata flag.
+- **`task version:set -- <version>`** is the canonical way to set a release version (wraps `alef sync-versions --set`). Use it for both stable releases and RCs.
+- **Cross-manifest version validation in `scripts/publish/validate-version-consistency.sh` now glob-discovers the Ruby `version.rb` file** across all three rb-sys-style layouts and silently skips Go/PHP whose version-bearing manifest is absent (those ecosystems version via git tags, not in source).
+
 ### Fixed
 
 - **C FFI, PHP, Ruby, R bindings shipped 40+ stub functions that returned `Not implemented` at runtime**. Every batch API (`batch_extract_file_sync`, `batch_extract_bytes_sync`, plus async variants), `extract_file`, `extract_file_sync`, and most of the Ruby gem's surface (21 functions) silently failed with error code 99. Root cause was in the alef binding generator: bare `Path` was misresolved to `Named("Path")` and sanitized to `String`; sanitized batch-tuple params (`Vec<(PathBuf, Option<FileExtractionConfig>)>`) were never handled by the PHP/Magnus/FFI codegen even though the IR carried the original type for JSON-roundtrip; Magnus rejected every extraction function via an over-strict `is_named_ref_param` check; and the R backend panicked on every async function. Fixed in alef and regenerated all bindings — Python, Node, FFI all build clean. Only `kreuzberg_get_preset` remains stubbed (return-type sanitization edge case; tracked separately).

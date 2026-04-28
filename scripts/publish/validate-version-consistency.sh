@@ -7,9 +7,16 @@ if [ -z "$expected" ]; then
   exit 2
 fi
 
+# Ecosystem-specific normalized forms of the canonical version. The canonical
+# form is `4.10.0-rc.1` (semver). Some manifest formats normalize prereleases:
+#   - Python (PEP 440):  `4.10.0rc1`           — drop hyphen, drop dot before N
+#   - RubyGems:          `4.10.0.pre.rc.1`     — substitute dash → `.pre.`
+expected_python="$(echo "$expected" | sed -E 's/-rc\.?([0-9]+)/rc\1/; s/-alpha\.?([0-9]+)/a\1/; s/-beta\.?([0-9]+)/b\1/')"
+expected_ruby="$(echo "$expected" | sed -E 's/-rc\.?([0-9]+)/.pre.rc.\1/; s/-alpha\.?([0-9]+)/.pre.alpha.\1/; s/-beta\.?([0-9]+)/.pre.beta.\1/')"
+
 errors=0
 
-echo "Expected version: $expected"
+echo "Expected version: $expected (python: $expected_python, ruby: $expected_ruby)"
 echo "----------------------------------------"
 
 cargo_version="$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2 || true)"
@@ -19,12 +26,8 @@ echo "Cargo.toml: $cargo_version"
   errors=$((errors + 1))
 }
 
-root_version="$(jq -r '.version' package.json)"
-echo "package.json (root): $root_version"
-[ "$root_version" = "$expected" ] || {
-  echo "❌ package.json (root) mismatch"
-  errors=$((errors + 1))
-}
+# Root package.json is the pnpm workspace marker (private, not published). Not
+# part of any registry release; skipped intentionally.
 
 wasm_version="$(jq -r '.version' crates/kreuzberg-wasm/package.json)"
 echo "crates/kreuzberg-wasm/package.json: $wasm_version"
@@ -42,8 +45,8 @@ echo "crates/kreuzberg-node/package.json: $node_version"
 
 python_version="$(grep '^version' packages/python/pyproject.toml | head -1 | cut -d'"' -f2 || true)"
 echo "packages/python/pyproject.toml: $python_version"
-[ "$python_version" = "$expected" ] || {
-  echo "❌ Python pyproject.toml mismatch"
+[ "$python_version" = "$expected_python" ] || {
+  echo "❌ Python pyproject.toml mismatch (expected $expected_python, got $python_version)"
   errors=$((errors + 1))
 }
 
@@ -51,8 +54,8 @@ ruby_version_file="$(find packages/ruby \( -path 'packages/ruby/lib/*/version.rb
 if [ -n "$ruby_version_file" ]; then
   ruby_version="$(grep "VERSION =" "$ruby_version_file" | sed -E 's/.*VERSION[[:space:]]*=[[:space:]]*["'\''"]([^"'\'']+)["'\''"].*/\1/')"
   echo "$ruby_version_file: $ruby_version"
-  [ "$ruby_version" = "$expected" ] || {
-    echo "❌ Ruby version.rb mismatch"
+  [ "$ruby_version" = "$expected_ruby" ] || {
+    echo "❌ Ruby version.rb mismatch (expected $expected_ruby, got $ruby_version)"
     errors=$((errors + 1))
   }
 else
