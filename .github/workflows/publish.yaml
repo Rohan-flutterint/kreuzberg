@@ -991,7 +991,8 @@ jobs:
         run: Remove-Item -Recurse -Force crates/kreuzberg-node\npm -ErrorAction SilentlyContinue
 
       - name: Create npm package structure
-        run: pnpm --filter "{./crates/kreuzberg-node}" exec napi create-npm-dirs
+        shell: bash
+        run: pnpm --filter '{./crates/kreuzberg-node}' exec napi create-npm-dirs
 
       - name: Build native module
         if: runner.os != 'Windows'
@@ -2820,6 +2821,7 @@ jobs:
 
       - name: Package native libraries (NIF 2.16)
         shell: bash
+        working-directory: packages/elixir/native/kreuzberg_nif
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           TARGET="${{ matrix.settings.target }}"
@@ -2838,7 +2840,7 @@ jobs:
             LIB_NAME="libkreuzberg_nif.so"
           fi
 
-          mkdir -p dist/elixir
+          mkdir -p "${GITHUB_WORKSPACE}/dist/elixir"
           ARTIFACT_NAME="libkreuzberg_nif-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
           TARBALL="${ARTIFACT_NAME}.tar.gz"
 
@@ -2860,11 +2862,12 @@ jobs:
           cp "$LIB_PATH" "${ARTIFACT_NAME}"
 
           # Create tarball
-          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          tar -czf "${GITHUB_WORKSPACE}/dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
           echo "Created: dist/elixir/${TARBALL}"
 
       - name: Package native libraries (NIF 2.17)
         shell: bash
+        working-directory: packages/elixir/native/kreuzberg_nif
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           TARGET="${{ matrix.settings.target }}"
@@ -2901,7 +2904,7 @@ jobs:
           cp "$LIB_PATH" "${ARTIFACT_NAME}"
 
           # Create tarball
-          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          tar -czf "${GITHUB_WORKSPACE}/dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
           echo "Created: dist/elixir/${TARBALL}"
 
       - name: Upload artifacts
