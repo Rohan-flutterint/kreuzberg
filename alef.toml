@@ -1018,6 +1018,13 @@ exclude_types = [
     # PooledString has methods incompatible with ext-php-rs (buffer_mut, deref_mut, fmt(f))
     # that trigger E0716/E0596/E0507 in the #[php_impl] macro expansion.
     "PooledString",
+    # Tagged data enums whose flat-PHP-class From<core> impls call .into() on PathBuf,
+    # usize, TableGrid, Vec<(String,String)>, [(u32,u32);4] fields that don't have the
+    # required Into<String>/Into<i64> implementations. Tracked upstream in alef-backend-php.
+    "ChunkSizing",
+    "EmbeddingModelType",
+    "NodeContent",
+    "OcrBoundingGeometry",
 ]
 
 [r]

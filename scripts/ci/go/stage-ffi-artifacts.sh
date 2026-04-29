@@ -44,9 +44,22 @@ shopt -u nullglob
 cp crates/kreuzberg-ffi/include/kreuzberg.h "${STAGING_DIR}/include/"
 echo "✓ Staged header: kreuzberg.h"
 
-# Stage pkg-config file
-cp crates/kreuzberg-ffi/kreuzberg-ffi-install.pc "${STAGING_DIR}/share/pkgconfig/kreuzberg-ffi.pc"
-echo "✓ Staged pkg-config: kreuzberg-ffi.pc"
+# Stage pkg-config file (generated inline — the .pc carries the version and is gitignored).
+ffi_version="$(grep -m1 '^version' crates/kreuzberg-ffi/Cargo.toml | cut -d '"' -f2)"
+cat > "${STAGING_DIR}/share/pkgconfig/kreuzberg-ffi.pc" <<EOF
+prefix=/usr/local
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: kreuzberg-ffi
+Description: C FFI bindings for Kreuzberg document intelligence library
+Version: ${ffi_version}
+URL: https://kreuzberg.dev
+Libs: -L\${libdir} -lkreuzberg_ffi
+Cflags: -I\${includedir}
+EOF
+echo "✓ Staged pkg-config: kreuzberg-ffi.pc (version=${ffi_version})"
 
 echo ""
 echo "✓ FFI artifacts staged successfully to ${STAGING_DIR}"

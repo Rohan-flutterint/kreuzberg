@@ -47,9 +47,23 @@ if (Test-Path "$TargetDir\pdfium.dll") {
 }
 
 # Copy header
-Copy-Item "crates\kreuzberg-ffi\kreuzberg.h" "$StagingDir\include\"
+Copy-Item "crates\kreuzberg-ffi\include\kreuzberg.h" "$StagingDir\include\"
 
-# Copy pkg-config file
-Copy-Item "crates\kreuzberg-ffi\kreuzberg-ffi-install.pc" "$StagingDir\share\pkgconfig\kreuzberg-ffi.pc"
+# Generate pkg-config file inline (the .pc is gitignored because it carries the version).
+$cargoToml = Get-Content "crates\kreuzberg-ffi\Cargo.toml"
+$ffiVersion = ($cargoToml | Select-String '^version').Line.Split('"')[1]
+@"
+prefix=/usr/local
+exec_prefix=`${prefix}
+libdir=`${exec_prefix}/lib
+includedir=`${prefix}/include
+
+Name: kreuzberg-ffi
+Description: C FFI bindings for Kreuzberg document intelligence library
+Version: $ffiVersion
+URL: https://kreuzberg.dev
+Libs: -L`${libdir} -lkreuzberg_ffi
+Cflags: -I`${includedir}
+"@ | Set-Content "$StagingDir\share\pkgconfig\kreuzberg-ffi.pc"
 
 Write-Host "✓ FFI artifacts staged successfully"
