@@ -140,9 +140,9 @@ repos:
         args: ["-x"]
       - id: clang-format
         args: ["--style=file"]
-        files: (^crates/kreuzberg-ffi/tests/c/|^tools/benchmark-harness/scripts/.*\.c$)
+        files: ^crates/kreuzberg-ffi/tests/c/
       - id: clang-tidy
-        files: (^crates/kreuzberg-ffi/tests/c/|^tools/benchmark-harness/scripts/.*\.c$)
+        files: ^crates/kreuzberg-ffi/tests/c/
       - id: checkstyle
         args:
           [
@@ -158,22 +158,25 @@ repos:
         files: ^(lib|src|kreuzberg|tools)/.*\.py$
         exclude: "e2e/|tests/|scripts/"
       - id: go-fmt
+        exclude: ^(e2e/|test_apps/|tools/)
       - id: golangci-lint
+        exclude: ^(e2e/|test_apps/|tools/)
       - id: govulncheck
+        exclude: ^(e2e/|test_apps/|tools/)
       - id: rubocop
-        files: \.rb$
+        files: ^packages/ruby/.*\.rb$
       - id: rubocop-lint
-        files: \.(rb|rbs)$
+        files: ^packages/ruby/.*\.(rb|rbs)$
       - id: steep
-        files: \.(rb|rbs)$
+        files: ^packages/ruby/.*\.(rb|rbs)$
       - id: dotnet-format
-        files: \.cs$
+        files: ^packages/csharp/.*\.cs$
       - id: dotnet-format-check
-        files: \.cs$
+        files: ^packages/csharp/.*\.cs$
       - id: php-cs-fixer
-        files: \.php$
+        files: ^packages/php/.*\.php$
       - id: phpstan
-        files: \.php$
+        files: ^packages/php/.*\.php$
       - id: mix-format
         files: ^packages/elixir/
       - id: mix-credo
@@ -207,13 +210,14 @@ repos:
       - id: zig-build-check
         files: ^packages/zig/.*\.zig$
       - id: helm-lint
-        files: ^charts/
+        files: ^charts/.*/(Chart\.yaml|templates/.+\.ya?ml)$
       - id: kubeconform
         args: ["-strict", "-summary"]
-        files: ^charts/
+        files: ^charts/.*/templates/.+\.ya?ml$
+        exclude: ^charts/.*/(values|Chart)\.ya?ml$
       - id: textlint
-        files: ^docs/.*\.md$
-        exclude: ^docs/reference/(api-|configuration\.md|errors\.md|types\.md)
+        files: ^docs/[^/]+/[^/]+\.md$
+        exclude: ^docs/(reference/|api-|snippets/|migration/)
 
   # Alef: verify bindings and sync versions
   - repo: https://github.com/kreuzberg-dev/alef
