@@ -1128,7 +1128,7 @@ cmake_config = true
 [crates.e2e]
 fixtures = "fixtures"
 output = "e2e"
-languages = ["python", "rust", "node", "go", "ruby", "elixir", "wasm", "java", "csharp", "php", "r"]
+languages = ["python", "rust", "node", "go", "ruby", "elixir", "wasm", "java", "csharp", "php", "r", "dart", "gleam", "kotlin", "swift", "zig"]
 fields_optional = [
   "metadata.format",
   "metadata.format.excel",

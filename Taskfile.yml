@@ -219,18 +219,18 @@ tasks:
   e2e:build:
     desc: "Build all language bindings used by e2e suites (release)"
     cmds:
-      - alef build --release --lang python,node,ruby,php,ffi,go,java,csharp,elixir,wasm,r
+      - alef build --release --lang python,node,ruby,php,ffi,go,java,csharp,elixir,wasm,r,dart,gleam,kotlin,swift,zig
 
   e2e:run:
     desc: "Run all e2e test suites across all languages"
     cmds:
-      - alef test --e2e --lang rust,python,node,ruby,php,go,java,csharp,elixir,wasm,r
+      - alef test --e2e --lang rust,python,node,ruby,php,go,java,csharp,elixir,wasm,r,dart,gleam,kotlin,swift,zig
 
   e2e:all:
     desc: "Build all bindings + run all e2e tests (single command)"
     cmds:
-      - alef build --release --lang python,node,ruby,php,ffi,go,java,csharp,elixir,wasm,r
-      - alef test --e2e --lang rust,python,node,ruby,php,go,java,csharp,elixir,wasm,r
+      - alef build --release --lang python,node,ruby,php,ffi,go,java,csharp,elixir,wasm,r,dart,gleam,kotlin,swift,zig
+      - alef test --e2e --lang rust,python,node,ruby,php,go,java,csharp,elixir,wasm,r,dart,gleam,kotlin,swift,zig
 
   e2e:test:
     desc: "Run E2E tests for all languages (alias for e2e:run)"
@@ -291,6 +291,31 @@ tasks:
     desc: "Run R e2e tests"
     cmds:
       - alef test --e2e --lang r
+
+  dart:e2e:
+    desc: "Run Dart e2e tests"
+    cmds:
+      - alef test --e2e --lang dart
+
+  gleam:e2e:
+    desc: "Run Gleam e2e tests"
+    cmds:
+      - alef test --e2e --lang gleam
+
+  kotlin:e2e:
+    desc: "Run Kotlin e2e tests"
+    cmds:
+      - alef test --e2e --lang kotlin
+
+  swift:e2e:
+    desc: "Run Swift e2e tests"
+    cmds:
+      - alef test --e2e --lang swift
+
+  zig:e2e:
+    desc: "Run Zig e2e tests"
+    cmds:
+      - alef test --e2e --lang zig
 
   # === Publish ===
   publish:validate:
