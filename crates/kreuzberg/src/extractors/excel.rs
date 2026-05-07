@@ -144,7 +144,11 @@ impl ExcelExtractor {
         let excel_metadata = ExcelMetadata {
             sheet_count: Some(sheet_count),
             sheet_names: Some(sheet_names),
-            custom_properties: if custom_properties.is_empty() { None } else { Some(custom_properties) },
+            custom_properties: if custom_properties.is_empty() {
+                None
+            } else {
+                Some(custom_properties)
+            },
         };
 
         doc.metadata = Metadata {

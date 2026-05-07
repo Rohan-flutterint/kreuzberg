@@ -868,8 +868,9 @@ via a discriminated union, and additional custom fields from postprocessors.
 | `tags` | `list[str] | None` | `[]` | Document tags (from frontmatter). |
 | `document_version` | `str | None` | `None` | Document version string (from frontmatter). |
 | `abstract_text` | `str | None` | `None` | Abstract or summary text (from frontmatter). |
-| `output_format` | `str | None` | `None` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
-| `additional` | `dict[str, dict[str, Any]]` | `{}` | Additional custom fields from postprocessors. Serialized as a nested `"additional"` object (not flattened at root level). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+| `output_format` | `str | None` | `None` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. |
+| `extraction_method` | `str | None` | `None` | Method used to extract text (e.g., "native", "ocr", "mixed", "native_ole"). |
+| `custom` | `dict[str, dict[str, Any]]` | `{}` | Custom fields for plugin-injected and format-specific dynamic data (e.g., OCR backend metadata, org-mode directives). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
 
 ---
 
@@ -884,6 +885,7 @@ discriminant. Sheet count and sheet names are stored inside this struct.
 |-------|------|---------|-------------|
 | `sheet_count` | `int | None` | `None` | Number of sheets in the workbook. |
 | `sheet_names` | `list[str] | None` | `[]` | Names of all sheets in the workbook. |
+| `custom_properties` | `dict[str, dict[str, Any]] | None` | `{}` | Custom office properties from docProps/custom.xml |
 
 ---
 
@@ -902,6 +904,19 @@ Includes sender/recipient information, message ID, and attachment list.
 | `bcc_emails` | `list[str]` | `[]` | BCC recipients |
 | `message_id` | `str | None` | `None` | Message-ID header value |
 | `attachments` | `list[str]` | `[]` | List of attachment filenames |
+| `extra_headers` | `dict[str, str] | None` | `{}` | Non-standard email headers as key-value pairs |
+
+---
+
+### ArchiveFileEntry
+
+A single entry in an archive (file or directory).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `str` | — | File path |
+| `size` | `int` | — | Size in bytes |
+| `is_dir` | `bool` | — | Whether dir |
 
 ---
 
@@ -915,7 +930,7 @@ Extracted from compressed archive files containing file lists and size informati
 |-------|------|---------|-------------|
 | `format` | `str` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
 | `file_count` | `int` | — | Total number of files in the archive |
-| `file_list` | `list[str]` | `[]` | List of file paths within the archive |
+| `entries` | `list[ArchiveFileEntry]` | `[]` | Typed entries with path, size, and is_dir fields |
 | `total_size` | `int` | — | Total uncompressed size in bytes |
 | `compressed_size` | `int | None` | `None` | Compressed size in bytes (if available) |
 
@@ -1008,6 +1023,7 @@ Extracted from PPTX files containing slide counts and presentation details.
 | `slide_names` | `list[str]` | `[]` | Names of slides (if available) |
 | `image_count` | `int | None` | `None` | Number of embedded images |
 | `table_count` | `int | None` | `None` | Number of tables |
+| `custom_properties` | `dict[str, dict[str, Any]] | None` | `{}` | Custom office properties from docProps/custom.xml |
 
 ---
 
@@ -1023,6 +1039,18 @@ Integrates with `office_metadata` module for core/app/custom properties.
 | `core_properties` | `dict[str, Any] | None` | `None` | Core properties from docProps/core.xml (Dublin Core metadata) Contains title, creator, subject, keywords, dates, etc. Shared format across DOCX/PPTX/XLSX documents. |
 | `app_properties` | `dict[str, Any] | None` | `None` | Application properties from docProps/app.xml (Word-specific statistics) Contains word count, page count, paragraph count, editing time, etc. DOCX-specific variant of Office application properties. |
 | `custom_properties` | `dict[str, dict[str, Any]] | None` | `{}` | Custom properties from docProps/custom.xml (user-defined properties) Contains key-value pairs defined by users or applications. Values can be strings, numbers, booleans, or dates. |
+
+---
+
+### StructuredMetadata
+
+JSON/YAML/TOML structured data metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data_format` | `str` | — | Detected data format: "json", "yaml", or "toml" |
+| `field_count` | `int` | — | Number of top-level fields |
+| `custom_fields` | `dict[str, dict[str, Any]] | None` | `{}` | Pass-through of custom fields not mapped to standard metadata |
 
 ---
 
@@ -1051,6 +1079,7 @@ BibTeX bibliography metadata.
 | `authors` | `list[str]` | `[]` | Authors |
 | `year_range` | `YearRange | None` | `None` | Year range (year range) |
 | `entry_types` | `dict[str, int] | None` | `{}` | Entry types |
+| `entries` | `list[dict[str, Any]] | None` | `[]` | Raw BibTeX entry data (author, title, year, etc. per entry) |
 
 ---
 

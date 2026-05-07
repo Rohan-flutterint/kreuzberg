@@ -596,7 +596,7 @@ public struct OcrBackend {
 ///         let word_count = result.content.split_whitespace().count();
 ///
 ///         // Add to metadata
-///         result.metadata.additional.insert("word_count".to_string().into(), serde_json::json!(word_count));
+///         result.metadata.custom.insert("word_count".to_string().into(), serde_json::json!(word_count));
 ///
 ///         Ok(())
 ///     }
@@ -937,6 +937,9 @@ public typealias ExcelMetadata = RustBridge.ExcelMetadata
 /// Includes sender/recipient information, message ID, and attachment list.
 public typealias EmailMetadata = RustBridge.EmailMetadata
 
+/// A single entry in an archive (file or directory).
+public typealias ArchiveFileEntry = RustBridge.ArchiveFileEntry
+
 /// Archive (ZIP/TAR/7Z) metadata.
 ///
 /// Extracted from compressed archive files containing file lists and size information.
@@ -989,6 +992,9 @@ public typealias PptxMetadata = RustBridge.PptxMetadata
 /// Extracted from DOCX files using shared Office Open XML metadata extraction.
 /// Integrates with `office_metadata` module for core/app/custom properties.
 public typealias DocxMetadata = RustBridge.DocxMetadata
+
+/// JSON/YAML/TOML structured data metadata.
+public typealias StructuredMetadata = RustBridge.StructuredMetadata
 
 /// CSV/TSV file metadata.
 public typealias CsvMetadata = RustBridge.CsvMetadata
@@ -1503,20 +1509,20 @@ public typealias LayoutClass = RustBridge.LayoutClass
 /// - `UnsupportedFormat` - Unsupported MIME type or file format
 /// - `Other` - Catch-all for uncommon errors
 public enum KreuzbergError: Error {
-    case io(message: String, field0: String)
-    case parsing(message: String, source: String)
-    case ocr(message: String, source: String)
-    case validation(message: String, source: String)
-    case cache(message: String, source: String)
-    case imageProcessing(message: String, source: String)
-    case serialization(message: String, source: String)
-    case missingDependency(message: String, field0: String)
-    case plugin(message: String, pluginName: String)
-    case lockPoisoned(message: String, field0: String)
-    case unsupportedFormat(message: String, field0: String)
-    case embedding(message: String, source: String)
-    case timeout(message: String, elapsedMs: UInt64, limitMs: UInt64)
-    case cancelled(message: String)
-    case security(message: String, source: String)
-    case other(message: String, field0: String)
+  case io(message: String, field0: String)
+  case parsing(message: String, source: String)
+  case ocr(message: String, source: String)
+  case validation(message: String, source: String)
+  case cache(message: String, source: String)
+  case imageProcessing(message: String, source: String)
+  case serialization(message: String, source: String)
+  case missingDependency(message: String, field0: String)
+  case plugin(message: String, pluginName: String)
+  case lockPoisoned(message: String, field0: String)
+  case unsupportedFormat(message: String, field0: String)
+  case embedding(message: String, source: String)
+  case timeout(message: String, elapsedMs: UInt64, limitMs: UInt64)
+  case cancelled(message: String)
+  case security(message: String, source: String)
+  case other(message: String, field0: String)
 }

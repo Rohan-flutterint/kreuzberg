@@ -1147,10 +1147,7 @@ mod tests {
         );
 
         // Check author details in custom metadata
-        let details = metadata
-            .custom
-            .get("author_details")
-            .expect("expected author_details");
+        let details = metadata.custom.get("author_details").expect("expected author_details");
         assert!(details.is_array());
         let arr = details.as_array().expect("author_details should be an array");
         assert_eq!(arr.len(), 1);

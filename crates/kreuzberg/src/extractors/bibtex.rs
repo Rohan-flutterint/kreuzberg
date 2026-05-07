@@ -604,10 +604,7 @@ Some random text that's not valid BibTeX"#;
             crate::types::FormatMetadata::Bibtex(m) => m,
             _ => panic!("Expected Bibtex format metadata"),
         };
-        let entries_array = bibtex_meta
-            .entries
-            .as_ref()
-            .expect("entries should be present");
+        let entries_array = bibtex_meta.entries.as_ref().expect("entries should be present");
         assert_eq!(entries_array.len(), 1);
 
         let entry = &entries_array[0];

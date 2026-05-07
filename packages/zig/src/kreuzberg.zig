@@ -49,7 +49,7 @@ inline fn _first_error(comptime E: type) E {
 /// - `LockPoisoned` - Mutex/RwLock poisoning (should not happen in normal operation)
 /// - `UnsupportedFormat` - Unsupported MIME type or file format
 /// - `Other` - Catch-all for uncommon errors
-pub const KreuzbergError = error {
+pub const KreuzbergError = error{
     Io,
     Parsing,
     Ocr,
@@ -489,8 +489,7 @@ pub const StructuredDataResult = struct {
     text_fields: []const [:0]const u8,
 };
 
-pub const StreamReader = struct {
-};
+pub const StreamReader = struct {};
 
 /// Result of OCR extraction from an image with optional page tracking.
 pub const ImageOcrResult = struct {
@@ -616,8 +615,7 @@ pub const PptxAppProperties = struct {
 ///
 /// Maps property names to their values. Values are converted to JSON types
 /// based on the VT (Variant Type) specified in the XML.
-pub const CustomProperties = struct {
-};
+pub const CustomProperties = struct {};
 
 /// OpenDocument metadata from meta.xml
 ///
@@ -658,8 +656,7 @@ pub const OdtProperties = struct {
 /// # MIME Type Validation
 ///
 /// The `mime_type` parameter is guaranteed to be already validated.
-pub const SyncExtractor = struct {
-};
+pub const SyncExtractor = struct {};
 
 /// Configuration for security limits across extractors.
 ///
@@ -678,8 +675,7 @@ pub const SecurityLimits = struct {
 };
 
 /// Helper struct for validating ZIP archives for security issues.
-pub const ZipBombValidator = struct {
-};
+pub const ZipBombValidator = struct {};
 
 /// Trait for in-process embedding backend plugins.
 ///
@@ -726,8 +722,7 @@ pub const ZipBombValidator = struct {
 /// or `tokio.runtime.Builder.new_current_thread()`) must use
 /// `embed_texts_async` instead, which awaits directly without
 /// `block_in_place`.
-pub const EmbeddingBackend = struct {
-};
+pub const EmbeddingBackend = struct {};
 
 /// Trait for document extractor plugins.
 ///
@@ -753,8 +748,7 @@ pub const EmbeddingBackend = struct {
 /// # Thread Safety
 ///
 /// Extractors must be thread-safe (`Send + Sync`) to support concurrent extraction.
-pub const DocumentExtractor = struct {
-};
+pub const DocumentExtractor = struct {};
 
 /// Trait for OCR backend plugins.
 ///
@@ -766,8 +760,7 @@ pub const DocumentExtractor = struct {
 /// # Thread Safety
 ///
 /// OCR backends must be thread-safe (`Send + Sync`) to support concurrent processing.
-pub const OcrBackend = struct {
-};
+pub const OcrBackend = struct {};
 
 /// Trait for post-processor plugins.
 ///
@@ -796,8 +789,7 @@ pub const OcrBackend = struct {
 /// # Thread Safety
 ///
 /// Post-processors must be thread-safe (`Send + Sync`).
-pub const PostProcessor = struct {
-};
+pub const PostProcessor = struct {};
 
 /// Base trait that all plugins must implement.
 ///
@@ -807,8 +799,7 @@ pub const PostProcessor = struct {
 /// # Thread Safety
 ///
 /// All plugins must be `Send + Sync` to support concurrent usage across threads.
-pub const Plugin = struct {
-};
+pub const Plugin = struct {};
 
 /// Trait for validator plugins.
 ///
@@ -834,8 +825,7 @@ pub const Plugin = struct {
 /// # Thread Safety
 ///
 /// Validators must be thread-safe (`Send + Sync`).
-pub const Validator = struct {
-};
+pub const Validator = struct {};
 
 pub const TokenReductionConfig = struct {
     level: ReductionLevel,
@@ -1355,7 +1345,8 @@ pub const Metadata = struct {
     document_version: ?[:0]const u8,
     abstract_text: ?[:0]const u8,
     output_format: ?[:0]const u8,
-    additional: std.StringHashMap([:0]const u8),
+    extraction_method: ?[:0]const u8,
+    custom: std.StringHashMap([:0]const u8),
 };
 
 /// Excel/spreadsheet format metadata.
@@ -1365,6 +1356,7 @@ pub const Metadata = struct {
 pub const ExcelMetadata = struct {
     sheet_count: ?u64,
     sheet_names: ?[]const [:0]const u8,
+    custom_properties: ?std.StringHashMap([:0]const u8),
 };
 
 /// Email metadata extracted from .eml and .msg files.
@@ -1378,6 +1370,14 @@ pub const EmailMetadata = struct {
     bcc_emails: []const [:0]const u8,
     message_id: ?[:0]const u8,
     attachments: []const [:0]const u8,
+    extra_headers: ?std.StringHashMap([:0]const u8),
+};
+
+/// A single entry in an archive (file or directory).
+pub const ArchiveFileEntry = struct {
+    path: [:0]const u8,
+    size: u64,
+    is_dir: bool,
 };
 
 /// Archive (ZIP/TAR/7Z) metadata.
@@ -1386,7 +1386,7 @@ pub const EmailMetadata = struct {
 pub const ArchiveMetadata = struct {
     format: [:0]const u8,
     file_count: u64,
-    file_list: []const [:0]const u8,
+    entries: []const ArchiveFileEntry,
     total_size: u64,
     compressed_size: ?u64,
 };
@@ -1496,6 +1496,7 @@ pub const PptxMetadata = struct {
     slide_names: []const [:0]const u8,
     image_count: ?u64,
     table_count: ?u64,
+    custom_properties: ?std.StringHashMap([:0]const u8),
 };
 
 /// Word document metadata.
@@ -1506,6 +1507,13 @@ pub const DocxMetadata = struct {
     core_properties: ?[:0]const u8,
     app_properties: ?[:0]const u8,
     custom_properties: ?std.StringHashMap([:0]const u8),
+};
+
+/// JSON/YAML/TOML structured data metadata.
+pub const StructuredMetadata = struct {
+    data_format: [:0]const u8,
+    field_count: u64,
+    custom_fields: ?std.StringHashMap([:0]const u8),
 };
 
 /// CSV/TSV file metadata.
@@ -1524,6 +1532,7 @@ pub const BibtexMetadata = struct {
     authors: []const [:0]const u8,
     year_range: ?YearRange,
     entry_types: ?std.StringHashMap(u64),
+    entries: ?[]const [:0]const u8,
 };
 
 /// Citation file metadata (RIS, PubMed, EndNote).
@@ -1762,27 +1771,22 @@ pub const Uri = struct {
 ///
 /// Implementing this trait allows a type to be used with `Pool<T>`.
 /// The `reset()` method should clear the object's state for reuse.
-pub const Recyclable = struct {
-};
+pub const Recyclable = struct {};
 
 /// Convenience type alias for a pooled String.
-pub const StringBufferPool = struct {
-};
+pub const StringBufferPool = struct {};
 
 /// Convenience type alias for a pooled Vec<u8>.
-pub const ByteBufferPool = struct {
-};
+pub const ByteBufferPool = struct {};
 
 /// A `tower.Layer` that wraps each extraction in a semantic tracing span.
-pub const TracingLayer = struct {
-};
+pub const TracingLayer = struct {};
 
 /// OpenAPI documentation structure.
 ///
 /// Defines all endpoints, request/response schemas, and examples
 /// for the Kreuzberg document extraction API.
-pub const ApiDoc = struct {
-};
+pub const ApiDoc = struct {};
 
 /// Server information response.
 pub const InfoResponse = struct {
@@ -1791,8 +1795,7 @@ pub const InfoResponse = struct {
 };
 
 /// Extraction response (list of results).
-pub const ExtractResponse = struct {
-};
+pub const ExtractResponse = struct {};
 
 /// Embedding request for generating embeddings from text.
 pub const EmbedRequest = struct {
@@ -2000,8 +2003,7 @@ pub const RecognizedTable = struct {
 };
 
 /// Manages tessdata file downloading, caching, and manifest generation.
-pub const TessdataManager = struct {
-};
+pub const TessdataManager = struct {};
 
 /// Configuration for PaddleOCR backend.
 ///
@@ -2114,8 +2116,7 @@ pub const CommonPdfMetadata = struct {
 /// Result type for unified PDF text and metadata extraction.
 ///
 /// Contains text, optional page boundaries, optional per-page content, and metadata.
-pub const PdfUnifiedExtractionResult = struct {
-};
+pub const PdfUnifiedExtractionResult = struct {};
 
 /// ONNX Runtime execution provider type.
 ///
@@ -2509,6 +2510,7 @@ pub const FormatMetadata = union(enum) {
     html: HtmlMetadata,
     ocr: OcrMetadata,
     csv: CsvMetadata,
+    structured: StructuredMetadata,
     bibtex: BibtexMetadata,
     citation: CitationMetadata,
     fiction_book: FictionBookMetadata,
@@ -2678,12 +2680,16 @@ pub const LayoutClass = enum {
 ///
 /// This function is only available with the `tokio-runtime` feature. For WASM targets,
 /// use a truly synchronous extraction approach instead.
-pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: ExtractionConfig) (KreuzbergError||error{OutOfMemory})!ExtractionResult {
+pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: ExtractionConfig) (KreuzbergError || error{OutOfMemory})!ExtractionResult {
     const path_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{path},
+        std.heap.c_allocator,
+        "{s}",
+        .{path},
     );
     const mime_type_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{mime_type},
+        std.heap.c_allocator,
+        "{s}",
+        .{mime_type},
     );
     const _result = c.kreuzberg_extract_file_sync(path_z, mime_type_z, config);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2701,9 +2707,11 @@ pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: Extra
 ///
 /// With the `tokio-runtime` feature, this blocks the current thread using the global
 /// Tokio runtime. Without it (WASM), this calls a truly synchronous implementation.
-pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: ExtractionConfig) (KreuzbergError||error{OutOfMemory})!ExtractionResult {
+pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: ExtractionConfig) (KreuzbergError || error{OutOfMemory})!ExtractionResult {
     const mime_type_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{mime_type},
+        std.heap.c_allocator,
+        "{s}",
+        .{mime_type},
     );
     const _result = c.kreuzberg_extract_bytes_sync(content.ptr, content.len, mime_type_z, config);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2717,10 +2725,12 @@ pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: Ex
 ///
 /// Uses the global Tokio runtime for optimal performance.
 /// Only available with `tokio-runtime` (WASM has no filesystem).
-pub fn batch_extract_files_sync(items: []const u8, config: ExtractionConfig) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn batch_extract_files_sync(items: []const u8, config: ExtractionConfig) (KreuzbergError || error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
     const items_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{items},
+        std.heap.c_allocator,
+        "{s}",
+        .{items},
     );
     const _result = c.kreuzberg_batch_extract_files_sync(items_z, config);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2741,10 +2751,12 @@ pub fn batch_extract_files_sync(items: []const u8, config: ExtractionConfig) (Kr
 /// With the `tokio-runtime` feature, this blocks the current thread using the global
 /// Tokio runtime. Without it (WASM), this calls a truly synchronous implementation
 /// that iterates through items and calls `extract_bytes_sync()`.
-pub fn batch_extract_bytes_sync(items: []const u8, config: ExtractionConfig) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn batch_extract_bytes_sync(items: []const u8, config: ExtractionConfig) (KreuzbergError || error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
     const items_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{items},
+        std.heap.c_allocator,
+        "{s}",
+        .{items},
     );
     const _result = c.kreuzberg_batch_extract_bytes_sync(items_z, config);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2774,7 +2786,7 @@ pub fn batch_extract_bytes_sync(items: []const u8, config: ExtractionConfig) (Kr
 /// **Errors:**
 ///
 /// Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
-pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_detect_mime_type_from_bytes(content.ptr, content.len);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2794,9 +2806,11 @@ pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError||error{O
 /// **Returns:**
 ///
 /// A vector of file extensions (without leading dot) for the MIME type.
-pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
     const mime_type_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{mime_type},
+        std.heap.c_allocator,
+        "{s}",
+        .{mime_type},
     );
     const _result = c.kreuzberg_get_extensions_for_mime(mime_type_z);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2812,7 +2826,7 @@ pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError||error{Out
 }
 
 /// List names of all registered document extractors.
-pub fn list_document_extractors() (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn list_document_extractors() (KreuzbergError || error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_document_extractors();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2832,7 +2846,7 @@ pub fn list_document_extractors() (KreuzbergError||error{OutOfMemory})![]u8 {
 /// **Returns:**
 ///
 /// A vector of OCR backend names.
-pub fn list_ocr_backends() (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn list_ocr_backends() (KreuzbergError || error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_ocr_backends();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2853,7 +2867,7 @@ pub fn list_ocr_backends() (KreuzbergError||error{OutOfMemory})![]u8 {
 ///
 /// - `Ok(())` if all backends were cleared successfully
 /// - `Err(...)` if any shutdown method failed
-pub fn clear_ocr_backends() (KreuzbergError||error{OutOfMemory})!void {
+pub fn clear_ocr_backends() (KreuzbergError || error{OutOfMemory})!void {
     _ = c.kreuzberg_clear_ocr_backends();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2870,7 +2884,7 @@ pub fn clear_ocr_backends() (KreuzbergError||error{OutOfMemory})!void {
 ///
 /// - `Ok(Vec<String>)` - Vector of post-processor names
 /// - `Err(...)` if the registry lock is poisoned
-pub fn list_post_processors() (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn list_post_processors() (KreuzbergError || error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_post_processors();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2884,7 +2898,7 @@ pub fn list_post_processors() (KreuzbergError||error{OutOfMemory})![]u8 {
 }
 
 /// Remove all registered post-processors.
-pub fn clear_post_processors() (KreuzbergError||error{OutOfMemory})!void {
+pub fn clear_post_processors() (KreuzbergError || error{OutOfMemory})!void {
     _ = c.kreuzberg_clear_post_processors();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2893,7 +2907,7 @@ pub fn clear_post_processors() (KreuzbergError||error{OutOfMemory})!void {
 }
 
 /// List names of all registered validators.
-pub fn list_validators() (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn list_validators() (KreuzbergError || error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_validators();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2907,7 +2921,7 @@ pub fn list_validators() (KreuzbergError||error{OutOfMemory})![]u8 {
 }
 
 /// Remove all registered validators.
-pub fn clear_validators() (KreuzbergError||error{OutOfMemory})!void {
+pub fn clear_validators() (KreuzbergError || error{OutOfMemory})!void {
     _ = c.kreuzberg_clear_validators();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2921,9 +2935,11 @@ pub fn clear_validators() (KreuzbergError||error{OutOfMemory})!void {
 ///
 /// Returns an error if the PDF is invalid, the page index is out of bounds,
 /// or if the page fails to render.
-pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32, password: ?[]const u8) (KreuzbergError||error{OutOfMemory})![]const u8 {
+pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32, password: ?[]const u8) (KreuzbergError || error{OutOfMemory})![]const u8 {
     const password_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{password},
+        std.heap.c_allocator,
+        "{s}",
+        .{password},
     );
     const _result = c.kreuzberg_render_pdf_page_to_png(pdf_bytes.ptr, pdf_bytes.len, page_index, dpi, password_z);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2937,9 +2953,11 @@ pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32,
 ///
 /// Uses the file extension and optionally the file content to determine the MIME type.
 /// Set `check_exists` to `true` to verify the file exists before detection.
-pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError || error{OutOfMemory})![]u8 {
     const path_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{path},
+        std.heap.c_allocator,
+        "{s}",
+        .{path},
     );
     const _result = c.kreuzberg_detect_mime_type(path_z, check_exists);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2957,10 +2975,12 @@ pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError||e
 /// Embed a list of texts using the configured embedding model.
 ///
 /// Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-pub fn embed_texts(texts: []const u8, config: EmbeddingConfig) (KreuzbergError||error{OutOfMemory})![]u8 {
+pub fn embed_texts(texts: []const u8, config: EmbeddingConfig) (KreuzbergError || error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
     const texts_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{texts},
+        std.heap.c_allocator,
+        "{s}",
+        .{texts},
     );
     const _result = c.kreuzberg_embed_texts(texts_z, config);
     if (c.kreuzberg_last_error_code() != 0) {
@@ -2981,7 +3001,9 @@ pub fn embed_texts(texts: []const u8, config: EmbeddingConfig) (KreuzbergError||
 /// clone so the value is safe to pass across FFI boundaries.
 pub fn get_embedding_preset(name: []const u8) ?EmbeddingPreset {
     const name_z: [*:0]u8 = try std.fmt.allocPrintZ(
-        std.heap.c_allocator, "{s}", .{name},
+        std.heap.c_allocator,
+        "{s}",
+        .{name},
     );
     std.heap.c_allocator.free(name_z[0..std.mem.len(name_z)]);
     const _result = c.kreuzberg_get_embedding_preset(name_z);
@@ -3206,7 +3228,9 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
                 const self: *T = @ptrCast(@alignCast(ud));
                 const image_bytes_slice = image_bytes_ptr[0..image_bytes_len];
                 if (self.process_image(image_bytes_slice, config)) |value| {
-                    _ = value; _ = out_result; unreachable; // complex return: implement manually
+                    _ = value;
+                    _ = out_result;
+                    unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3219,7 +3243,9 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
             fn thunk(ud: ?*anyopaque, path: [*c]const u8, config: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.process_image_file(path, config)) |value| {
-                    _ = value; _ = out_result; unreachable; // complex return: implement manually
+                    _ = value;
+                    _ = out_result;
+                    unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3272,7 +3298,9 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
             fn thunk(ud: ?*anyopaque, _path: [*c]const u8, _config: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.process_document(_path, _config)) |value| {
-                    _ = value; _ = out_result; unreachable; // complex return: implement manually
+                    _ = value;
+                    _ = out_result;
+                    unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3341,7 +3369,7 @@ pub const IPostProcessor = extern struct {
     ///     let language = "en"; // Placeholder detection
     ///
     ///     // Add to metadata
-    ///     result.metadata.additional.insert("detected_language".to_string().into(), serde_json::json!(language));
+    ///     result.metadata.custom.insert("detected_language".to_string().into(), serde_json::json!(language));
     ///
     ///     Ok(())
     /// }
@@ -3616,7 +3644,7 @@ pub const IValidator = extern struct {
     ///     -> Result<()> {
     ///     // Check if quality_score exists in metadata
     ///     let score = result.metadata
-    ///         .additional
+    ///         .custom
     ///         .get("quality_score")
     ///         .and_then(|v| v.as_f64())
     ///         .unwrap_or(0.0);
@@ -3914,7 +3942,9 @@ pub fn make_embedding_backend_vtable(comptime T: type, instance: *T) IEmbeddingB
             fn thunk(ud: ?*anyopaque, texts: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.embed(texts)) |value| {
-                    _ = value; _ = out_result; unreachable; // complex return: implement manually
+                    _ = value;
+                    _ = out_result;
+                    unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code

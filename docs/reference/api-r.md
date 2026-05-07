@@ -732,6 +732,19 @@ enabled, each processable file produces its own full `ExtractionResult`.
 
 ---
 
+#### ArchiveFileEntry
+
+A single entry in an archive (file or directory).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `character` | — | File path |
+| `size` | `integer` | — | Size in bytes |
+| `is_dir` | `logical` | — | Whether dir |
+
+
+---
+
 #### ArchiveMetadata
 
 Archive (ZIP/TAR/7Z) metadata.
@@ -742,7 +755,7 @@ Extracted from compressed archive files containing file lists and size informati
 |-------|------|---------|-------------|
 | `format` | `character` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
 | `file_count` | `integer` | — | Total number of files in the archive |
-| `file_list` | `list` | `list()` | List of file paths within the archive |
+| `entries` | `list` | `list()` | Typed entries with path, size, and is_dir fields |
 | `total_size` | `integer` | — | Total uncompressed size in bytes |
 | `compressed_size` | `integer or NULL` | `NULL` | Compressed size in bytes (if available) |
 
@@ -805,6 +818,7 @@ BibTeX bibliography metadata.
 | `authors` | `list` | `list()` | Authors |
 | `year_range` | `YearRange or NULL` | `NULL` | Year range (year range) |
 | `entry_types` | `list or NULL` | `list()` | Entry types |
+| `entries` | `list or NULL` | `list()` | Raw BibTeX entry data (author, title, year, etc. per entry) |
 
 
 ---
@@ -1564,6 +1578,7 @@ Includes sender/recipient information, message ID, and attachment list.
 | `bcc_emails` | `list` | `list()` | BCC recipients |
 | `message_id` | `character or NULL` | `NULL` | Message-ID header value |
 | `attachments` | `list` | `list()` | List of attachment filenames |
+| `extra_headers` | `list or NULL` | `list()` | Non-standard email headers as key-value pairs |
 
 
 ---
@@ -1795,6 +1810,7 @@ discriminant. Sheet count and sheet names are stored inside this struct.
 |-------|------|---------|-------------|
 | `sheet_count` | `integer or NULL` | `NULL` | Number of sheets in the workbook. |
 | `sheet_names` | `list or NULL` | `list()` | Names of all sheets in the workbook. |
+| `custom_properties` | `list or NULL` | `list()` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -2694,15 +2710,16 @@ via a discriminated union, and additional custom fields from postprocessors.
 | `tags` | `list or NULL` | `list()` | Document tags (from frontmatter). |
 | `document_version` | `character or NULL` | `NULL` | Document version string (from frontmatter). |
 | `abstract_text` | `character or NULL` | `NULL` | Abstract or summary text (from frontmatter). |
-| `output_format` | `character or NULL` | `NULL` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
-| `additional` | `list` | `list()` | Additional custom fields from postprocessors. Serialized as a nested `"additional"` object (not flattened at root level). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+| `output_format` | `character or NULL` | `NULL` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. |
+| `extraction_method` | `character or NULL` | `NULL` | Method used to extract text (e.g., "native", "ocr", "mixed", "native_ole"). |
+| `custom` | `list` | `list()` | Custom fields for plugin-injected and format-specific dynamic data (e.g., OCR backend metadata, org-mode directives). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
 
 ##### Methods
 
 ###### is_empty()
 
 Returns `true` when no metadata fields, format-specific metadata, or
-additional postprocessor fields are populated.
+custom postprocessor fields are populated.
 
 **Signature:**
 
@@ -3914,6 +3931,7 @@ Extracted from PPTX files containing slide counts and presentation details.
 | `slide_names` | `list` | `list()` | Names of slides (if available) |
 | `image_count` | `integer or NULL` | `NULL` | Number of embedded images |
 | `table_count` | `integer or NULL` | `NULL` | Number of tables |
+| `custom_properties` | `list or NULL` | `list()` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -4206,6 +4224,19 @@ Response from structured extraction endpoint.
 | `structured_output` | `list` | — | Structured data conforming to the provided JSON schema |
 | `content` | `character` | — | Extracted document text content |
 | `mime_type` | `character` | — | Detected MIME type of the input file |
+
+
+---
+
+#### StructuredMetadata
+
+JSON/YAML/TOML structured data metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data_format` | `character` | — | Detected data format: "json", "yaml", or "toml" |
+| `field_count` | `integer` | — | Number of top-level fields |
+| `custom_fields` | `list or NULL` | `list()` | Pass-through of custom fields not mapped to standard metadata |
 
 
 ---
@@ -4716,7 +4747,7 @@ async fn validate(&self, result: &ExtractionResult, config: &ExtractionConfig)
     -> Result<()> {
     // Check if quality_score exists in metadata
     let score = result.metadata
-        .additional
+        .custom
         .get("quality_score")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
@@ -5406,6 +5437,7 @@ type-safe, clean metadata without nested optionals.
 | `html` | Preserve as HTML `<mark>` tags — Fields: `0`: `HtmlMetadata` |
 | `ocr` | Ocr — Fields: `0`: `OcrMetadata` |
 | `csv` | Csv format — Fields: `0`: `CsvMetadata` |
+| `structured` | Structured — Fields: `0`: `StructuredMetadata` |
 | `bibtex` | Bibtex — Fields: `0`: `BibtexMetadata` |
 | `citation` | Citation — Fields: `0`: `CitationMetadata` |
 | `fiction_book` | Fiction book — Fields: `0`: `FictionBookMetadata` |

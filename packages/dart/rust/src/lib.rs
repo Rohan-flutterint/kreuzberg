@@ -914,13 +914,15 @@ pub struct Metadata {
     pub document_version: Option<String>,
     pub abstract_text: Option<String>,
     pub output_format: Option<String>,
-    pub additional: std::collections::HashMap<String, String>,
+    pub extraction_method: Option<String>,
+    pub custom: std::collections::HashMap<String, String>,
 }
 
 #[frb(mirror(ExcelMetadata))]
 pub struct ExcelMetadata {
     pub sheet_count: Option<i64>,
     pub sheet_names: Option<Vec<String>>,
+    pub custom_properties: Option<std::collections::HashMap<String, String>>,
 }
 
 #[frb(mirror(EmailMetadata))]
@@ -932,13 +934,21 @@ pub struct EmailMetadata {
     pub bcc_emails: Vec<String>,
     pub message_id: Option<String>,
     pub attachments: Vec<String>,
+    pub extra_headers: Option<std::collections::HashMap<String, String>>,
+}
+
+#[frb(mirror(ArchiveFileEntry))]
+pub struct ArchiveFileEntry {
+    pub path: String,
+    pub size: i64,
+    pub is_dir: bool,
 }
 
 #[frb(mirror(ArchiveMetadata))]
 pub struct ArchiveMetadata {
     pub format: String,
     pub file_count: i64,
-    pub file_list: Vec<String>,
+    pub entries: Vec<ArchiveFileEntry>,
     pub total_size: i64,
     pub compressed_size: Option<i64>,
 }
@@ -1036,6 +1046,7 @@ pub struct PptxMetadata {
     pub slide_names: Vec<String>,
     pub image_count: Option<i64>,
     pub table_count: Option<i64>,
+    pub custom_properties: Option<std::collections::HashMap<String, String>>,
 }
 
 #[frb(mirror(DocxMetadata))]
@@ -1043,6 +1054,13 @@ pub struct DocxMetadata {
     pub core_properties: Option<String>,
     pub app_properties: Option<String>,
     pub custom_properties: Option<std::collections::HashMap<String, String>>,
+}
+
+#[frb(mirror(StructuredMetadata))]
+pub struct StructuredMetadata {
+    pub data_format: String,
+    pub field_count: i64,
+    pub custom_fields: Option<std::collections::HashMap<String, String>>,
 }
 
 #[frb(mirror(CsvMetadata))]
@@ -1061,6 +1079,7 @@ pub struct BibtexMetadata {
     pub authors: Vec<String>,
     pub year_range: Option<YearRange>,
     pub entry_types: Option<std::collections::HashMap<String, i64>>,
+    pub entries: Option<Vec<String>>,
 }
 
 #[frb(mirror(CitationMetadata))]
@@ -1908,6 +1927,7 @@ pub enum FormatMetadata {
     Html { field0: HtmlMetadata },
     Ocr { field0: OcrMetadata },
     Csv { field0: CsvMetadata },
+    Structured { field0: StructuredMetadata },
     Bibtex { field0: BibtexMetadata },
     Citation { field0: CitationMetadata },
     FictionBook { field0: FictionBookMetadata },

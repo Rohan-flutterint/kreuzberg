@@ -755,6 +755,19 @@ enabled, each processable file produces its own full `ExtractionResult`.
 
 ---
 
+#### ArchiveFileEntry
+
+A single entry in an archive (file or directory).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String.t()` | — | File path |
+| `size` | `integer()` | — | Size in bytes |
+| `is_dir` | `boolean()` | — | Whether dir |
+
+
+---
+
 #### ArchiveMetadata
 
 Archive (ZIP/TAR/7Z) metadata.
@@ -765,7 +778,7 @@ Extracted from compressed archive files containing file lists and size informati
 |-------|------|---------|-------------|
 | `format` | `String.t()` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
 | `file_count` | `integer()` | — | Total number of files in the archive |
-| `file_list` | `list(String.t())` | `[]` | List of file paths within the archive |
+| `entries` | `list(ArchiveFileEntry)` | `[]` | Typed entries with path, size, and is_dir fields |
 | `total_size` | `integer()` | — | Total uncompressed size in bytes |
 | `compressed_size` | `integer() | nil` | `nil` | Compressed size in bytes (if available) |
 
@@ -828,6 +841,7 @@ BibTeX bibliography metadata.
 | `authors` | `list(String.t())` | `[]` | Authors |
 | `year_range` | `YearRange | nil` | `nil` | Year range (year range) |
 | `entry_types` | `map() | nil` | `%{}` | Entry types |
+| `entries` | `list(term()) | nil` | `[]` | Raw BibTeX entry data (author, title, year, etc. per entry) |
 
 
 ---
@@ -1587,6 +1601,7 @@ Includes sender/recipient information, message ID, and attachment list.
 | `bcc_emails` | `list(String.t())` | `[]` | BCC recipients |
 | `message_id` | `String.t() | nil` | `nil` | Message-ID header value |
 | `attachments` | `list(String.t())` | `[]` | List of attachment filenames |
+| `extra_headers` | `map() | nil` | `%{}` | Non-standard email headers as key-value pairs |
 
 
 ---
@@ -1818,6 +1833,7 @@ discriminant. Sheet count and sheet names are stored inside this struct.
 |-------|------|---------|-------------|
 | `sheet_count` | `integer() | nil` | `nil` | Number of sheets in the workbook. |
 | `sheet_names` | `list(String.t()) | nil` | `[]` | Names of all sheets in the workbook. |
+| `custom_properties` | `map() | nil` | `%{}` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -2717,15 +2733,16 @@ via a discriminated union, and additional custom fields from postprocessors.
 | `tags` | `list(String.t()) | nil` | `[]` | Document tags (from frontmatter). |
 | `document_version` | `String.t() | nil` | `nil` | Document version string (from frontmatter). |
 | `abstract_text` | `String.t() | nil` | `nil` | Abstract or summary text (from frontmatter). |
-| `output_format` | `String.t() | nil` | `nil` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
-| `additional` | `map()` | `%{}` | Additional custom fields from postprocessors. Serialized as a nested `"additional"` object (not flattened at root level). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+| `output_format` | `String.t() | nil` | `nil` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. |
+| `extraction_method` | `String.t() | nil` | `nil` | Method used to extract text (e.g., "native", "ocr", "mixed", "native_ole"). |
+| `custom` | `map()` | `%{}` | Custom fields for plugin-injected and format-specific dynamic data (e.g., OCR backend metadata, org-mode directives). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
 
 ##### Functions
 
 ###### is_empty()
 
 Returns `true` when no metadata fields, format-specific metadata, or
-additional postprocessor fields are populated.
+custom postprocessor fields are populated.
 
 **Signature:**
 
@@ -3937,6 +3954,7 @@ Extracted from PPTX files containing slide counts and presentation details.
 | `slide_names` | `list(String.t())` | `[]` | Names of slides (if available) |
 | `image_count` | `integer() | nil` | `nil` | Number of embedded images |
 | `table_count` | `integer() | nil` | `nil` | Number of tables |
+| `custom_properties` | `map() | nil` | `%{}` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -4229,6 +4247,19 @@ Response from structured extraction endpoint.
 | `structured_output` | `term()` | — | Structured data conforming to the provided JSON schema |
 | `content` | `String.t()` | — | Extracted document text content |
 | `mime_type` | `String.t()` | — | Detected MIME type of the input file |
+
+
+---
+
+#### StructuredMetadata
+
+JSON/YAML/TOML structured data metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data_format` | `String.t()` | — | Detected data format: "json", "yaml", or "toml" |
+| `field_count` | `integer()` | — | Number of top-level fields |
+| `custom_fields` | `map() | nil` | `%{}` | Pass-through of custom fields not mapped to standard metadata |
 
 
 ---
@@ -4739,7 +4770,7 @@ async fn validate(&self, result: &ExtractionResult, config: &ExtractionConfig)
     -> Result<()> {
     // Check if quality_score exists in metadata
     let score = result.metadata
-        .additional
+        .custom
         .get("quality_score")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
@@ -5429,6 +5460,7 @@ type-safe, clean metadata without nested optionals.
 | `html` | Preserve as HTML `<mark>` tags — Fields: `0`: `HtmlMetadata` |
 | `ocr` | Ocr — Fields: `0`: `OcrMetadata` |
 | `csv` | Csv format — Fields: `0`: `CsvMetadata` |
+| `structured` | Structured — Fields: `0`: `StructuredMetadata` |
 | `bibtex` | Bibtex — Fields: `0`: `BibtexMetadata` |
 | `citation` | Citation — Fields: `0`: `CitationMetadata` |
 | `fiction_book` | Fiction book — Fields: `0`: `FictionBookMetadata` |

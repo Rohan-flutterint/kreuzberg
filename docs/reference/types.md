@@ -1040,6 +1040,18 @@ for specific document types (invoices, handwriting, etc.).
 
 ---
 
+#### ArchiveFileEntry
+
+A single entry in an archive (file or directory).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | File path |
+| `size` | `u64` | — | Size in bytes |
+| `is_dir` | `bool` | — | Whether dir |
+
+---
+
 #### OcrConfidence
 
 Confidence scores for an OCR element.
@@ -1300,8 +1312,9 @@ via a discriminated union, and additional custom fields from postprocessors.
 | `tags` | `Vec<String>` | `vec![]` | Document tags (from frontmatter). |
 | `document_version` | `Option<String>` | `Default::default()` | Document version string (from frontmatter). |
 | `abstract_text` | `Option<String>` | `Default::default()` | Abstract or summary text (from frontmatter). |
-| `output_format` | `Option<String>` | `Default::default()` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
-| `additional` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Additional custom fields from postprocessors. Serialized as a nested `"additional"` object (not flattened at root level). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+| `output_format` | `Option<String>` | `Default::default()` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. |
+| `extraction_method` | `Option<String>` | `Default::default()` | Method used to extract text (e.g., "native", "ocr", "mixed", "native_ole"). |
+| `custom` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Custom fields for plugin-injected and format-specific dynamic data (e.g., OCR backend metadata, org-mode directives). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
 
 ---
 
@@ -1316,6 +1329,7 @@ discriminant. Sheet count and sheet names are stored inside this struct.
 |-------|------|---------|-------------|
 | `sheet_count` | `Option<usize>` | `Default::default()` | Number of sheets in the workbook. |
 | `sheet_names` | `Vec<String>` | `vec![]` | Names of all sheets in the workbook. |
+| `custom_properties` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Custom office properties from docProps/custom.xml |
 
 ---
 
@@ -1334,6 +1348,7 @@ Includes sender/recipient information, message ID, and attachment list.
 | `bcc_emails` | `Vec<String>` | `vec![]` | BCC recipients |
 | `message_id` | `Option<String>` | `Default::default()` | Message-ID header value |
 | `attachments` | `Vec<String>` | `vec![]` | List of attachment filenames |
+| `extra_headers` | `HashMap<String, String>` | `HashMap::new()` | Non-standard email headers as key-value pairs |
 
 ---
 
@@ -1347,7 +1362,7 @@ Extracted from compressed archive files containing file lists and size informati
 |-------|------|---------|-------------|
 | `format` | `String` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
 | `file_count` | `usize` | — | Total number of files in the archive |
-| `file_list` | `Vec<String>` | `vec![]` | List of file paths within the archive |
+| `entries` | `Vec<ArchiveFileEntry>` | `vec![]` | Typed entries with path, size, and is_dir fields |
 | `total_size` | `usize` | — | Total uncompressed size in bytes |
 | `compressed_size` | `Option<usize>` | `Default::default()` | Compressed size in bytes (if available) |
 
@@ -1495,6 +1510,7 @@ Extracted from PPTX files containing slide counts and presentation details.
 | `slide_names` | `Vec<String>` | `vec![]` | Names of slides (if available) |
 | `image_count` | `Option<usize>` | `Default::default()` | Number of embedded images |
 | `table_count` | `Option<usize>` | `Default::default()` | Number of tables |
+| `custom_properties` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Custom office properties from docProps/custom.xml |
 
 ---
 
@@ -1510,6 +1526,18 @@ Integrates with `office_metadata` module for core/app/custom properties.
 | `core_properties` | `Option<serde_json::Value>` | `Default::default()` | Core properties from docProps/core.xml (Dublin Core metadata) Contains title, creator, subject, keywords, dates, etc. Shared format across DOCX/PPTX/XLSX documents. |
 | `app_properties` | `Option<serde_json::Value>` | `Default::default()` | Application properties from docProps/app.xml (Word-specific statistics) Contains word count, page count, paragraph count, editing time, etc. DOCX-specific variant of Office application properties. |
 | `custom_properties` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Custom properties from docProps/custom.xml (user-defined properties) Contains key-value pairs defined by users or applications. Values can be strings, numbers, booleans, or dates. |
+
+---
+
+#### StructuredMetadata
+
+JSON/YAML/TOML structured data metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data_format` | `String` | — | Detected data format: "json", "yaml", or "toml" |
+| `field_count` | `usize` | — | Number of top-level fields |
+| `custom_fields` | `HashMap<String, serde_json::Value>` | `HashMap::new()` | Pass-through of custom fields not mapped to standard metadata |
 
 ---
 
@@ -1538,6 +1566,7 @@ BibTeX bibliography metadata.
 | `authors` | `Vec<String>` | `vec![]` | Authors |
 | `year_range` | `Option<YearRange>` | `Default::default()` | Year range (year range) |
 | `entry_types` | `HashMap<String, usize>` | `HashMap::new()` | Entry types |
+| `entries` | `Vec<serde_json::Value>` | `vec![]` | Raw BibTeX entry data (author, title, year, etc. per entry) |
 
 ---
 

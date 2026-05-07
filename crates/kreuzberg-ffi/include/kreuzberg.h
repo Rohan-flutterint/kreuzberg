@@ -15,6 +15,7 @@ typedef struct KREUZBERGAnchorProperties KREUZBERGAnchorProperties;
 typedef struct KREUZBERGAnnotationKind KREUZBERGAnnotationKind;
 typedef struct KREUZBERGApiDoc KREUZBERGApiDoc;
 typedef struct KREUZBERGArchiveEntry KREUZBERGArchiveEntry;
+typedef struct KREUZBERGArchiveFileEntry KREUZBERGArchiveFileEntry;
 typedef struct KREUZBERGArchiveMetadata KREUZBERGArchiveMetadata;
 typedef struct KREUZBERGBBox KREUZBERGBBox;
 typedef struct KREUZBERGBatchBytesItem KREUZBERGBatchBytesItem;
@@ -196,6 +197,7 @@ typedef struct KREUZBERGStructuredDataResult KREUZBERGStructuredDataResult;
 typedef struct KREUZBERGStructuredDataType KREUZBERGStructuredDataType;
 typedef struct KREUZBERGStructuredExtractionConfig KREUZBERGStructuredExtractionConfig;
 typedef struct KREUZBERGStructuredExtractionResponse KREUZBERGStructuredExtractionResponse;
+typedef struct KREUZBERGStructuredMetadata KREUZBERGStructuredMetadata;
 typedef struct KREUZBERGStyleDefinition KREUZBERGStyleDefinition;
 typedef struct KREUZBERGSupportedFormat KREUZBERGSupportedFormat;
 typedef struct KREUZBERGSyncExtractor KREUZBERGSyncExtractor;
@@ -468,7 +470,7 @@ typedef struct KREUZBERGKreuzbergPostProcessorVTable {
    * let language = "en"; // Placeholder detection
    *
    * // Add to metadata
-   * result.metadata.additional.insert("detected_language".to_string().into(), serde_json::json!(language));
+   * result.metadata.custom.insert("detected_language".to_string().into(), serde_json::json!(language));
    *
    * Ok(())
    * }
@@ -652,7 +654,7 @@ typedef struct KREUZBERGKreuzbergValidatorVTable {
    * -> Result<()> {
    * // Check if quality_score exists in metadata
    * let score = result.metadata
-   * .additional
+   * .custom
    * .get("quality_score")
    * .and_then(|v| v.as_f64())
    * .unwrap_or(0.0);
@@ -6613,15 +6615,22 @@ char *kreuzberg_metadata_abstract_text(const KREUZBERGMetadata *ptr);
 char *kreuzberg_metadata_output_format(const KREUZBERGMetadata *ptr);
 
 /**
- * Get the `additional` field from a `Metadata`.
+ * Get the `extraction_method` field from a `Metadata`.
  * # Safety
  * Pointer must be a valid handle returned by this library.
  */
-char *kreuzberg_metadata_additional(const KREUZBERGMetadata *ptr);
+char *kreuzberg_metadata_extraction_method(const KREUZBERGMetadata *ptr);
+
+/**
+ * Get the `custom` field from a `Metadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_metadata_custom(const KREUZBERGMetadata *ptr);
 
 /**
  * Returns `true` when no metadata fields, format-specific metadata, or
- * additional postprocessor fields are populated.
+ * custom postprocessor fields are populated.
  * # Safety
  * Caller must ensure all pointer arguments are valid or null.
  * Returned pointers must be freed with the appropriate free function.
@@ -6664,6 +6673,13 @@ uintptr_t kreuzberg_excel_metadata_sheet_count(const KREUZBERGExcelMetadata *ptr
  * Pointer must be a valid handle returned by this library.
  */
 char *kreuzberg_excel_metadata_sheet_names(const KREUZBERGExcelMetadata *ptr);
+
+/**
+ * Get the `custom_properties` field from a `ExcelMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_excel_metadata_custom_properties(const KREUZBERGExcelMetadata *ptr);
 
 /**
  * Create a `EmailMetadata` from a JSON string. Returns null on failure.
@@ -6738,6 +6754,57 @@ char *kreuzberg_email_metadata_message_id(const KREUZBERGEmailMetadata *ptr);
 char *kreuzberg_email_metadata_attachments(const KREUZBERGEmailMetadata *ptr);
 
 /**
+ * Get the `extra_headers` field from a `EmailMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_email_metadata_extra_headers(const KREUZBERGEmailMetadata *ptr);
+
+/**
+ * Create a `ArchiveFileEntry` from a JSON string. Returns null on failure.
+ * # Safety
+ * JSON string must be valid UTF-8 and null-terminated.
+ * Returned handle must be freed with `kreuzberg_archive_file_entry_free`.
+ */
+KREUZBERGArchiveFileEntry *kreuzberg_archive_file_entry_from_json(const char *json);
+
+/**
+ * Serialize a `ArchiveFileEntry` to a JSON string. Returns null on failure.
+ * # Safety
+ * `ptr` must be a valid, non-null pointer returned by a `kreuzberg` function.
+ * The returned string must be freed with `kreuzberg_free_string`.
+ */
+char *kreuzberg_archive_file_entry_to_json(const KREUZBERGArchiveFileEntry *ptr);
+
+/**
+ * Free a `ArchiveFileEntry` handle.
+ * # Safety
+ * Pointer must have been returned by this library, or be null.
+ */
+void kreuzberg_archive_file_entry_free(KREUZBERGArchiveFileEntry *ptr);
+
+/**
+ * Get the `path` field from a `ArchiveFileEntry`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_archive_file_entry_path(const KREUZBERGArchiveFileEntry *ptr);
+
+/**
+ * Get the `size` field from a `ArchiveFileEntry`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+uint64_t kreuzberg_archive_file_entry_size(const KREUZBERGArchiveFileEntry *ptr);
+
+/**
+ * Get the `is_dir` field from a `ArchiveFileEntry`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+int32_t kreuzberg_archive_file_entry_is_dir(const KREUZBERGArchiveFileEntry *ptr);
+
+/**
  * Create a `ArchiveMetadata` from a JSON string. Returns null on failure.
  * # Safety
  * JSON string must be valid UTF-8 and null-terminated.
@@ -6768,11 +6835,11 @@ void kreuzberg_archive_metadata_free(KREUZBERGArchiveMetadata *ptr);
 uintptr_t kreuzberg_archive_metadata_file_count(const KREUZBERGArchiveMetadata *ptr);
 
 /**
- * Get the `file_list` field from a `ArchiveMetadata`.
+ * Get the `entries` field from a `ArchiveMetadata`.
  * # Safety
  * Pointer must be a valid handle returned by this library.
  */
-char *kreuzberg_archive_metadata_file_list(const KREUZBERGArchiveMetadata *ptr);
+char *kreuzberg_archive_metadata_entries(const KREUZBERGArchiveMetadata *ptr);
 
 /**
  * Get the `total_size` field from a `ArchiveMetadata`.
@@ -7376,6 +7443,13 @@ uintptr_t kreuzberg_pptx_metadata_image_count(const KREUZBERGPptxMetadata *ptr);
 uintptr_t kreuzberg_pptx_metadata_table_count(const KREUZBERGPptxMetadata *ptr);
 
 /**
+ * Get the `custom_properties` field from a `PptxMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_pptx_metadata_custom_properties(const KREUZBERGPptxMetadata *ptr);
+
+/**
  * Create a `DocxMetadata` from a JSON string. Returns null on failure.
  * # Safety
  * JSON string must be valid UTF-8 and null-terminated.
@@ -7418,6 +7492,50 @@ char *kreuzberg_docx_metadata_app_properties(const KREUZBERGDocxMetadata *ptr);
  * Pointer must be a valid handle returned by this library.
  */
 char *kreuzberg_docx_metadata_custom_properties(const KREUZBERGDocxMetadata *ptr);
+
+/**
+ * Create a `StructuredMetadata` from a JSON string. Returns null on failure.
+ * # Safety
+ * JSON string must be valid UTF-8 and null-terminated.
+ * Returned handle must be freed with `kreuzberg_structured_metadata_free`.
+ */
+KREUZBERGStructuredMetadata *kreuzberg_structured_metadata_from_json(const char *json);
+
+/**
+ * Serialize a `StructuredMetadata` to a JSON string. Returns null on failure.
+ * # Safety
+ * `ptr` must be a valid, non-null pointer returned by a `kreuzberg` function.
+ * The returned string must be freed with `kreuzberg_free_string`.
+ */
+char *kreuzberg_structured_metadata_to_json(const KREUZBERGStructuredMetadata *ptr);
+
+/**
+ * Free a `StructuredMetadata` handle.
+ * # Safety
+ * Pointer must have been returned by this library, or be null.
+ */
+void kreuzberg_structured_metadata_free(KREUZBERGStructuredMetadata *ptr);
+
+/**
+ * Get the `data_format` field from a `StructuredMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_structured_metadata_data_format(const KREUZBERGStructuredMetadata *ptr);
+
+/**
+ * Get the `field_count` field from a `StructuredMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+uintptr_t kreuzberg_structured_metadata_field_count(const KREUZBERGStructuredMetadata *ptr);
+
+/**
+ * Get the `custom_fields` field from a `StructuredMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_structured_metadata_custom_fields(const KREUZBERGStructuredMetadata *ptr);
 
 /**
  * Create a `CsvMetadata` from a JSON string. Returns null on failure.
@@ -7534,6 +7652,13 @@ KREUZBERGYearRange *kreuzberg_bibtex_metadata_year_range(const KREUZBERGBibtexMe
  * Pointer must be a valid handle returned by this library.
  */
 char *kreuzberg_bibtex_metadata_entry_types(const KREUZBERGBibtexMetadata *ptr);
+
+/**
+ * Get the `entries` field from a `BibtexMetadata`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_bibtex_metadata_entries(const KREUZBERGBibtexMetadata *ptr);
 
 /**
  * Create a `CitationMetadata` from a JSON string. Returns null on failure.

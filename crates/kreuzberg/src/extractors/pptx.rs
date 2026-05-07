@@ -270,7 +270,11 @@ impl PptxExtractor {
             })
             .collect();
 
-        pptx_metadata.custom_properties = if custom_properties.is_empty() { None } else { Some(custom_properties) };
+        pptx_metadata.custom_properties = if custom_properties.is_empty() {
+            None
+        } else {
+            Some(custom_properties)
+        };
 
         let mut doc = Self::build_internal_document(&pptx_result.content, pptx_result.slide_count as u32, budget)?;
         doc.mime_type = Cow::Owned(mime_type.to_string());

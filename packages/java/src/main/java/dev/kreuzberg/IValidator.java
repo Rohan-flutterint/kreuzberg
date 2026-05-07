@@ -3,8 +3,7 @@ package dev.kreuzberg;
 /**
  * Bridge interface for the Validator plugin system.
  *
- * Implementations are wrapped by ValidatorBridge and exposed to the native
- * runtime through Panama FFM upcall stubs.
+ * Implementations are wrapped by ValidatorBridge and exposed to the native runtime through Panama FFM upcall stubs.
  */
 public interface IValidator {
 
@@ -15,10 +14,12 @@ public interface IValidator {
     String version();
 
     /** Initialize the plugin. */
-    default void initialize() throws Exception {}
+    default void initialize() throws Exception {
+    }
 
     /** Shut down the plugin. */
-    default void shutdown() throws Exception {}
+    default void shutdown() throws Exception {
+    }
 
     /** validate. */
     void validate(ExtractionResult result, ExtractionConfig config) throws Exception;

@@ -182,7 +182,11 @@ impl SyncExtractor for EmailExtractor {
             bcc_emails: email_result.bcc_emails,
             message_id: email_result.message_id,
             attachments: attachment_names,
-            extra_headers: if extra_headers.is_empty() { None } else { Some(extra_headers) },
+            extra_headers: if extra_headers.is_empty() {
+                None
+            } else {
+                Some(extra_headers)
+            },
         };
 
         // Map from_name to standard authors field

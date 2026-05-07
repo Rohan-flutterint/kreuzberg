@@ -43,11 +43,13 @@ async fn test_extract_jsonl_metadata() {
         .await
         .expect("JSONL metadata extraction should succeed");
 
-    let structured_meta = result
-        .metadata
-        .format
-        .as_ref()
-        .and_then(|f| if let kreuzberg::FormatMetadata::Structured(s) = f { Some(s) } else { None });
+    let structured_meta = result.metadata.format.as_ref().and_then(|f| {
+        if let kreuzberg::FormatMetadata::Structured(s) = f {
+            Some(s)
+        } else {
+            None
+        }
+    });
     assert!(structured_meta.is_some(), "Metadata should have Structured format");
     assert_eq!(
         structured_meta.unwrap().data_format,

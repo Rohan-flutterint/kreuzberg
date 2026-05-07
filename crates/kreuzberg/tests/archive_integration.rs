@@ -399,11 +399,7 @@ async fn test_large_archive() {
         _ => panic!("Expected Archive metadata"),
     };
     assert_eq!(archive_meta.file_count, 100, "Should have 100 files");
-    assert_eq!(
-        archive_meta.entries.len(),
-        100,
-        "file_list should contain 100 entries"
-    );
+    assert_eq!(archive_meta.entries.len(), 100, "file_list should contain 100 entries");
 
     assert!(result.content.contains("file_0.txt"));
     assert!(result.content.contains("file_99.txt"));

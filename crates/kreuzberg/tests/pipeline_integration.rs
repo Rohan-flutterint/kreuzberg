@@ -779,10 +779,7 @@ async fn test_pipeline_metadata_added_in_early_visible_in_middle() {
         impl PostProcessor for MiddleReadingProcessor {
             async fn process(&self, result: &mut ExtractionResult, _: &ExtractionConfig) -> Result<()> {
                 if let Some(val) = result.metadata.custom.get(&Cow::Borrowed("early_key")) {
-                    result
-                        .metadata
-                        .custom
-                        .insert(Cow::Borrowed("middle_saw"), val.clone());
+                    result.metadata.custom.insert(Cow::Borrowed("middle_saw"), val.clone());
                 }
                 Ok(())
             }

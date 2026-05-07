@@ -1011,19 +1011,19 @@ EmailMetadata$from_json <- function(json) .Call("wrap__EmailMetadata__from_json"
 #' @export
 `[[.EmailMetadata` <- `$.EmailMetadata`
 
-ArchiveMetadata <- new.env(parent = emptyenv())
+ArchiveFileEntry <- new.env(parent = emptyenv())
 
-ArchiveMetadata$from_json <- function(json) .Call("wrap__ArchiveMetadata__from_json", json, PACKAGE = "kreuzberg")
+ArchiveFileEntry$from_json <- function(json) .Call("wrap__ArchiveFileEntry__from_json", json, PACKAGE = "kreuzberg")
 
 #' @export
-`$.ArchiveMetadata` <- function(self, name) {
-  func <- ArchiveMetadata[[name]]
+`$.ArchiveFileEntry` <- function(self, name) {
+  func <- ArchiveFileEntry[[name]]
   environment(func) <- environment()
   func
 }
 
 #' @export
-`[[.ArchiveMetadata` <- `$.ArchiveMetadata`
+`[[.ArchiveFileEntry` <- `$.ArchiveFileEntry`
 
 XmlMetadata <- new.env(parent = emptyenv())
 
@@ -1154,6 +1154,20 @@ DocxMetadata$from_json <- function(json) .Call("wrap__DocxMetadata__from_json", 
 
 #' @export
 `[[.DocxMetadata` <- `$.DocxMetadata`
+
+StructuredMetadata <- new.env(parent = emptyenv())
+
+StructuredMetadata$from_json <- function(json) .Call("wrap__StructuredMetadata__from_json", json, PACKAGE = "kreuzberg")
+
+#' @export
+`$.StructuredMetadata` <- function(self, name) {
+  func <- StructuredMetadata[[name]]
+  environment(func) <- environment()
+  func
+}
+
+#' @export
+`[[.StructuredMetadata` <- `$.StructuredMetadata`
 
 CsvMetadata <- new.env(parent = emptyenv())
 

@@ -92,10 +92,7 @@ impl PostProcessor for QualityProcessor {
 
 /// Check if metadata contains any important fields.
 fn should_use_metadata(metadata: &crate::types::Metadata) -> bool {
-    metadata.title.is_some()
-        || metadata.subject.is_some()
-        || metadata.authors.is_some()
-        || metadata.keywords.is_some()
+    metadata.title.is_some() || metadata.subject.is_some() || metadata.authors.is_some() || metadata.keywords.is_some()
 }
 
 /// Build a metadata map from typed fields for quality scoring.

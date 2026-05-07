@@ -732,6 +732,19 @@ enabled, each processable file produces its own full `ExtractionResult`.
 
 ---
 
+#### ArchiveFileEntry
+
+A single entry in an archive (file or directory).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | File path |
+| `size` | `long` | — | Size in bytes |
+| `isDir` | `boolean` | — | Whether dir |
+
+
+---
+
 #### ArchiveMetadata
 
 Archive (ZIP/TAR/7Z) metadata.
@@ -742,7 +755,7 @@ Extracted from compressed archive files containing file lists and size informati
 |-------|------|---------|-------------|
 | `format` | `String` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
 | `fileCount` | `long` | — | Total number of files in the archive |
-| `fileList` | `List<String>` | `Collections.emptyList()` | List of file paths within the archive |
+| `entries` | `List<ArchiveFileEntry>` | `Collections.emptyList()` | Typed entries with path, size, and is_dir fields |
 | `totalSize` | `long` | — | Total uncompressed size in bytes |
 | `compressedSize` | `Optional<Long>` | `null` | Compressed size in bytes (if available) |
 
@@ -805,6 +818,7 @@ BibTeX bibliography metadata.
 | `authors` | `List<String>` | `Collections.emptyList()` | Authors |
 | `yearRange` | `Optional<YearRange>` | `null` | Year range (year range) |
 | `entryTypes` | `Optional<Map<String, Long>>` | `Collections.emptyMap()` | Entry types |
+| `entries` | `Optional<List<Object>>` | `Collections.emptyList()` | Raw BibTeX entry data (author, title, year, etc. per entry) |
 
 
 ---
@@ -1564,6 +1578,7 @@ Includes sender/recipient information, message ID, and attachment list.
 | `bccEmails` | `List<String>` | `Collections.emptyList()` | BCC recipients |
 | `messageId` | `Optional<String>` | `null` | Message-ID header value |
 | `attachments` | `List<String>` | `Collections.emptyList()` | List of attachment filenames |
+| `extraHeaders` | `Optional<Map<String, String>>` | `Collections.emptyMap()` | Non-standard email headers as key-value pairs |
 
 
 ---
@@ -1795,6 +1810,7 @@ discriminant. Sheet count and sheet names are stored inside this struct.
 |-------|------|---------|-------------|
 | `sheetCount` | `Optional<Long>` | `null` | Number of sheets in the workbook. |
 | `sheetNames` | `Optional<List<String>>` | `Collections.emptyList()` | Names of all sheets in the workbook. |
+| `customProperties` | `Optional<Map<String, Object>>` | `Collections.emptyMap()` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -2694,15 +2710,16 @@ via a discriminated union, and additional custom fields from postprocessors.
 | `tags` | `Optional<List<String>>` | `Collections.emptyList()` | Document tags (from frontmatter). |
 | `documentVersion` | `Optional<String>` | `null` | Document version string (from frontmatter). |
 | `abstractText` | `Optional<String>` | `null` | Abstract or summary text (from frontmatter). |
-| `outputFormat` | `Optional<String>` | `null` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
-| `additional` | `Map<String, Object>` | `Collections.emptyMap()` | Additional custom fields from postprocessors. Serialized as a nested `"additional"` object (not flattened at root level). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+| `outputFormat` | `Optional<String>` | `null` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. |
+| `extractionMethod` | `Optional<String>` | `null` | Method used to extract text (e.g., "native", "ocr", "mixed", "native_ole"). |
+| `custom` | `Map<String, Object>` | `Collections.emptyMap()` | Custom fields for plugin-injected and format-specific dynamic data (e.g., OCR backend metadata, org-mode directives). Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
 
 ##### Methods
 
 ###### isEmpty()
 
 Returns `true` when no metadata fields, format-specific metadata, or
-additional postprocessor fields are populated.
+custom postprocessor fields are populated.
 
 **Signature:**
 
@@ -3914,6 +3931,7 @@ Extracted from PPTX files containing slide counts and presentation details.
 | `slideNames` | `List<String>` | `Collections.emptyList()` | Names of slides (if available) |
 | `imageCount` | `Optional<Long>` | `null` | Number of embedded images |
 | `tableCount` | `Optional<Long>` | `null` | Number of tables |
+| `customProperties` | `Optional<Map<String, Object>>` | `Collections.emptyMap()` | Custom office properties from docProps/custom.xml |
 
 
 ---
@@ -4206,6 +4224,19 @@ Response from structured extraction endpoint.
 | `structuredOutput` | `Object` | — | Structured data conforming to the provided JSON schema |
 | `content` | `String` | — | Extracted document text content |
 | `mimeType` | `String` | — | Detected MIME type of the input file |
+
+
+---
+
+#### StructuredMetadata
+
+JSON/YAML/TOML structured data metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `dataFormat` | `String` | — | Detected data format: "json", "yaml", or "toml" |
+| `fieldCount` | `long` | — | Number of top-level fields |
+| `customFields` | `Optional<Map<String, Object>>` | `Collections.emptyMap()` | Pass-through of custom fields not mapped to standard metadata |
 
 
 ---
@@ -4716,7 +4747,7 @@ async fn validate(&self, result: &ExtractionResult, config: &ExtractionConfig)
     -> Result<()> {
     // Check if quality_score exists in metadata
     let score = result.metadata
-        .additional
+        .custom
         .get("quality_score")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
@@ -5406,6 +5437,7 @@ type-safe, clean metadata without nested optionals.
 | `HTML` | Preserve as HTML `<mark>` tags — Fields: `0`: `HtmlMetadata` |
 | `OCR` | Ocr — Fields: `0`: `OcrMetadata` |
 | `CSV` | Csv format — Fields: `0`: `CsvMetadata` |
+| `STRUCTURED` | Structured — Fields: `0`: `StructuredMetadata` |
 | `BIBTEX` | Bibtex — Fields: `0`: `BibtexMetadata` |
 | `CITATION` | Citation — Fields: `0`: `CitationMetadata` |
 | `FICTION_BOOK` | Fiction book — Fields: `0`: `FictionBookMetadata` |

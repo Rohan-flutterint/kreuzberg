@@ -60,11 +60,7 @@ async fn test_docx_full_metadata_extraction() {
         "Should have 108 words"
     );
     assert_eq!(
-        result
-            .metadata
-            .custom
-            .get("character_count")
-            .and_then(|v| v.as_i64()),
+        result.metadata.custom.get("character_count").and_then(|v| v.as_i64()),
         Some(620),
         "Should have 620 characters"
     );
@@ -74,11 +70,7 @@ async fn test_docx_full_metadata_extraction() {
         "Should have 5 lines"
     );
     assert_eq!(
-        result
-            .metadata
-            .custom
-            .get("paragraph_count")
-            .and_then(|v| v.as_i64()),
+        result.metadata.custom.get("paragraph_count").and_then(|v| v.as_i64()),
         Some(1),
         "Should have 1 paragraph"
     );
