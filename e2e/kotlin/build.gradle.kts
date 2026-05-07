@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation(files("../../packages/kotlin/build/libs/kreuzberg-5.0.0-rc.1.jar"))
+    testImplementation(files("../../target/release/kreuzberg.jar"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.3")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
