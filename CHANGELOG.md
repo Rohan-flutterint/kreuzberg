@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Java FFI compile error**: `readJsonList` now wraps the null-check and
+  `checkLastError()` call inside try-catch, resolving an unreported `Throwable`
+  exception that blocked Java e2e test compilation.
 - **alef.toml**: `TesseractWasmBackend` added to `[crates.exclude].types`
   so non-WASM bindings (kreuzberg-py, kreuzberg-nif, etc.) no longer
   reference the WASM-only OCR backend (which is
