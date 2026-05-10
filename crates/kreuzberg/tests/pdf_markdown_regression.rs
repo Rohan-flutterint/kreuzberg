@@ -340,7 +340,6 @@ const PDFIUM_KNOWN_REGRESSIONS: &[&str] = &[
     "right_to_left_02",                       // md 0.424 < 0.43 (RTL drift)
     "hello_structure",                        // md 0.778 < 0.93
     "issue-336-example",                      // md 0.522 < 0.74
-    "issue-463-example",                      // md 0.817 < 0.82
     "issue-466-example",                      // md 0.833 / plain 0.806 < 0.93
     "issue-53-example",                       // md 0.843 / plain 0.694 < 0.90
     "issue-987-test",                         // md 0.400 / plain 0.000 < 0.93
