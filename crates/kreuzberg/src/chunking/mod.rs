@@ -87,6 +87,7 @@ static PROCESSOR_INITIALIZED: OnceCell<()> = OnceCell::new();
 ///
 /// This function is called automatically when needed.
 /// It's safe to call multiple times - registration only happens once.
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn ensure_initialized() -> Result<()> {
     PROCESSOR_INITIALIZED
         .get_or_try_init(register_chunking_processor)
@@ -100,6 +101,7 @@ pub(crate) fn ensure_initialized() -> Result<()> {
 ///
 /// **Note:** This is called automatically on first use.
 /// Explicit calling is optional.
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn register_chunking_processor() -> Result<()> {
     let registry = crate::plugins::registry::get_post_processor_registry();
     let mut registry = registry.write();

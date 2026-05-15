@@ -30,6 +30,7 @@ impl TracingLayer {
 impl<S> Layer<S> for TracingLayer {
     type Service = TracingService<S>;
 
+    #[cfg_attr(alef, alef(skip))]
     fn layer(&self, inner: S) -> Self::Service {
         TracingService { inner }
     }

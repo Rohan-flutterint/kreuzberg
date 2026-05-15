@@ -620,6 +620,7 @@ fn panic_to_string(payload: Box<dyn std::any::Any + Send>) -> String {
 /// by the api/mcp `cache.warm` endpoints and by the kreuzberg-cli warm command.
 /// Excluded from the language bindings via alef.toml `[exclude].functions`.
 #[cfg(feature = "embeddings")]
+#[cfg_attr(alef, alef(skip))]
 pub fn warm_model(
     model_type: &crate::core::config::EmbeddingModelType,
     cache_dir: Option<std::path::PathBuf>,

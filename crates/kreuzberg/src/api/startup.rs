@@ -61,6 +61,7 @@ use super::{config::load_server_config, router::create_router_with_limits_and_se
 ///
 /// python -m kreuzberg.api
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub async fn serve(host: impl AsRef<str>, port: u16) -> Result<()> {
     let extraction_config = match ExtractionConfig::discover()? {
         Some(config) => {
@@ -108,6 +109,7 @@ pub async fn serve(host: impl AsRef<str>, port: u16) -> Result<()> {
 ///     Ok(())
 /// }
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub async fn serve_with_config(host: impl AsRef<str>, port: u16, config: ExtractionConfig) -> Result<()> {
     let limits = ApiSizeLimits::default();
     tracing::info!(
@@ -144,6 +146,7 @@ pub async fn serve_with_config(host: impl AsRef<str>, port: u16, config: Extract
 ///     Ok(())
 /// }
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub async fn serve_with_config_and_limits(
     host: impl AsRef<str>,
     port: u16,
@@ -212,6 +215,7 @@ pub async fn serve_with_config_and_limits(
 ///     Ok(())
 /// }
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub async fn serve_with_server_config(extraction_config: ExtractionConfig, server_config: ServerConfig) -> Result<()> {
     let ip: IpAddr = server_config
         .host
@@ -255,6 +259,7 @@ pub async fn serve_with_server_config(extraction_config: ExtractionConfig, serve
 ///
 /// Uses config file discovery (searches current/parent directories for kreuzberg.toml/yaml/json).
 /// Validates plugins at startup to help diagnose configuration issues.
+#[cfg_attr(alef, alef(skip))]
 pub async fn serve_default() -> Result<()> {
     serve("127.0.0.1", 8000).await
 }

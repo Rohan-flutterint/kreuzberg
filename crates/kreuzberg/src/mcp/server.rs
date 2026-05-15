@@ -940,6 +940,7 @@ impl Default for KreuzbergMcp {
 ///     Ok(())
 /// }
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub async fn start_mcp_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let service = KreuzbergMcp::new()?.serve(stdio()).await?;
 
@@ -951,6 +952,7 @@ pub async fn start_mcp_server() -> Result<(), Box<dyn std::error::Error + Send +
 ///
 /// This variant allows specifying a custom extraction configuration
 /// (e.g., loaded from a file) instead of using defaults.
+#[cfg_attr(alef, alef(skip))]
 pub async fn start_mcp_server_with_config(
     config: ExtractionConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -981,6 +983,7 @@ pub async fn start_mcp_server_with_config(
 /// }
 /// ```
 #[cfg(feature = "mcp-http")]
+#[cfg_attr(alef, alef(skip))]
 pub async fn start_mcp_server_http(
     host: impl AsRef<str>,
     port: u16,
@@ -1034,6 +1037,7 @@ pub async fn start_mcp_server_http(
 /// }
 /// ```
 #[cfg(feature = "mcp-http")]
+#[cfg_attr(alef, alef(skip))]
 pub async fn start_mcp_server_http_with_config(
     host: impl AsRef<str>,
     port: u16,

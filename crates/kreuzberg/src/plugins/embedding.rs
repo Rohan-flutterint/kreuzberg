@@ -115,6 +115,7 @@ pub trait EmbeddingBackend: Plugin {
 ///   or `dimensions()` is zero.
 /// - [`crate::KreuzbergError::Plugin`] if a backend with that name is already registered.
 /// - Any error from the backend's `initialize()` method.
+#[cfg_attr(alef, alef(skip))]
 pub fn register_embedding_backend(backend: Arc<dyn EmbeddingBackend>) -> Result<()> {
     use crate::plugins::registry::get_embedding_backend_registry;
 
@@ -130,6 +131,7 @@ pub fn register_embedding_backend(backend: Arc<dyn EmbeddingBackend>) -> Result<
 /// # Errors
 ///
 /// - Any error returned by the backend's `shutdown()` method.
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_embedding_backend(name: &str) -> Result<()> {
     use crate::plugins::registry::get_embedding_backend_registry;
 
@@ -146,6 +148,7 @@ pub fn unregister_embedding_backend(name: &str) -> Result<()> {
 ///
 /// - Any error returned by a backend's `shutdown()` method. The first error
 ///   encountered stops processing of remaining backends.
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_embedding_backends() -> Result<()> {
     use crate::plugins::registry::get_embedding_backend_registry;
 

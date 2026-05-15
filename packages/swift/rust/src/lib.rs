@@ -690,31 +690,6 @@ mod ffi {
     }
 
     extern "Rust" {
-        type TableProperties;
-        #[swift_bridge(init)]
-        fn new(
-            style_id: Option<String>,
-            width: Option<String>,
-            alignment: Option<String>,
-            layout: Option<String>,
-            look: Option<String>,
-            borders: Option<String>,
-            cell_margins: Option<String>,
-            indent: Option<String>,
-            caption: Option<String>,
-        ) -> TableProperties;
-        fn style_id(&self) -> Option<String>;
-        fn width(&self) -> Option<String>;
-        fn alignment(&self) -> Option<String>;
-        fn layout(&self) -> Option<String>;
-        fn look(&self) -> Option<String>;
-        fn borders(&self) -> Option<String>;
-        fn cell_margins(&self) -> Option<String>;
-        fn indent(&self) -> Option<String>;
-        fn caption(&self) -> Option<String>;
-    }
-
-    extern "Rust" {
         type DocxAppProperties;
         #[swift_bridge(init)]
         fn new(
@@ -4879,114 +4854,6 @@ impl ResolvedStyle {
     }
     pub fn run_properties(&self) -> String {
         format!("{:?}", &self.0.run_properties)
-    }
-}
-
-pub struct TableProperties(pub kreuzberg::extraction::docx::table::TableProperties);
-impl TableProperties {
-    pub fn new(
-        style_id: Option<String>,
-        width: Option<String>,
-        alignment: Option<String>,
-        layout: Option<String>,
-        look: Option<String>,
-        borders: Option<String>,
-        cell_margins: Option<String>,
-        indent: Option<String>,
-        caption: Option<String>,
-    ) -> TableProperties {
-        let mut __target: kreuzberg::extraction::docx::table::TableProperties = ::std::default::Default::default();
-        if let Some(s) = style_id {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.style_id = Some(t);
-                }
-            }
-        }
-        if let Some(s) = width {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.width = Some(t);
-                }
-            }
-        }
-        if let Some(s) = alignment {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.alignment = Some(t);
-                }
-            }
-        }
-        if let Some(s) = layout {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.layout = Some(t);
-                }
-            }
-        }
-        if let Some(s) = look {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.look = Some(t);
-                }
-            }
-        }
-        if let Some(s) = borders {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.borders = Some(t);
-                }
-            }
-        }
-        if let Some(s) = cell_margins {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.cell_margins = Some(t);
-                }
-            }
-        }
-        if let Some(s) = indent {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.indent = Some(t);
-                }
-            }
-        }
-        if let Some(s) = caption {
-            if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
-                if let Ok(t) = ::serde_json::from_value(v) {
-                    __target.caption = Some(t);
-                }
-            }
-        }
-        TableProperties(__target)
-    }
-    pub fn style_id(&self) -> Option<String> {
-        self.0.style_id.clone()
-    }
-    pub fn width(&self) -> Option<String> {
-        self.0.width.as_ref().and_then(|v| serde_json::to_string(v).ok())
-    }
-    pub fn alignment(&self) -> Option<String> {
-        self.0.alignment.clone()
-    }
-    pub fn layout(&self) -> Option<String> {
-        self.0.layout.clone()
-    }
-    pub fn look(&self) -> Option<String> {
-        self.0.look.as_ref().and_then(|v| serde_json::to_string(v).ok())
-    }
-    pub fn borders(&self) -> Option<String> {
-        self.0.borders.as_ref().and_then(|v| serde_json::to_string(v).ok())
-    }
-    pub fn cell_margins(&self) -> Option<String> {
-        self.0.cell_margins.as_ref().and_then(|v| serde_json::to_string(v).ok())
-    }
-    pub fn indent(&self) -> Option<String> {
-        self.0.indent.as_ref().and_then(|v| serde_json::to_string(v).ok())
-    }
-    pub fn caption(&self) -> Option<String> {
-        self.0.caption.clone()
     }
 }
 
@@ -9652,7 +9519,11 @@ impl KeywordConfig {
         // alef: algorithm (KeywordAlgorithm) is an enum; reverse From not generated — left at default
         __target.max_keywords = max_keywords;
         __target.min_score = min_score;
-        __target.ngram_range = ngram_range;
+        if let Ok(__v) = ::serde_json::to_value(ngram_range) {
+            if let Ok(t) = ::serde_json::from_value(__v) {
+                __target.ngram_range = t;
+            }
+        }
         if let Some(s) = language {
             if let Ok(v) = ::serde_json::from_str::<::serde_json::Value>(&s) {
                 if let Ok(t) = ::serde_json::from_value(v) {

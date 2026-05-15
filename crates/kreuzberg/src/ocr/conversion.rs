@@ -342,6 +342,7 @@ trait OcrElementExt {
 
 #[cfg(feature = "paddle-ocr")]
 impl OcrElementExt for OcrElement {
+    #[cfg_attr(alef, alef(skip))]
     fn with_rotation_opt(mut self, rotation: Option<OcrRotation>) -> Self {
         self.rotation = rotation;
         self

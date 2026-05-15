@@ -705,6 +705,7 @@ where
 ///
 /// Each sheet is separated by a blank line. Sheet names are included as headers.
 /// This produces text suitable for quality scoring against ground truth.
+#[cfg_attr(alef, alef(skip))]
 pub fn excel_to_text(workbook: &ExcelWorkbook) -> String {
     let mut result = String::new();
 
@@ -732,6 +733,7 @@ pub fn excel_to_text(workbook: &ExcelWorkbook) -> String {
     result
 }
 
+#[cfg_attr(alef, alef(skip))]
 pub fn excel_to_markdown(workbook: &ExcelWorkbook) -> String {
     let total_capacity: usize = workbook.sheets.iter().map(|sheet| sheet.markdown.len() + 2).sum();
 

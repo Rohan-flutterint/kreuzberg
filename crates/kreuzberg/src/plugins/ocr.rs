@@ -354,6 +354,7 @@ pub trait OcrBackend: Plugin {
 /// # Ok::<(), kreuzberg::KreuzbergError>(())
 /// # });
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn register_ocr_backend(backend: Arc<dyn OcrBackend>) -> crate::Result<()> {
     use crate::plugins::registry::get_ocr_backend_registry;
 
@@ -386,6 +387,7 @@ pub fn register_ocr_backend(backend: Arc<dyn OcrBackend>) -> crate::Result<()> {
 /// # Ok::<(), kreuzberg::KreuzbergError>(())
 /// # });
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_ocr_backend(name: &str) -> crate::Result<()> {
     use crate::plugins::registry::get_ocr_backend_registry;
 
@@ -444,6 +446,7 @@ pub fn list_ocr_backends() -> crate::Result<Vec<String>> {
 /// # Ok::<(), kreuzberg::KreuzbergError>(())
 /// # });
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_ocr_backends() -> crate::Result<()> {
     use crate::plugins::registry::get_ocr_backend_registry;
 

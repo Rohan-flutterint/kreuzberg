@@ -49,6 +49,7 @@ const MAX_CLASSIFY_PIXELS: u64 = 64 * 1024 * 1024; // 64 megapixels
 ///
 /// A tuple of `(ImageKind, confidence)` where confidence is in [0.0, 1.0].
 /// Returns `(Unknown, 0.0)` if bytes cannot be decoded.
+#[cfg_attr(alef, alef(skip))]
 pub fn classify(
     bytes: &[u8],
     format: &str,
@@ -231,6 +232,7 @@ fn compute_entropy_on_thumbnail(_bytes: &[u8], _width: u32, _height: u32) -> Res
 ///   (`min(width, height) / 2`) of each other
 /// - Dimensions must match within ±20%
 /// - Emits one `info!` span per page with cluster count and max cluster size
+#[cfg_attr(alef, alef(skip))]
 pub fn cluster_tiles(images: &mut [ExtractedImage]) {
     if images.is_empty() {
         return;

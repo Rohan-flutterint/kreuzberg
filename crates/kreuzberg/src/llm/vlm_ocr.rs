@@ -76,6 +76,7 @@ impl OcrBackend for VlmOcrBackend {
         true
     }
 
+    #[cfg_attr(alef, alef(skip))]
     fn backend_type(&self) -> OcrBackendType {
         OcrBackendType::Custom
     }

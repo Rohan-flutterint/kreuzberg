@@ -7,7 +7,6 @@
 use crate::error::{KreuzbergError, Result};
 use crate::extraction::ooxml_constants::DRAWINGML_NAMESPACE;
 #[cfg_attr(alef, alef(skip))]
-
 // --- Types ---
 
 /// A theme color definition, either direct RGB or a system color with fallback.

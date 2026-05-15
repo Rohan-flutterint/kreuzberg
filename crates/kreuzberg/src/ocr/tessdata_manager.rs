@@ -58,6 +58,7 @@ impl TessdataManager {
     ///
     /// Paths are relative to the cache root (prefixed with "tessdata/").
     #[cfg(feature = "paddle-ocr")]
+    #[cfg_attr(alef, alef(skip))]
     pub fn manifest() -> Vec<crate::paddle_ocr::ModelManifestEntry> {
         all_download_codes()
             .into_iter()

@@ -8,7 +8,6 @@ use crate::extraction::ooxml_constants::WORDPROCESSINGML_NAMESPACE;
 use quick_xml::Reader;
 use quick_xml::events::{BytesStart, Event};
 #[cfg_attr(alef, alef(skip))]
-
 // --- Types ---
 
 /// Page orientation.

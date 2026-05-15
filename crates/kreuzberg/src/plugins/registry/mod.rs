@@ -77,31 +77,37 @@ pub static RENDERER_REGISTRY: LazyLock<Arc<RwLock<RendererRegistry>>> =
     LazyLock::new(|| Arc::new(RwLock::new(RendererRegistry::new())));
 
 /// Get the global OCR backend registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_ocr_backend_registry() -> Arc<RwLock<OcrBackendRegistry>> {
     OCR_BACKEND_REGISTRY.clone()
 }
 
 /// Get the global embedding backend registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_embedding_backend_registry() -> Arc<RwLock<EmbeddingBackendRegistry>> {
     EMBEDDING_BACKEND_REGISTRY.clone()
 }
 
 /// Get the global document extractor registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_document_extractor_registry() -> Arc<RwLock<DocumentExtractorRegistry>> {
     DOCUMENT_EXTRACTOR_REGISTRY.clone()
 }
 
 /// Get the global post-processor registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_post_processor_registry() -> Arc<RwLock<PostProcessorRegistry>> {
     POST_PROCESSOR_REGISTRY.clone()
 }
 
 /// Get the global validator registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_validator_registry() -> Arc<RwLock<ValidatorRegistry>> {
     VALIDATOR_REGISTRY.clone()
 }
 
 /// Get the global renderer registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn get_renderer_registry() -> Arc<RwLock<RendererRegistry>> {
     RENDERER_REGISTRY.clone()
 }

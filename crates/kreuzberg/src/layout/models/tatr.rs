@@ -73,7 +73,6 @@ const NMS_IOB_THRESHOLD_COLS: f32 = 0.3;
 /// splitting the grid incorrectly.
 const MIN_COL_WIDTH_FRAC: f32 = 0.01;
 #[cfg_attr(alef, alef(skip))]
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

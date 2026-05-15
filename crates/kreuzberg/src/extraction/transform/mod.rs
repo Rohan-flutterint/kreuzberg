@@ -45,6 +45,7 @@ use std::borrow::Cow;
 /// # Returns
 ///
 /// A vector of Elements with proper semantic types and metadata.
+#[cfg_attr(alef, alef(skip))]
 pub fn transform_extraction_result_to_elements(result: &ExtractionResult) -> Vec<Element> {
     let mut elements = Vec::new();
 

@@ -26,7 +26,6 @@ use super::ocr_elements::{OcrBoundingGeometry, OcrConfidence, OcrElementLevel, O
 use super::tables::Table;
 use crate::types::ExtractedImage;
 #[cfg_attr(alef, alef(skip))]
-
 // ============================================================================
 // ID Type
 // ============================================================================
@@ -116,7 +115,6 @@ impl AsRef<str> for InternalElementId {
     }
 }
 #[cfg_attr(alef, alef(skip))]
-
 // ============================================================================
 // Internal Document
 // ============================================================================

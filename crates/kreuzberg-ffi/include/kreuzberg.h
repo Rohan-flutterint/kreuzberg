@@ -205,7 +205,6 @@ typedef struct KREUZBERGTable KREUZBERGTable;
 typedef struct KREUZBERGTableCell KREUZBERGTableCell;
 typedef struct KREUZBERGTableGrid KREUZBERGTableGrid;
 typedef struct KREUZBERGTableModel KREUZBERGTableModel;
-typedef struct KREUZBERGTableProperties KREUZBERGTableProperties;
 typedef struct KREUZBERGTessdataManager KREUZBERGTessdataManager;
 typedef struct KREUZBERGTesseractConfig KREUZBERGTesseractConfig;
 typedef struct KREUZBERGTextAnnotation KREUZBERGTextAnnotation;
@@ -3730,57 +3729,6 @@ int32_t kreuzberg_style_definition_is_default(const KREUZBERGStyleDefinition *pt
  * Pointer must have been returned by this library, or be null.
  */
 void kreuzberg_resolved_style_free(KREUZBERGResolvedStyle *ptr);
-
-/**
- * Create a `TableProperties` from a JSON string. Returns null on failure.
- * # Safety
- * JSON string must be valid UTF-8 and null-terminated.
- * Returned handle must be freed with `kreuzberg_table_properties_free`.
- */
-KREUZBERGTableProperties *kreuzberg_table_properties_from_json(const char *json);
-
-/**
- * Serialize a `TableProperties` to a JSON string. Returns null on failure.
- * # Safety
- * `ptr` must be a valid, non-null pointer returned by a `kreuzberg` function.
- * The returned string must be freed with `kreuzberg_free_string`.
- */
-char *kreuzberg_table_properties_to_json(const KREUZBERGTableProperties *ptr);
-
-/**
- * Free a `TableProperties` handle.
- * # Safety
- * Pointer must have been returned by this library, or be null.
- */
-void kreuzberg_table_properties_free(KREUZBERGTableProperties *ptr);
-
-/**
- * Get the `style_id` field from a `TableProperties`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_table_properties_style_id(const KREUZBERGTableProperties *ptr);
-
-/**
- * Get the `alignment` field from a `TableProperties`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_table_properties_alignment(const KREUZBERGTableProperties *ptr);
-
-/**
- * Get the `layout` field from a `TableProperties`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_table_properties_layout(const KREUZBERGTableProperties *ptr);
-
-/**
- * Get the `caption` field from a `TableProperties`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_table_properties_caption(const KREUZBERGTableProperties *ptr);
 
 /**
  * Create a `DocxAppProperties` from a JSON string. Returns null on failure.

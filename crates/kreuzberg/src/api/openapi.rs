@@ -118,11 +118,13 @@ pub struct ApiDoc;
 /// println!("{}", schema);
 /// ```
 #[cfg(feature = "api")]
+#[cfg_attr(alef, alef(skip))]
 pub fn openapi_json() -> String {
     ApiDoc::openapi().to_pretty_json().unwrap_or_else(|_| "{}".to_string())
 }
 
 #[cfg(not(feature = "api"))]
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn openapi_json() -> String {
     r#"{"error": "API feature not enabled"}"#.to_string()
 }

@@ -49,6 +49,7 @@ use super::validation::validate_utf8_boundaries;
 /// # Ok(())
 /// # }
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn chunk_text(
     text: &str,
     config: &ChunkingConfig,

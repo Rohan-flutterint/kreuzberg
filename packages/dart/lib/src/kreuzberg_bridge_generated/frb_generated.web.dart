@@ -1615,9 +1615,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TableModel dco_decode_table_model(dynamic raw);
 
   @protected
-  TableProperties dco_decode_table_properties(dynamic raw);
-
-  @protected
   TesseractConfig dco_decode_tesseract_config(dynamic raw);
 
   @protected
@@ -3486,9 +3483,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TableModel sse_decode_table_model(SseDeserializer deserializer);
-
-  @protected
-  TableProperties sse_decode_table_properties(SseDeserializer deserializer);
 
   @protected
   TesseractConfig sse_decode_tesseract_config(SseDeserializer deserializer);
@@ -5849,12 +5843,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_table_model(TableModel self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_table_properties(
-    TableProperties self,
-    SseSerializer serializer,
-  );
 
   @protected
   void sse_encode_tesseract_config(

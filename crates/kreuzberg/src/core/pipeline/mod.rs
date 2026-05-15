@@ -54,6 +54,7 @@ use initialization::{get_processors_from_cache, initialize_features, initialize_
         content.element_count = doc.elements.len(),
     )
 ))]
+#[cfg_attr(alef, alef(skip))]
 pub async fn run_pipeline(doc: InternalDocument, config: &ExtractionConfig) -> Result<ExtractionResult> {
     // 1. Process extracted images with OCR if configured
     #[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
@@ -243,6 +244,7 @@ pub async fn run_pipeline(doc: InternalDocument, config: &ExtractionConfig) -> R
 /// - Async post-processors
 /// - Async validators
 #[cfg(not(feature = "tokio-runtime"))]
+#[cfg_attr(alef, alef(skip))]
 pub fn run_pipeline_sync(doc: InternalDocument, config: &ExtractionConfig) -> Result<ExtractionResult> {
     // Pre-render markdown for chunker heading context (same logic as async path).
     #[cfg(feature = "chunking")]

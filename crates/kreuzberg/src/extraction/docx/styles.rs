@@ -8,7 +8,6 @@ use ahash::AHashMap;
 use crate::error::{KreuzbergError, Result};
 use crate::extraction::ooxml_constants::WORDPROCESSINGML_NAMESPACE;
 #[cfg_attr(alef, alef(skip))]
-
 // --- Types ---
 
 /// The type of a style definition in DOCX.

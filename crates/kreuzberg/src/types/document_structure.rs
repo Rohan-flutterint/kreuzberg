@@ -717,6 +717,7 @@ impl DocumentStructure {
 
     /// Iterate over root-level body nodes (content_layer == Body, parent == None).
     #[cfg(test)]
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn body_roots(&self) -> impl Iterator<Item = (NodeIndex, &DocumentNode)> {
         self.nodes.iter().enumerate().filter_map(|(i, node)| {
             if node.parent.is_none() && node.content_layer == ContentLayer::Body {
@@ -729,6 +730,7 @@ impl DocumentStructure {
 
     /// Iterate over root-level furniture nodes (non-Body content_layer, parent == None).
     #[cfg(test)]
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn furniture_roots(&self) -> impl Iterator<Item = (NodeIndex, &DocumentNode)> {
         self.nodes.iter().enumerate().filter_map(|(i, node)| {
             if node.parent.is_none() && node.content_layer != ContentLayer::Body {

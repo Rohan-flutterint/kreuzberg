@@ -73,6 +73,7 @@ pub trait Renderer: Plugin {
 /// trait-bridge codegen. The underlying `parking_lot::RwLock` cannot be
 /// poisoned (parking_lot provides no poisoning semantics), so this function
 /// never returns `Err` in practice.
+#[cfg_attr(alef, alef(skip))]
 pub fn register_renderer(renderer: Arc<dyn Renderer>) -> Result<()> {
     use crate::plugins::registry::get_renderer_registry;
 
@@ -86,6 +87,7 @@ pub fn register_renderer(renderer: Arc<dyn Renderer>) -> Result<()> {
 /// # Errors
 ///
 /// Returns an error if the registry lock is poisoned.
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_renderer(name: &str) -> Result<()> {
     use crate::plugins::registry::get_renderer_registry;
 
@@ -116,6 +118,7 @@ pub fn list_renderers() -> Result<Vec<String>> {
 /// # Errors
 ///
 /// Returns an error if the registry lock is poisoned.
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_renderers() -> Result<()> {
     use crate::plugins::registry::get_renderer_registry;
 

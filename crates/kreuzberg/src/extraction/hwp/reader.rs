@@ -70,18 +70,21 @@ impl StreamReader {
         }
     }
 
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn read_u16(&mut self) -> Result<u16> {
         let mut buf = [0u8; 2];
         self.cursor.read_exact(&mut buf)?;
         Ok(u16::from_le_bytes(buf))
     }
 
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn read_u32(&mut self) -> Result<u32> {
         let mut buf = [0u8; 4];
         self.cursor.read_exact(&mut buf)?;
         Ok(u32::from_le_bytes(buf))
     }
 
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn read_bytes(&mut self, len: usize) -> Result<Vec<u8>> {
         let mut buf = vec![0u8; len];
         self.cursor.read_exact(&mut buf)?;

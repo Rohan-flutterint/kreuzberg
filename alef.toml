@@ -1,5 +1,5 @@
 [workspace]
-alef_version = "0.16.3"
+alef_version = "0.16.8"
 languages = [
   "python",
   "node",
@@ -808,77 +808,9 @@ types = [
   "ApiError",
 ]
 functions = [
-  # Internal functions not part of public API (kept for compatibility)
-  "resolve_cache_dir",
-  "detect_and_rotate",
-  "ensure_initialized",
-  "register_keyword_processor",
-  "register_chunking_processor",
-  # Plugin-registry accessors — internal mechanism, not user-facing. Used by
-  # integration tests inside the kreuzberg crate; must stay `pub` for those.
-  "get_document_extractor_registry",
-  "get_embedding_backend_registry",
-  "get_ocr_backend_registry",
-  "get_post_processor_registry",
-  "get_renderer_registry",
-  "get_validator_registry",
-  # Format catalog — internal to CLI/server. Cli accesses via the submodule path.
-  "list_supported_formats",
-  # chunk_text — invoked via ExtractionConfig.chunking; only kreuzberg-cli still
-  # calls the standalone function directly. Not part of the public binding API.
-  "chunk_text",
-  # Renderers — invoked via ExtractionConfig.output_format; standalone fns are
-  # internal. render_json is referenced by an integration test in the kreuzberg crate.
-  "render_json",
-  # validate_mime_type — used by integration tests inside the kreuzberg crate;
-  # the public path is via ExtractionConfig validation, not standalone.
-  "validate_mime_type",
-  # Config serde plumbing — internal, exposed only for CLI/server.
-  "build_config_from_json",
-  "merge_config_json",
-  # Text quality / utility helpers — public path is via ExtractionConfig.
-  "clean_extracted_text",
+  # Functions with alef(skip) but behind cfg gates — alef-skip doesn't work through cfg boundaries
   "normalize_whitespace",
-  # Internal pool helpers / cache helpers / OCR helpers / image classifiers.
-  "clear_processor_cache",
-  "cluster_tiles",
-  "compute_hash",
-  "create_byte_buffer_pool",
-  "create_string_buffer_pool",
-  # Internal converters — invoked via ExtractionConfig.output_format.
-  "djot_content_to_djot",
-  "excel_to_markdown",
-  "excel_to_text",
-  "extraction_result_to_djot",
-  # Server / MCP / API entry points — these belong to kreuzberg-cli + the api
-  # / mcp features, not the language bindings.
-  "openapi_json",
-  "serve_default",
-  "serve_with_server_config",
-  "start_mcp_server",
-  "start_mcp_server_with_config",
-  # Internal transform — used by the rendering pipeline.
-  "transform_extraction_result_to_elements",
-  # Validation — same rationale as validate_mime_type.
   "validate_language_code",
-  # Cache plumbing — internal mechanism. Not part of the public binding API.
-  "get_cache_metadata",
-  "clear_cache_directory",
-  # Pipeline internals — invoked by extract_file/extract_bytes. Not part of public API.
-  "apply_output_format",
-  "run_pipeline",
-  "run_pipeline_sync",
-  "derive_extraction_result",
-  "classify",
-  "convert_html_to_markdown",
-  # Server / MCP — under `kreuzberg-cli` and the api/mcp features. Not public bindings.
-  "create_router",
-  "create_router_with_limits",
-  "serve",
-  "serve_with_config",
-  "serve_with_config_and_limits",
-  "start_mcp_server_http",
-  "start_mcp_server_http_with_config",
   # Trait-bridge `register_*`/`unregister_*` functions — `gen_trait_bridge`
   # already emits the idiomatic bridge form per language. `gen_function` would
   # also emit them with the raw opaque-type signature, producing duplicate
@@ -904,46 +836,24 @@ functions = [
   "clear_embedding_backends",
   "clear_renderers",
   "clear_document_extractors",
-  # warm_model — used by kreuzberg-cli `kreuzberg cache warm` and by the api/mcp
-  # `cache.warm` endpoints. Not part of the public binding surface.
-  "warm_model",
 ]
 methods = [
-  "OcrElement.with_rotation_opt",
-  "VlmOcrBackend.backend_type",
-  "ApiError.validation",
-  "ApiError.unprocessable",
-  "ApiError.internal",
-  "ApiError.bad_gateway",
+  # From<T> trait impls — auto-emitted by derive/trait-bridge
   "ApiError.from",
 
-  # Returns PathBuf — can't convert to String across FFI
-  "PaddleOcrConfig.resolve_cache_dir",
-
-  # Internal struct methods — not public API
-  "ServerConfig.from_file",
-  "ServerConfig.from_json_file",
-  "ServerConfig.from_toml_file",
-  "ServerConfig.from_yaml_file",
-  "ServerConfig.apply_env_overrides",
-  "DocumentStructure.body_roots",
-  "DocumentStructure.furniture_roots",
-  "BBox.center",
-  "PooledString.deref",
-  "PooledString.deref_mut",
-  "PooledString.buffer_mut",
-  "TessdataManager.manifest",
-  "TracingLayer.layer",
-  "StreamReader.read_bytes",
-  "StreamReader.read_u8",
-  "StreamReader.read_u16",
-  "StreamReader.read_u32",
-  "StreamReader.push",
-
-  # fmt trait impls — not callable from bindings
+  # fmt trait impls — auto-emitted by derive, not callable from bindings
   "BBox.fmt",
   "LayoutDetection.fmt",
   "PooledString.fmt",
+
+  # Deref/DerefMut impls for internal pooled types — not part of public API
+  "PooledString.deref",
+  "PooledString.deref_mut",
+  "PooledString.buffer_mut",
+
+  # Internal methods that can't easily be source-annotated (trait impls or unusual patterns)
+  "BBox.center",
+  "TessdataManager.manifest",
 
   # Deprecated Rust-only aliases — excluded from bindings
   "LayoutDetection.class",

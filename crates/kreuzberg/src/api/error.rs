@@ -134,16 +134,19 @@ impl ApiError {
     }
 
     /// Create a validation error (400).
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn validation(error: KreuzbergError) -> Self {
         Self::new(StatusCode::BAD_REQUEST, error)
     }
 
     /// Create an unprocessable entity error (422).
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn unprocessable(error: KreuzbergError) -> Self {
         Self::new(StatusCode::UNPROCESSABLE_ENTITY, error)
     }
 
     /// Create an internal server error (500).
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn internal(error: KreuzbergError) -> Self {
         Self::new(StatusCode::INTERNAL_SERVER_ERROR, error)
     }
@@ -152,6 +155,7 @@ impl ApiError {
     ///
     /// Use when an upstream service (e.g., model download from HuggingFace) fails.
     #[cfg(any(feature = "paddle-ocr", feature = "layout-detection", feature = "embeddings"))]
+    #[cfg_attr(alef, alef(skip))]
     pub(crate) fn bad_gateway(error: KreuzbergError) -> Self {
         Self::new(StatusCode::BAD_GATEWAY, error)
     }

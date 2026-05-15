@@ -228,6 +228,7 @@ pub(crate) fn validate_ocr_backend(backend: &str) -> Result<()> {
 /// assert!(validate_language_code("deu").is_ok());
 /// assert!(validate_language_code("invalid").is_err());
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn validate_language_code(code: &str) -> Result<()> {
     let code_lower = code.to_lowercase();
 

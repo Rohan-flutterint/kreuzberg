@@ -24,6 +24,7 @@ use std::sync::Arc;
 /// - [`crate::KreuzbergError::Validation`] if the plugin name is empty or
 ///   contains whitespace.
 /// - Any error returned by the extractor's `initialize()` method.
+#[cfg_attr(alef, alef(skip))]
 pub fn register_document_extractor(extractor: Arc<dyn DocumentExtractor>) -> crate::Result<()> {
     use crate::plugins::registry::get_document_extractor_registry;
 
@@ -40,6 +41,7 @@ pub fn register_document_extractor(extractor: Arc<dyn DocumentExtractor>) -> cra
 /// # Errors
 ///
 /// - Any error returned by the extractor's `shutdown()` method.
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_document_extractor(name: &str) -> crate::Result<()> {
     use crate::plugins::registry::get_document_extractor_registry;
 
@@ -66,6 +68,7 @@ pub fn list_document_extractors() -> crate::Result<Vec<String>> {
 ///
 /// - Any error returned by an extractor's `shutdown()` method. The first error
 ///   encountered stops processing of remaining extractors.
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_document_extractors() -> crate::Result<()> {
     use crate::plugins::registry::get_document_extractor_registry;
 

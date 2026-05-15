@@ -22,6 +22,7 @@ use std::sync::Arc;
 /// # Arguments
 ///
 /// * `processor` - The post-processor to register
+#[cfg_attr(alef, alef(skip))]
 pub fn register_post_processor(processor: Arc<dyn PostProcessor>) -> crate::Result<()> {
     use crate::plugins::registry::get_post_processor_registry;
 
@@ -32,6 +33,7 @@ pub fn register_post_processor(processor: Arc<dyn PostProcessor>) -> crate::Resu
 }
 
 /// Unregister a post-processor by name.
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_post_processor(name: &str) -> crate::Result<()> {
     use crate::plugins::registry::get_post_processor_registry;
 
@@ -42,6 +44,7 @@ pub fn unregister_post_processor(name: &str) -> crate::Result<()> {
 }
 
 /// Remove all registered post-processors.
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_post_processors() -> crate::Result<()> {
     use crate::plugins::registry::get_post_processor_registry;
 

@@ -73,6 +73,7 @@ pub(crate) fn resolve_conversion_options(
 /// # Returns
 ///
 /// A markdown or djot string, or an error if conversion fails
+#[cfg_attr(alef, alef(skip))]
 pub fn convert_html_to_markdown(
     html: &str,
     options: Option<ConversionOptions>,

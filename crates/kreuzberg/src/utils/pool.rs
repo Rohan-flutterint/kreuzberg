@@ -306,6 +306,7 @@ pub type ByteBufferPool = Pool<Vec<u8>>;
 /// let mut buffer = pool.acquire().unwrap();
 /// buffer.push_str("content");
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn create_string_buffer_pool(pool_size: usize, buffer_capacity: usize) -> StringBufferPool {
     Pool::new(move || String::with_capacity(buffer_capacity), pool_size)
 }
@@ -330,6 +331,7 @@ pub fn create_string_buffer_pool(pool_size: usize, buffer_capacity: usize) -> St
 /// let mut buffer = pool.acquire().unwrap();
 /// buffer.extend_from_slice(b"binary data");
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn create_byte_buffer_pool(pool_size: usize, buffer_capacity: usize) -> ByteBufferPool {
     Pool::new(move || Vec::with_capacity(buffer_capacity), pool_size)
 }

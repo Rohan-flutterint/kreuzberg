@@ -129,6 +129,7 @@ impl PaddleOcrConfig {
     /// let cache_dir = config.resolve_cache_dir();
     /// println!("Cache directory: {:?}", cache_dir);
     /// ```
+    #[cfg_attr(alef, alef(skip))]
     pub fn resolve_cache_dir(&self) -> PathBuf {
         // First check if cache_dir is explicitly set
         if let Some(path) = &self.cache_dir {

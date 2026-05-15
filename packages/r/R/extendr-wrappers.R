@@ -431,15 +431,6 @@ ResolvedStyle <- new.env(parent = emptyenv())
 }
 #' @export
 `[[.ResolvedStyle` <- `$.ResolvedStyle`
-TableProperties <- new.env(parent = emptyenv())
-#' @export
-`$.TableProperties` <- function(self, name) {
-  func <- TableProperties[[name]]
-  environment(func) <- environment()
-  func
-}
-#' @export
-`[[.TableProperties` <- `$.TableProperties`
 DocxAppProperties <- new.env(parent = emptyenv())
 DocxAppProperties$from_json <- function(json) .Call("wrap__DocxAppProperties__from_json", json, PACKAGE = "kreuzberg")
 #' @export

@@ -153,6 +153,7 @@ pub(crate) fn ensure_initialized() -> Result<()> {
 /// # #[cfg(not(any(feature = "keywords-yake", feature = "keywords-rake")))]
 /// # fn main() {}
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn register_keyword_processor() -> Result<()> {
     let registry = get_post_processor_registry();
     let mut registry = registry.write();

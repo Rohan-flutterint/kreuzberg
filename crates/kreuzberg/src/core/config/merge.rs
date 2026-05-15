@@ -34,6 +34,7 @@ use super::ExtractionConfig;
 /// assert!(merged.use_cache);   // preserved from base
 /// assert!(merged.force_ocr);   // applied from override
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn merge_config_json(base: &ExtractionConfig, override_json: &str) -> Result<ExtractionConfig, String> {
     let override_value: serde_json::Value =
         serde_json::from_str(override_json).map_err(|e| format!("Failed to parse override JSON: {e}"))?;
@@ -56,6 +57,7 @@ pub fn merge_config_json(base: &ExtractionConfig, override_json: &str) -> Result
 ///
 /// If `override_json` is `None`, returns a clone of `base`. Otherwise delegates
 /// to [`merge_config_json`].
+#[cfg_attr(alef, alef(skip))]
 pub fn build_config_from_json(
     base: &ExtractionConfig,
     override_json: Option<&str>,

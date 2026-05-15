@@ -11,6 +11,7 @@ pub const MIN_COLUMN_WIDTH: usize = 3;
 /// Compute a blake3 hash string from input data.
 ///
 /// Returns a 32-character hex string (128 bits of blake3 output).
+#[cfg_attr(alef, alef(skip))]
 pub fn compute_hash(data: &str) -> String {
     crate::cache::blake3_hash_bytes(data.as_bytes())
 }

@@ -61,6 +61,7 @@ pub(crate) fn escape_html_entities(text: &str) -> Cow<'_, str> {
 /// Returns Cow::Borrowed if no normalization needed.
 #[cfg(any(feature = "quality", feature = "office"))]
 #[inline]
+#[cfg_attr(alef, alef(skip))]
 pub(crate) fn normalize_whitespace(s: &str) -> Cow<'_, str> {
     // Check if normalization is needed
     let needs_normalization = s

@@ -49,7 +49,7 @@ inline fn _first_error(comptime E: type) E {
 /// - `LockPoisoned` - Mutex/RwLock poisoning (should not happen in normal operation)
 /// - `UnsupportedFormat` - Unsupported MIME type or file format
 /// - `Other` - Catch-all for uncommon errors
-pub const KreuzbergError = error{
+pub const KreuzbergError = error {
     Io,
     Parsing,
     Ocr,
@@ -527,19 +527,6 @@ pub const AnchorProperties = struct {
     position_h: ?[:0]const u8,
     position_v: ?[:0]const u8,
     wrap_type: [:0]const u8,
-};
-
-/// Table-level properties from `<w:tblPr>`.
-pub const TableProperties = struct {
-    style_id: ?[:0]const u8,
-    width: ?[:0]const u8,
-    alignment: ?[:0]const u8,
-    layout: ?[:0]const u8,
-    look: ?[:0]const u8,
-    borders: ?[:0]const u8,
-    cell_margins: ?[:0]const u8,
-    indent: ?[:0]const u8,
-    caption: ?[:0]const u8,
 };
 
 /// Application properties from docProps/app.xml for DOCX
@@ -2410,16 +2397,18 @@ pub const LayoutClass = enum {
 ///
 /// Returns `KreuzbergError.Validation` if MIME type is invalid.
 /// Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
-pub fn extract_bytes(content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const mime_type_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{mime_type}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+pub fn extract_bytes(content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const mime_type_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{mime_type}, 0);
+    defer std.heap.c_allocator.free(mime_type_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_extract_bytes(content.ptr, content.len, mime_type_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(mime_type_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const _json_ptr = c.kreuzberg_extraction_result_to_json(_result.?);
@@ -2428,7 +2417,8 @@ pub fn extract_bytes(content: []const u8, mime_type: []const u8, config: []const
         const slice = std.mem.sliceTo(_json_ptr, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Extract content from a file.
@@ -2449,18 +2439,21 @@ pub fn extract_bytes(content: []const u8, mime_type: []const u8, config: []const
 ///
 /// Returns `KreuzbergError.Io` if the file doesn't exist (NotFound) or for other file I/O errors.
 /// Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
-pub fn extract_file(path: []const u8, mime_type: ?[]const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const path_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{path}, 0);
-    const mime_type_z: ?[:0]u8 = if (mime_type) |v| try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{v}, 0) else null;
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+pub fn extract_file(path: []const u8, mime_type: ?[]const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const path_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{path}, 0);
+    defer std.heap.c_allocator.free(path_z);
+    const mime_type_z: ?[:0]u8 = if (mime_type) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (mime_type_z) |z| std.heap.c_allocator.free(z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_extract_file(path_z, if (mime_type_z) |z| z.ptr else null, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(path_z);
-    if (mime_type_z) |z| std.heap.c_allocator.free(z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const _json_ptr = c.kreuzberg_extraction_result_to_json(_result.?);
@@ -2469,7 +2462,8 @@ pub fn extract_file(path: []const u8, mime_type: ?[]const u8, config: []const u8
         const slice = std.mem.sliceTo(_json_ptr, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Synchronous wrapper for `extract_file`.
@@ -2482,18 +2476,21 @@ pub fn extract_file(path: []const u8, mime_type: ?[]const u8, config: []const u8
 ///
 /// This function is only available with the `tokio-runtime` feature. For WASM targets,
 /// use a truly synchronous extraction approach instead.
-pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const path_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{path}, 0);
-    const mime_type_z: ?[:0]u8 = if (mime_type) |v| try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{v}, 0) else null;
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const path_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{path}, 0);
+    defer std.heap.c_allocator.free(path_z);
+    const mime_type_z: ?[:0]u8 = if (mime_type) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (mime_type_z) |z| std.heap.c_allocator.free(z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_extract_file_sync(path_z, if (mime_type_z) |z| z.ptr else null, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(path_z);
-    if (mime_type_z) |z| std.heap.c_allocator.free(z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const _json_ptr = c.kreuzberg_extraction_result_to_json(_result.?);
@@ -2502,7 +2499,8 @@ pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: []con
         const slice = std.mem.sliceTo(_json_ptr, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Synchronous wrapper for `extract_bytes`.
@@ -2512,16 +2510,18 @@ pub fn extract_file_sync(path: []const u8, mime_type: ?[]const u8, config: []con
 ///
 /// With the `tokio-runtime` feature, this blocks the current thread using the global
 /// Tokio runtime. Without it (WASM), this calls a truly synchronous implementation.
-pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const mime_type_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{mime_type}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const mime_type_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{mime_type}, 0);
+    defer std.heap.c_allocator.free(mime_type_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_extract_bytes_sync(content.ptr, content.len, mime_type_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(mime_type_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const _json_ptr = c.kreuzberg_extraction_result_to_json(_result.?);
@@ -2530,24 +2530,27 @@ pub fn extract_bytes_sync(content: []const u8, mime_type: []const u8, config: []
         const slice = std.mem.sliceTo(_json_ptr, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Synchronous wrapper for `batch_extract_files`.
 ///
 /// Uses the global Tokio runtime for optimal performance.
 /// Only available with `tokio-runtime` (WASM has no filesystem).
-pub fn batch_extract_files_sync(items: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn batch_extract_files_sync(items: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const items_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{items}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const items_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{items}, 0);
+    defer std.heap.c_allocator.free(items_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_batch_extract_files_sync(items_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(items_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2563,17 +2566,19 @@ pub fn batch_extract_files_sync(items: []const u8, config: []const u8) (Kreuzber
 /// With the `tokio-runtime` feature, this blocks the current thread using the global
 /// Tokio runtime. Without it (WASM), this calls a truly synchronous implementation
 /// that iterates through items and calls `extract_bytes_sync()`.
-pub fn batch_extract_bytes_sync(items: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn batch_extract_bytes_sync(items: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const items_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{items}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const items_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{items}, 0);
+    defer std.heap.c_allocator.free(items_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_batch_extract_bytes_sync(items_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(items_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2611,17 +2616,19 @@ pub fn batch_extract_bytes_sync(items: []const u8, config: []const u8) (Kreuzber
 ///
 ///
 /// Per-file configuration overrides:
-pub fn batch_extract_files(items: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn batch_extract_files(items: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const items_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{items}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const items_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{items}, 0);
+    defer std.heap.c_allocator.free(items_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_batch_extract_files(items_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(items_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2653,17 +2660,19 @@ pub fn batch_extract_files(items: []const u8, config: []const u8) (KreuzbergErro
 ///
 ///
 /// Per-item configuration overrides:
-pub fn batch_extract_bytes(items: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn batch_extract_bytes(items: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const items_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{items}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const items_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{items}, 0);
+    defer std.heap.c_allocator.free(items_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_extraction_config_from_json(config_z);
     const _result = c.kreuzberg_batch_extract_bytes(items_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(items_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_extraction_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2688,7 +2697,7 @@ pub fn batch_extract_bytes(items: []const u8, config: []const u8) (KreuzbergErro
 /// **Errors:**
 ///
 /// Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
-pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_detect_mime_type_from_bytes(content.ptr, content.len);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2708,13 +2717,14 @@ pub fn detect_mime_type_from_bytes(content: []const u8) (KreuzbergError || error
 /// **Returns:**
 ///
 /// A vector of file extensions (without leading dot) for the MIME type.
-pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const mime_type_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{mime_type}, 0);
+pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const mime_type_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{mime_type}, 0);
+    defer std.heap.c_allocator.free(mime_type_z);
     const _result = c.kreuzberg_get_extensions_for_mime(mime_type_z);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(mime_type_z);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
@@ -2727,7 +2737,7 @@ pub fn get_extensions_for_mime(mime_type: []const u8) (KreuzbergError || error{O
 ///
 /// Used by `kreuzberg-cli` and the api/mcp endpoints; excluded from the
 /// language bindings via `alef.toml [exclude].functions`.
-pub fn list_embedding_backends() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_embedding_backends() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_embedding_backends();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2741,7 +2751,7 @@ pub fn list_embedding_backends() (KreuzbergError || error{OutOfMemory})![]u8 {
 }
 
 /// List names of all registered document extractors.
-pub fn list_document_extractors() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_document_extractors() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_document_extractors();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2761,7 +2771,7 @@ pub fn list_document_extractors() (KreuzbergError || error{OutOfMemory})![]u8 {
 /// **Returns:**
 ///
 /// A vector of OCR backend names.
-pub fn list_ocr_backends() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_ocr_backends() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_ocr_backends();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2783,7 +2793,7 @@ pub fn list_ocr_backends() (KreuzbergError || error{OutOfMemory})![]u8 {
 ///
 /// - `Ok(Vec<String>)` - Vector of post-processor names
 /// - `Err(...)` if the registry lock is poisoned
-pub fn list_post_processors() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_post_processors() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_post_processors();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2801,7 +2811,7 @@ pub fn list_post_processors() (KreuzbergError || error{OutOfMemory})![]u8 {
 /// **Errors:**
 ///
 /// Returns an error if the registry lock is poisoned.
-pub fn list_renderers() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_renderers() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_renderers();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2815,7 +2825,7 @@ pub fn list_renderers() (KreuzbergError || error{OutOfMemory})![]u8 {
 }
 
 /// List names of all registered validators.
-pub fn list_validators() (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn list_validators() (KreuzbergError||error{OutOfMemory})![]u8 {
     const _result = c.kreuzberg_list_validators();
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
@@ -2841,17 +2851,19 @@ pub fn list_validators() (KreuzbergError || error{OutOfMemory})![]u8 {
 /// - `KreuzbergError.MissingDependency` if ONNX Runtime is not installed
 /// - `KreuzbergError.Embedding` if the preset name is unknown, model download fails,
 ///   or the blocking inference task panics
-pub fn embed_texts_async(texts: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn embed_texts_async(texts: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const texts_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{texts}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const texts_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{texts}, 0);
+    defer std.heap.c_allocator.free(texts_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_embedding_config_from_json(config_z);
     const _result = c.kreuzberg_embed_texts_async(texts_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(texts_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_embedding_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2870,8 +2882,10 @@ pub fn embed_texts_async(texts: []const u8, config: []const u8) (KreuzbergError 
 ///
 /// Returns `KreuzbergError.Parsing` if the PDF cannot be opened, authenticated,
 /// or rendered, or if `page_index` is out of range.
-pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32, password: ?[]const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const password_z: ?[:0]u8 = if (password) |v| try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{v}, 0) else null;
+pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32, password: ?[]const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const password_z: ?[:0]u8 = if (password) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (password_z) |z| std.heap.c_allocator.free(z);
     var _out_ptr: [*c]u8 = undefined;
     var _out_len: usize = 0;
     var _out_cap: usize = 0;
@@ -2879,7 +2893,6 @@ pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32,
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    if (password_z) |z| std.heap.c_allocator.free(z);
     const _owned = try std.heap.c_allocator.dupe(u8, _out_ptr[0.._out_len]);
     c.kreuzberg_free_bytes(_out_ptr, _out_len, _out_cap);
     return _owned;
@@ -2889,13 +2902,14 @@ pub fn render_pdf_page_to_png(pdf_bytes: []const u8, page_index: u64, dpi: ?i32,
 ///
 /// Uses the file extension and optionally the file content to determine the MIME type.
 /// Set `check_exists` to `true` to verify the file exists before detection.
-pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError || error{OutOfMemory})![]u8 {
-    const path_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{path}, 0);
+pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError||error{OutOfMemory})![]u8 {
+    const path_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{path}, 0);
+    defer std.heap.c_allocator.free(path_z);
     const _result = c.kreuzberg_detect_mime_type(path_z, check_exists);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(path_z);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
@@ -2907,17 +2921,19 @@ pub fn detect_mime_type(path: []const u8, check_exists: bool) (KreuzbergError ||
 /// Embed a list of texts using the configured embedding model.
 ///
 /// Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-pub fn embed_texts(texts: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+pub fn embed_texts(texts: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
     // Vec/Map parameters are passed as JSON strings across the FFI boundary.
-    const texts_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{texts}, 0);
-    const config_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{config}, 0);
+    const texts_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{texts}, 0);
+    defer std.heap.c_allocator.free(texts_z);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
     const config_handle = c.kreuzberg_embedding_config_from_json(config_z);
     const _result = c.kreuzberg_embed_texts(texts_z, config_handle);
     if (c.kreuzberg_last_error_code() != 0) {
         return _first_error(KreuzbergError);
     }
-    std.heap.c_allocator.free(texts_z);
-    std.heap.c_allocator.free(config_z);
     if (config_handle) |h| c.kreuzberg_embedding_config_free(h);
     return blk: {
         const slice = std.mem.sliceTo(_result, 0);
@@ -2932,8 +2948,9 @@ pub fn embed_texts(texts: []const u8, config: []const u8) (KreuzbergError || err
 /// Returns `null` if no preset with the given name exists. Returns an owned
 /// clone so the value is safe to pass across FFI boundaries.
 pub fn get_embedding_preset(name: []const u8) error{OutOfMemory}!?[]u8 {
-    const name_z = try std.fmt.allocPrintSentinel(std.heap.c_allocator, "{s}", .{name}, 0);
-    std.heap.c_allocator.free(name_z);
+    const name_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{name}, 0);
+    defer std.heap.c_allocator.free(name_z);
     const _result = c.kreuzberg_get_embedding_preset(name_z);
     return if (_result == null) null else blk: {
         const _json_ptr = c.kreuzberg_embedding_preset_to_json(_result.?);
@@ -2942,7 +2959,8 @@ pub fn get_embedding_preset(name: []const u8) error{OutOfMemory}!?[]u8 {
         const slice = std.mem.sliceTo(_json_ptr, 0);
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List the names of all available embedding presets.
@@ -3165,9 +3183,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
                 const self: *T = @ptrCast(@alignCast(ud));
                 const image_bytes_slice = image_bytes_ptr[0..image_bytes_len];
                 if (self.process_image(image_bytes_slice, config)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3180,9 +3196,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
             fn thunk(ud: ?*anyopaque, path: [*c]const u8, config: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.process_image_file(path, config)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3235,9 +3249,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
             fn thunk(ud: ?*anyopaque, _path: [*c]const u8, _config: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.process_document(_path, _config)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -3857,9 +3869,7 @@ pub fn make_embedding_backend_vtable(comptime T: type, instance: *T) IEmbeddingB
             fn thunk(ud: ?*anyopaque, texts: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.embed(texts)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -4049,9 +4059,7 @@ pub fn make_document_extractor_vtable(comptime T: type, instance: *T) IDocumentE
                 const self: *T = @ptrCast(@alignCast(ud));
                 const content_slice = content_ptr[0..content_len];
                 if (self.extract_bytes(content_slice, mime_type, config)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -4064,9 +4072,7 @@ pub fn make_document_extractor_vtable(comptime T: type, instance: *T) IDocumentE
             fn thunk(ud: ?*anyopaque, path: [*c]const u8, mime_type: [*c]const u8, config: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.extract_file(path, mime_type, config)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -4214,9 +4220,7 @@ pub fn make_renderer_vtable(comptime T: type, instance: *T) IRenderer {
             fn thunk(ud: ?*anyopaque, doc: [*c]const u8, out_result: ?*?[*c]u8, out_error: ?*?[*c]u8) callconv(.C) i32 {
                 const self: *T = @ptrCast(@alignCast(ud));
                 if (self.render(doc)) |value| {
-                    _ = value;
-                    _ = out_result;
-                    unreachable; // complex return: implement manually
+                    _ = value; _ = out_result; unreachable; // complex return: implement manually
                 } else |err| {
                     _ = err;
                     if (out_error) |ptr| ptr.* = null; // caller checks error code
@@ -4232,6 +4236,109 @@ pub fn make_renderer_vtable(comptime T: type, instance: *T) IRenderer {
         }.thunk,
     };
 }
+
+pub const CharShape = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *CharShape) void {
+        c.kreuzberg_char_shape_free(@as(*c.KREUZBERGCharShape, @ptrCast(self._handle)));
+    }
+};
+
+pub const HwpImage = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *HwpImage) void {
+        c.kreuzberg_hwp_image_free(@as(*c.KREUZBERGHwpImage, @ptrCast(self._handle)));
+    }
+};
+
+pub const StreamReader = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *StreamReader) void {
+        c.kreuzberg_stream_reader_free(@as(*c.KREUZBERGStreamReader, @ptrCast(self._handle)));
+    }
+};
+
+/// Result of OCR extraction from an image with optional page tracking.
+pub const ImageOcrResult = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ImageOcrResult) void {
+        c.kreuzberg_image_ocr_result_free(@as(*c.KREUZBERGImageOcrResult, @ptrCast(self._handle)));
+    }
+};
+
+/// Page margins converted to points (1/72 inch).
+pub const PageMarginsPoints = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *PageMarginsPoints) void {
+        c.kreuzberg_page_margins_points_free(@as(*c.KREUZBERGPageMarginsPoints, @ptrCast(self._handle)));
+    }
+};
+
+/// A single style definition parsed from `<w:style>` in `word/styles.xml`.
+pub const StyleDefinition = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *StyleDefinition) void {
+        c.kreuzberg_style_definition_free(@as(*c.KREUZBERGStyleDefinition, @ptrCast(self._handle)));
+    }
+};
+
+/// Fully resolved (flattened) style after walking the inheritance chain.
+pub const ResolvedStyle = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ResolvedStyle) void {
+        c.kreuzberg_resolved_style_free(@as(*c.KREUZBERGResolvedStyle, @ptrCast(self._handle)));
+    }
+};
+
+/// Custom properties from docProps/custom.xml
+///
+/// Maps property names to their values. Values are converted to JSON types
+/// based on the VT (Variant Type) specified in the XML.
+pub const CustomProperties = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *CustomProperties) void {
+        c.kreuzberg_custom_properties_free(@as(*c.KREUZBERGCustomProperties, @ptrCast(self._handle)));
+    }
+};
+
+/// OpenDocument metadata from meta.xml
+///
+/// Contains metadata fields defined by the OASIS OpenDocument Format standard.
+/// Uses Dublin Core elements (dc:) and OpenDocument meta elements (meta:).
+pub const OdtProperties = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *OdtProperties) void {
+        c.kreuzberg_odt_properties_free(@as(*c.KREUZBERGOdtProperties, @ptrCast(self._handle)));
+    }
+};
+
+/// Helper struct for validating ZIP archives for security issues.
+pub const ZipBombValidator = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ZipBombValidator) void {
+        c.kreuzberg_zip_bomb_validator_free(@as(*c.KREUZBERGZipBombValidator, @ptrCast(self._handle)));
+    }
+};
 
 /// Extractor for Hangul Word Processor XML (.hwpx) files.
 ///
@@ -4259,14 +4366,14 @@ pub const HwpxExtractor = struct {
         };
     }
 
-    pub fn initialize(self: *HwpxExtractor) (KreuzbergError || error{OutOfMemory})!void {
+    pub fn initialize(self: *HwpxExtractor) (KreuzbergError||error{OutOfMemory})!void {
         _ = c.kreuzberg_hwpx_extractor_initialize(@as(*c.KREUZBERGHwpxExtractor, @ptrCast(self._handle)));
         if (c.kreuzberg_last_error_code() != 0) {
             return _first_error(KreuzbergError);
         }
     }
 
-    pub fn shutdown(self: *HwpxExtractor) (KreuzbergError || error{OutOfMemory})!void {
+    pub fn shutdown(self: *HwpxExtractor) (KreuzbergError||error{OutOfMemory})!void {
         _ = c.kreuzberg_hwpx_extractor_shutdown(@as(*c.KREUZBERGHwpxExtractor, @ptrCast(self._handle)));
         if (c.kreuzberg_last_error_code() != 0) {
             return _first_error(KreuzbergError);
@@ -4293,16 +4400,16 @@ pub const HwpxExtractor = struct {
         };
     }
 
-    pub fn extract_bytes(self: *HwpxExtractor, content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError || error{OutOfMemory})![]u8 {
+    pub fn extract_bytes(self: *HwpxExtractor, content: []const u8, mime_type: []const u8, config: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
         const mime_type_z = try std.heap.c_allocator.dupeZ(u8, mime_type);
+        defer std.heap.c_allocator.free(mime_type_z);
         const config_z = try std.heap.c_allocator.dupeZ(u8, config);
+        defer std.heap.c_allocator.free(config_z);
         const config_handle = c.kreuzberg_extraction_config_from_json(config_z.ptr);
         const _result = c.kreuzberg_hwpx_extractor_extract_bytes(@as(*c.KREUZBERGHwpxExtractor, @ptrCast(self._handle)), content.ptr, content.len, mime_type_z, config_handle);
         if (c.kreuzberg_last_error_code() != 0) {
             return _first_error(KreuzbergError);
         }
-        std.heap.c_allocator.free(mime_type_z);
-        std.heap.c_allocator.free(config_z);
         c.kreuzberg_extraction_config_free(config_handle);
         return blk: {
             const slice = std.mem.span(_result);
@@ -4333,6 +4440,78 @@ pub const HwpxExtractor = struct {
     }
 };
 
+/// Convenience type alias for a pooled String.
+pub const StringBufferPool = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *StringBufferPool) void {
+        c.kreuzberg_string_buffer_pool_free(@as(*c.KREUZBERGStringBufferPool, @ptrCast(self._handle)));
+    }
+};
+
+/// Convenience type alias for a pooled Vec<u8>.
+pub const ByteBufferPool = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ByteBufferPool) void {
+        c.kreuzberg_byte_buffer_pool_free(@as(*c.KREUZBERGByteBufferPool, @ptrCast(self._handle)));
+    }
+};
+
+/// A `tower.Layer` that wraps each extraction in a semantic tracing span.
+pub const TracingLayer = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *TracingLayer) void {
+        c.kreuzberg_tracing_layer_free(@as(*c.KREUZBERGTracingLayer, @ptrCast(self._handle)));
+    }
+};
+
+/// OpenAPI documentation structure.
+///
+/// Defines all endpoints, request/response schemas, and examples
+/// for the Kreuzberg document extraction API.
+pub const ApiDoc = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ApiDoc) void {
+        c.kreuzberg_api_doc_free(@as(*c.KREUZBERGApiDoc, @ptrCast(self._handle)));
+    }
+};
+
+/// Extraction response (list of results).
+pub const ExtractResponse = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *ExtractResponse) void {
+        c.kreuzberg_extract_response_free(@as(*c.KREUZBERGExtractResponse, @ptrCast(self._handle)));
+    }
+};
+
+/// A merged chunk produced by `merge_segments`.
+pub const MergedChunk = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *MergedChunk) void {
+        c.kreuzberg_merged_chunk_free(@as(*c.KREUZBERGMergedChunk, @ptrCast(self._handle)));
+    }
+};
+
+pub const OcrCacheStats = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *OcrCacheStats) void {
+        c.kreuzberg_ocr_cache_stats_free(@as(*c.KREUZBERGOcrCacheStats, @ptrCast(self._handle)));
+    }
+};
+
 /// Manages tessdata file downloading, caching, and manifest generation.
 pub const TessdataManager = struct {
     _handle: *anyopaque,
@@ -4351,7 +4530,7 @@ pub const TessdataManager = struct {
     /// Check if a specific language traineddata file is cached.
     pub fn is_language_cached(self: *TessdataManager, lang: []const u8) error{OutOfMemory}!bool {
         const lang_z = try std.heap.c_allocator.dupeZ(u8, lang);
-        std.heap.c_allocator.free(lang_z);
+        defer std.heap.c_allocator.free(lang_z);
         const _result = c.kreuzberg_tessdata_manager_is_language_cached(@as(*c.KREUZBERGTessdataManager, @ptrCast(self._handle)), lang_z);
         return _result;
     }
@@ -4362,7 +4541,7 @@ pub const TessdataManager = struct {
     ///
     /// When the `paddle-ocr` feature is not enabled, no download URLs are available
     /// and this method always returns `Ok(0)`.
-    pub fn ensure_all_languages(self: *TessdataManager) (KreuzbergError || error{OutOfMemory})!u64 {
+    pub fn ensure_all_languages(self: *TessdataManager) (KreuzbergError||error{OutOfMemory})!u64 {
         const _result = c.kreuzberg_tessdata_manager_ensure_all_languages(@as(*c.KREUZBERGTessdataManager, @ptrCast(self._handle)));
         if (c.kreuzberg_last_error_code() != 0) {
             return _first_error(KreuzbergError);

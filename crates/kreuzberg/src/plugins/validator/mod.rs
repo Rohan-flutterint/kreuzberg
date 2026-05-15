@@ -13,6 +13,7 @@ pub use r#trait::Validator;
 use std::sync::Arc;
 
 /// Register a validator plugin with the global registry.
+#[cfg_attr(alef, alef(skip))]
 pub fn register_validator(validator: Arc<dyn Validator>) -> crate::Result<()> {
     use crate::plugins::registry::get_validator_registry;
 
@@ -23,6 +24,7 @@ pub fn register_validator(validator: Arc<dyn Validator>) -> crate::Result<()> {
 }
 
 /// Unregister a validator by name.
+#[cfg_attr(alef, alef(skip))]
 pub fn unregister_validator(name: &str) -> crate::Result<()> {
     use crate::plugins::registry::get_validator_registry;
 
@@ -43,6 +45,7 @@ pub fn list_validators() -> crate::Result<Vec<String>> {
 }
 
 /// Remove all registered validators.
+#[cfg_attr(alef, alef(skip))]
 pub fn clear_validators() -> crate::Result<()> {
     use crate::plugins::registry::get_validator_registry;
 

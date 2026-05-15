@@ -633,6 +633,7 @@ pub fn detect_mime_type(path: impl AsRef<Path>, check_exists: bool) -> Result<St
 /// # Errors
 ///
 /// Returns `KreuzbergError::UnsupportedFormat` if not supported.
+#[cfg_attr(alef, alef(skip))]
 pub fn validate_mime_type(mime_type: &str) -> Result<String> {
     if SUPPORTED_MIME_TYPES.contains(mime_type) {
         tracing::trace!(mime_type = %mime_type, "MIME type validated (exact match)");
@@ -887,6 +888,7 @@ pub fn get_extensions_for_mime(mime_type: &str) -> Result<Vec<String>> {
 /// assert!(!formats.is_empty());
 /// assert!(formats.iter().any(|f| f.extension == "pdf"));
 /// ```
+#[cfg_attr(alef, alef(skip))]
 pub fn list_supported_formats() -> Vec<SupportedFormat> {
     let mut formats: Vec<SupportedFormat> = EXT_TO_MIME
         .iter()

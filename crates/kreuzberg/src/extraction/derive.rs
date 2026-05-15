@@ -535,6 +535,7 @@ fn parse_metadata_entries(text: &str) -> Vec<(String, String)> {
 /// 5. Extracts OCR elements for backward compatibility
 /// 6. Optionally derives `DocumentStructure` (assumes relationships resolved)
 /// 7. Assembles the final `ExtractionResult`
+#[cfg_attr(alef, alef(skip))]
 pub fn derive_extraction_result(
     mut doc: InternalDocument,
     include_document_structure: bool,
