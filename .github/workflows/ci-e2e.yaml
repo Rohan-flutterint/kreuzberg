@@ -161,7 +161,7 @@ jobs:
             test-cmd: "cd e2e/swift && swift test"
           - lang: zig
             zig-version: "0.16.0"
-            test-cmd: "cd e2e/zig && zig build test -Dffi_path=../../target/release"
+            test-cmd: "FFI_ABS=\"$PWD/target/release\" && cd e2e/zig && zig build test -Dffi_path=\"$FFI_ABS\""
     steps:
       - uses: actions/checkout@v6
         with:
@@ -252,6 +252,8 @@ jobs:
       - name: Setup Gradle
         if: matrix.lang == 'kotlin_android'
         uses: kreuzberg-dev/actions/setup-gradle@v1
+        with:
+          gradle-version: "9.0"
 
       - name: Setup .NET
         if: matrix.dotnet-version
