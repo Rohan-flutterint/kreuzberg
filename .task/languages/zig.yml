@@ -1,0 +1,19 @@
+version: "3"
+internal: true
+
+tasks:
+  update:
+    desc: "Update Zig dependencies (zig fetch --update-hash)"
+    silent: false
+    cmds:
+      - cmd: |
+          cd packages/zig && zig fetch --update-hash
+        ignore_error: false
+
+  upgrade:
+    desc: "Upgrade Zig dependencies (zig fetch --update-hash)"
+    silent: false
+    cmds:
+      - cmd: |
+          cd packages/zig && zig fetch --update-hash
+        ignore_error: false

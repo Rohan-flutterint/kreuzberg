@@ -5,7 +5,7 @@ version: "3"
 # ============================================================================
 # Primary development interface. Rust core tasks delegate to .task/languages/rust.yml.
 # All binding language operations (setup, build, test, lint, format, clean,
-# update, upgrade, publish) are handled by alef v0.7.9.
+# update, upgrade, publish) are handled by alef v0.15.48.
 #
 # Command patterns:
 #   task setup         -> install all dependencies
@@ -16,17 +16,55 @@ version: "3"
 #   task test:cov      -> tests with coverage
 #   task format        -> format all code (cargo fmt + alef fmt)
 #   task lint          -> lint via prek (full pre-commit chain)
-#   task update        -> compatible dependency updates everywhere
-#   task upgrade       -> aggressive upgrades (cargo upgrade --incompatible,
-#                         pnpm up --latest, uv sync --upgrade, bundle update, etc.)
+#   task update        -> compatible dependency updates (minor versions only)
+#   task upgrade       -> breaking dependency upgrades (latest versions)
 #   task clean         -> remove all build artifacts
 #   task publish:*     -> alef publish validate/prepare/build/package
 #   task rust:*        -> Rust-specific tasks
+#   task python:*      -> Python-specific tasks
+#   task node:*        -> Node/TypeScript-specific tasks
+#   task ruby:*        -> Ruby-specific tasks
+#   task php:*         -> PHP-specific tasks
+#   task go:*          -> Go-specific tasks
+#   task java:*        -> Java-specific tasks
+#   task csharp:*      -> C#-specific tasks
+#   task elixir:*      -> Elixir-specific tasks
+#   task dart:*        -> Dart-specific tasks
+#   task swift:*       -> Swift-specific tasks
+#   task kotlin_android:* -> Kotlin/Android-specific tasks
+#   task r:*           -> R-specific tasks
+#   task zig:*         -> Zig-specific tasks
 # ============================================================================
 
 includes:
   rust:
     taskfile: ./.task/languages/rust.yml
+  python:
+    taskfile: ./.task/languages/python.yml
+  node:
+    taskfile: ./.task/languages/node.yml
+  ruby:
+    taskfile: ./.task/languages/ruby.yml
+  php:
+    taskfile: ./.task/languages/php.yml
+  go:
+    taskfile: ./.task/languages/go.yml
+  java:
+    taskfile: ./.task/languages/java.yml
+  csharp:
+    taskfile: ./.task/languages/csharp.yml
+  elixir:
+    taskfile: ./.task/languages/elixir.yml
+  dart:
+    taskfile: ./.task/languages/dart.yml
+  swift:
+    taskfile: ./.task/languages/swift.yml
+  kotlin_android:
+    taskfile: ./.task/languages/kotlin_android.yml
+  r:
+    taskfile: ./.task/languages/r.yml
+  zig:
+    taskfile: ./.task/languages/zig.yml
   version:
     taskfile: ./.task/tools/version-sync.yml
   benchmark:
@@ -167,17 +205,43 @@ tasks:
 
   # === Update / Upgrade ===
   update:
-    desc: "Update dependencies (compatible only)"
+    desc: "Update all dependencies within major versions (minor patches only)"
     cmds:
       - task: rust:update
+      - task: python:update
+      - task: node:update
+      - task: ruby:update
+      - task: php:update
+      - task: go:update
+      - task: java:update
+      - task: csharp:update
+      - task: elixir:update
+      - task: dart:update
+      - task: swift:update
+      - task: kotlin_android:update
+      - task: r:update
+      - task: zig:update
       - alef update
       - prek autoupdate
 
   upgrade:
-    desc: "Upgrade dependencies aggressively (cargo upgrade --incompatible, pnpm up --latest, uv sync --upgrade, GitHub Actions, etc.)"
+    desc: "Upgrade all dependencies to latest including breaking changes"
     cmds:
       - rustup update stable
       - task: rust:upgrade
+      - task: python:upgrade
+      - task: node:upgrade
+      - task: ruby:upgrade
+      - task: php:upgrade
+      - task: go:upgrade
+      - task: java:upgrade
+      - task: csharp:upgrade
+      - task: elixir:upgrade
+      - task: dart:upgrade
+      - task: swift:upgrade
+      - task: kotlin_android:upgrade
+      - task: r:upgrade
+      - task: zig:upgrade
       - alef update --latest
       - prek autoupdate
       - npx --yes actions-up@latest --yes --style preserve

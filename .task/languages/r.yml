@@ -1,0 +1,19 @@
+version: "3"
+internal: true
+
+tasks:
+  update:
+    desc: "Update R dependencies within major versions (devtools::update_packages(check.built = TRUE))"
+    silent: false
+    cmds:
+      - cmd: |
+          cd packages/r && Rscript -e "devtools::update_packages(check.built = TRUE)"
+        ignore_error: false
+
+  upgrade:
+    desc: "Upgrade R dependencies to latest including breaking changes (update.packages())"
+    silent: false
+    cmds:
+      - cmd: |
+          cd packages/r && Rscript -e "update.packages(ask = FALSE)"
+        ignore_error: false
