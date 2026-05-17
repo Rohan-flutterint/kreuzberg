@@ -258,6 +258,22 @@ scratch/
 
 e2e/zig/.zig-cache/
 
+# Swift e2e build artifacts (Swift Package Manager)
+e2e/swift/.build/
+e2e/swift/.swiftpm/
+e2e/swift/Package.resolved
+e2e/swift_e2e/.build/
+e2e/swift_e2e/.swiftpm/
+e2e/swift_e2e/Package.resolved
+
+# Dart e2e build artifacts
+e2e/dart/.dart_tool/
+e2e/dart/build/
+e2e/dart/pubspec.lock
+
+# Go e2e build artifacts
+e2e/go/vendor/
+
 erl_crash.dump
 
 # BEGIN ai-rulez (DO NOT EDIT - managed by ai-rulez)
