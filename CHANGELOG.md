@@ -126,6 +126,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   numbered lists with sibling items are unaffected. Lone lowercase-initial lines
   (`1. go there alone`) remain `ListItem` and are not affected.
 
+- **Bordered 2-column PDF tables now detected (#964)**: Added `extract_tables_bordered` as a
+  second detection tier between the strict native pass and the text-heuristic fallback. Tables
+  whose cells are drawn with stroke lines or rectangles but have only 2 columns are now recovered.
+
 ## [5.0.0-rc.1] - 2026-05-16
 
 ### Changed
