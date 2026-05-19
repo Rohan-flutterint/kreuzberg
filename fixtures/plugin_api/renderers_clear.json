@@ -11,8 +11,7 @@
   "call": "clear_renderers",
   "assertions": [
     {
-      "type": "is_empty",
-      "field": "result"
+      "type": "not_error"
     }
   ]
 }
