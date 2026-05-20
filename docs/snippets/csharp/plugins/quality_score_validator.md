@@ -1,6 +1,9 @@
 ```csharp title="C#"
 using Kreuzberg;
 
+var validator = new QualityScoreValidator();
+ValidatorRegistry.Register(validator);
+
 public class QualityScoreValidator : IValidator
 {
     private const float MinimumQuality = 0.7f;
@@ -50,7 +53,4 @@ public class QualityScoreValidator : IValidator
         return Math.Min(score, 1.0f);
     }
 }
-
-var validator = new QualityScoreValidator();
-ValidatorRegistry.Register(validator);
 ```
