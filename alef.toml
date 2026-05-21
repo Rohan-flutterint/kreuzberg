@@ -893,6 +893,9 @@ args = [
 function = "extract_bytes"
 async = true
 
+[crates.e2e.calls.extract_file.overrides.swift]
+unnamed_arg_indices = [0, 1, 2]
+
 [crates.e2e.calls.extract_file.overrides.zig]
 # Zig binding has no async runtime; redirect to the sync variant and parse JSON.
 function = "extract_file_sync"
@@ -919,6 +922,9 @@ args = [
 options_type = "ExtractionConfig"
 options_via = "from_json"
 json_object_types = { chunking = "ChunkingConfig", ocr = "OcrConfig", images = "ImageExtractionConfig", html_output = "HtmlOutputConfig", language_detection = "LanguageDetectionConfig", postprocessor = "PostProcessorConfig", acceleration = "AccelerationConfig", email = "EmailConfig", pages = "PageConfig", pdf_options = "PdfConfig", layout = "LayoutDetectionConfig", tree_sitter = "TreeSitterConfig", structured_extraction = "StructuredExtractionConfig", content_filter = "ContentFilterConfig", token_reduction = "TokenReductionOptions" }
+
+[crates.e2e.calls.extract_bytes.overrides.swift]
+unnamed_arg_indices = [0, 1, 2]
 
 [crates.e2e.calls.extract_bytes.overrides.python]
 arg_name_map = { data = "content" }
@@ -963,6 +969,9 @@ options_type = "ExtractionConfig"
 options_via = "from_json"
 json_object_types = { chunking = "ChunkingConfig", ocr = "OcrConfig", images = "ImageExtractionConfig", html_output = "HtmlOutputConfig", language_detection = "LanguageDetectionConfig", postprocessor = "PostProcessorConfig", acceleration = "AccelerationConfig", email = "EmailConfig", pages = "PageConfig", pdf_options = "PdfConfig", layout = "LayoutDetectionConfig", tree_sitter = "TreeSitterConfig", structured_extraction = "StructuredExtractionConfig", content_filter = "ContentFilterConfig", token_reduction = "TokenReductionOptions" }
 
+[crates.e2e.calls.extract_file_sync.overrides.swift]
+unnamed_arg_indices = [0, 1, 2]
+
 [crates.e2e.calls.extract_file_sync.overrides.zig]
 function = "extract_file_sync"
 async = false
@@ -997,6 +1006,9 @@ options_type = "ExtractionConfig"
 
 [crates.e2e.calls.extract_bytes_sync.overrides.r]
 arg_name_map = { data = "content" }
+
+[crates.e2e.calls.extract_bytes_sync.overrides.swift]
+unnamed_arg_indices = [0, 1, 2]
 
 [crates.e2e.calls.extract_bytes_sync.overrides.zig]
 function = "extract_bytes_sync"

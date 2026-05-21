@@ -201,11 +201,6 @@ internal extension EmailConfig {
 /// ```
 public typealias ExtractionConfig = RustBridge.ExtractionConfig
 
-/// A Rust-managed vector, re-exported for e2e test convenience.
-///
-/// Used in generated tests to construct byte/string vectors for batch operations.
-public typealias RustVec = RustBridge.RustVec
-
 /// Per-file extraction configuration overrides for batch processing.
 ///
 /// All fields are `Option<T>` — `None` means "use the batch-level default."
@@ -5909,6 +5904,34 @@ public func extractFile(
 // MARK: - E2e Test Convenience Wrappers
 // JSON-config and file-loading wrappers used exclusively by the generated e2e tests.
 
+public func extractionConfigFromJson<GenericIntoRustString: IntoRustString>(
+    _ json: GenericIntoRustString
+) throws -> ExtractionConfig {
+    try RustBridge.extractionConfigFromJson(json)
+}
+
+public func batchBytesItemFromJson<GenericIntoRustString: IntoRustString>(
+    _ json: GenericIntoRustString
+) throws -> BatchBytesItem {
+    try RustBridge.batchBytesItemFromJson(json)
+}
+
+public func batchFileItemFromJson<GenericIntoRustString: IntoRustString>(
+    _ json: GenericIntoRustString
+) throws -> BatchFileItem {
+    try RustBridge.batchFileItemFromJson(json)
+}
+
+// MARK: - ExtractionResult Property Accessors
+extension ExtractionResultRef {
+    public var mimeType: RustString {
+        self.mimeType()
+    }
+    public var content: RustString {
+        self.content()
+    }
+}
+
 private func resolveFixturePath(_ name: String) -> URL {
     if let dir = ProcessInfo.processInfo.environment["FIXTURES_DIR"] {
         return URL(fileURLWithPath: dir).appendingPathComponent(name)
@@ -6761,10 +6784,6 @@ public func elementTypeFromJson(_ json: String) throws -> ElementType {
     return try JSONDecoder().decode(ElementType.self, from: data)
 }
 
-public func extractionConfigFromJson<GenericIntoRustString: RustBridge.IntoRustString>(_ json: GenericIntoRustString) throws -> ExtractionConfig {
-    return try RustBridge.extractionConfigFromJson(json)
-}
-
 public func formatMetadataFromJson(_ json: String) throws -> FormatMetadata {
     return try RustBridge.formatMetadataFromJson(json)
 }
@@ -7082,4 +7101,22 @@ public func unregisterDocumentExtractor(_ name: String) throws {
 /// Remove every registered `DocumentExtractor` plugin. Typically used in test teardown.
 public func clearDocumentExtractors() throws {
     try RustBridge.clearDocumentExtractors()
+}
+
+/// Register an inbound `Renderer` plugin implementation. The Swift
+/// host wraps a `Renderer` conformer in a `SwiftRendererBox` adapter
+/// (see `Sources/RustBridge/Plugins.swift`); pass the wrapped instance to
+/// register the plugin in the global registry.
+public func registerRenderer(_ swiftBox: SwiftRendererBox) throws {
+    try RustBridge.registerRenderer(swiftBox)
+}
+
+/// Unregister a previously-registered `Renderer` plugin by name.
+public func unregisterRenderer(_ name: String) throws {
+    try RustBridge.unregisterRenderer(name)
+}
+
+/// Remove every registered `Renderer` plugin. Typically used in test teardown.
+public func clearRenderers() throws {
+    try RustBridge.clearRenderers()
 }

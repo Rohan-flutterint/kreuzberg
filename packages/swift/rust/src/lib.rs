@@ -11675,7 +11675,7 @@ pub fn alef_phantom_vec_renderer() -> Vec<RendererBox> {
 pub fn renderer_call_render(this: &RendererBox, doc: String) -> String {
     match this
         .0
-        .render(&serde_json::from_str::<kreuzberg::internal::InternalDocument>(&doc).expect("valid JSON for doc"))
+        .render(&serde_json::from_str::<kreuzberg::InternalDocument>(&doc).expect("valid JSON for doc"))
     {
         Ok(v) => format!(
             "{{\"ok\": {}}}",
@@ -12102,12 +12102,12 @@ impl kreuzberg::plugins::DocumentExtractor for SwiftDocumentExtractorWrapper {
         content: &[u8],
         mime_type: &str,
         config: &kreuzberg::ExtractionConfig,
-    ) -> std::result::Result<kreuzberg::internal::InternalDocument, kreuzberg::KreuzbergError> {
+    ) -> std::result::Result<kreuzberg::InternalDocument, kreuzberg::KreuzbergError> {
         let content = content.to_vec();
         let mime_type = mime_type.to_string();
         let config = ::serde_json::to_string(&config).expect("serializable param config");
         let envelope = self.inner.alef_extract_bytes(content, mime_type, config);
-        decode_inbound_envelope::<kreuzberg::internal::InternalDocument>(&envelope)
+        decode_inbound_envelope::<kreuzberg::InternalDocument>(&envelope)
     }
 
     fn supported_mime_types(&self) -> &'static [&'static str] {
@@ -12187,10 +12187,7 @@ impl kreuzberg::plugins::Plugin for SwiftRendererWrapper {
     }
 }
 impl kreuzberg::plugins::Renderer for SwiftRendererWrapper {
-    fn render(
-        &self,
-        doc: &kreuzberg::internal::InternalDocument,
-    ) -> std::result::Result<String, kreuzberg::KreuzbergError> {
+    fn render(&self, doc: &kreuzberg::InternalDocument) -> std::result::Result<String, kreuzberg::KreuzbergError> {
         let doc = ::serde_json::to_string(&doc).expect("serializable param doc");
         let envelope = self.inner.alef_render(doc);
         decode_inbound_envelope::<String>(&envelope)

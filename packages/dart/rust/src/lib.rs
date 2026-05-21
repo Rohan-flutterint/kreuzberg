@@ -14,7 +14,7 @@ mod frb_generated;
 pub use flutter_rust_bridge::DartFnFuture;
 use flutter_rust_bridge::frb;
 #[allow(unused_imports)]
-pub use kreuzberg::internal::InternalDocument;
+pub use kreuzberg::InternalDocument;
 
 /// Hardware acceleration configuration for ONNX Runtime models.
 ///
@@ -10190,20 +10190,12 @@ pub struct DocumentExtractorDartImpl {
     /// Plugin version used by the Plugin super-trait impl.
     plugin_version: String,
     extract_bytes: Box<
-        dyn Fn(
-                Vec<u8>,
-                String,
-                ExtractionConfig,
-            ) -> flutter_rust_bridge::DartFnFuture<kreuzberg::internal::InternalDocument>
+        dyn Fn(Vec<u8>, String, ExtractionConfig) -> flutter_rust_bridge::DartFnFuture<kreuzberg::InternalDocument>
             + Send
             + Sync,
     >,
     extract_file: Box<
-        dyn Fn(
-                String,
-                String,
-                ExtractionConfig,
-            ) -> flutter_rust_bridge::DartFnFuture<kreuzberg::internal::InternalDocument>
+        dyn Fn(String, String, ExtractionConfig) -> flutter_rust_bridge::DartFnFuture<kreuzberg::InternalDocument>
             + Send
             + Sync,
     >,
@@ -10242,7 +10234,7 @@ impl kreuzberg::plugins::DocumentExtractor for DocumentExtractorDartImpl {
         content: &[u8],
         mime_type: &str,
         config: &kreuzberg::ExtractionConfig,
-    ) -> kreuzberg::Result<kreuzberg::internal::InternalDocument> {
+    ) -> kreuzberg::Result<kreuzberg::InternalDocument> {
         let content = content.to_vec();
         let mime_type = mime_type.to_string();
         let config = ExtractionConfig::from(config.clone());
@@ -10254,7 +10246,7 @@ impl kreuzberg::plugins::DocumentExtractor for DocumentExtractorDartImpl {
         path: &std::path::Path,
         mime_type: &str,
         config: &kreuzberg::ExtractionConfig,
-    ) -> kreuzberg::Result<kreuzberg::internal::InternalDocument> {
+    ) -> kreuzberg::Result<kreuzberg::InternalDocument> {
         let path = path.to_string_lossy().into_owned();
         let mime_type = mime_type.to_string();
         let config = ExtractionConfig::from(config.clone());
@@ -10298,20 +10290,12 @@ pub fn create_document_extractor_dart_impl(
     plugin_name: String,
     plugin_version: String,
     extract_bytes: Box<
-        dyn Fn(
-                Vec<u8>,
-                String,
-                ExtractionConfig,
-            ) -> flutter_rust_bridge::DartFnFuture<kreuzberg::internal::InternalDocument>
+        dyn Fn(Vec<u8>, String, ExtractionConfig) -> flutter_rust_bridge::DartFnFuture<kreuzberg::InternalDocument>
             + Send
             + Sync,
     >,
     extract_file: Box<
-        dyn Fn(
-                String,
-                String,
-                ExtractionConfig,
-            ) -> flutter_rust_bridge::DartFnFuture<kreuzberg::internal::InternalDocument>
+        dyn Fn(String, String, ExtractionConfig) -> flutter_rust_bridge::DartFnFuture<kreuzberg::InternalDocument>
             + Send
             + Sync,
     >,
@@ -10365,8 +10349,7 @@ pub struct RendererDartImpl {
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
     plugin_version: String,
-    render:
-        Box<dyn Fn(kreuzberg::internal::InternalDocument) -> flutter_rust_bridge::DartFnFuture<String> + Send + Sync>,
+    render: Box<dyn Fn(kreuzberg::InternalDocument) -> flutter_rust_bridge::DartFnFuture<String> + Send + Sync>,
 }
 impl ::std::fmt::Debug for RendererDartImpl {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -10393,7 +10376,7 @@ impl kreuzberg::plugins::Plugin for RendererDartImpl {
 }
 
 impl kreuzberg::plugins::Renderer for RendererDartImpl {
-    fn render(&self, doc: &kreuzberg::internal::InternalDocument) -> kreuzberg::Result<String> {
+    fn render(&self, doc: &kreuzberg::InternalDocument) -> kreuzberg::Result<String> {
         let doc = doc.clone();
         let __result = ::tokio::runtime::Builder::new_current_thread()
             .build()
@@ -10408,9 +10391,7 @@ impl kreuzberg::plugins::Renderer for RendererDartImpl {
 pub fn create_renderer_dart_impl(
     plugin_name: String,
     plugin_version: String,
-    render: Box<
-        dyn Fn(kreuzberg::internal::InternalDocument) -> flutter_rust_bridge::DartFnFuture<String> + Send + Sync,
-    >,
+    render: Box<dyn Fn(kreuzberg::InternalDocument) -> flutter_rust_bridge::DartFnFuture<String> + Send + Sync>,
 ) -> RendererDartImpl {
     RendererDartImpl {
         plugin_name,
