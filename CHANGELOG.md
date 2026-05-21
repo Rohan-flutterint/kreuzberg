@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **kotlin-android**: Removed `#[cfg_attr(alef, alef(skip))]` from `InternalDocument` struct so it gets generated for Kotlin bindings. The type is used in trait bridge method signatures (e.g., `IRenderer::render(doc: InternalDocument)`) and must be available for the generated interface to compile. Previously the generated Kotlin code referenced `InternalDocument` but the type was never emitted, causing "Unresolved reference" errors. (`crates/kreuzberg/src/types/internal.rs`)
+
+- **kotlin-android**: Added `embed_texts_async` to `exclude_functions` in `alef.toml`. The function creates a naming conflict with the suspend wrapper of `embed_texts` — both generate `suspend fun embedTextsAsync()` in Kotlin, causing overload ambiguity. Callers should use the suspend function from `embed_texts` instead. This resolves duplicate function declaration errors in the generated `Kreuzberg.kt`. (`alef.toml`)
+
 ### Changed
 
 - **alef**: bumped to v0.17.24. Regenerated all bindings and e2e tests. v0.17.24 includes: conditional `#[php(prop)]` for Prop-compatible types only (fixes E0277 errors for non-Prop fields), Kotlin/Android codegen fixes (named struct field default-construction, sealed-class field annotations, JNI single-param `is_optional` propagation), Dart pubspec single-caret version constraint, alef-e2e/zig module_name path fix, valid `build.zig.zon` declarations, scaffold wasm filename underscore conversion, alef-e2e/csharp synthetic chunk assertion inline predicates (`chunks_have_heading_context`, `first_chunk_starts_with_heading`), alef-e2e/python equivalent. Known regression: `e2e/csharp/tests/ContractTests.cs` is no longer emitted by the C# e2e generator; other languages still emit their contract test file (tracked for upstream fix). (`alef.toml`, ~935 regenerated files)
