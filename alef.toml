@@ -820,7 +820,6 @@ class = "dev.kreuzberg.Kreuzberg"
 function = "extractFile"
 options_type = "ExtractionConfig"
 enum_fields = { outputFormat = "OutputFormat" }
-assert_enum_fields = { "metadata.format" = "FormatMetadata" }
 
 [crates.e2e.call.overrides.csharp]
 class = "KreuzbergLib"
