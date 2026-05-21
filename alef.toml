@@ -1,5 +1,5 @@
 [workspace]
-alef_version = "0.17.24"
+alef_version = "0.17.25"
 languages = [
   "python",
   "node",
@@ -1075,6 +1075,9 @@ returns_result = true
 result_is_simple = true
 args = [{ name = "content", field = "input.data", type = "bytes" }]
 
+[crates.e2e.calls.detect_mime_type_from_bytes.overrides.swift]
+unnamed_arg_indices = [0]
+
 [crates.e2e.calls.validate_chunking_params.overrides.python]
 arg_name_map = { max_characters = "max_chars", overlap = "max_overlap" }
 
@@ -1216,6 +1219,7 @@ args = [
 [crates.e2e.calls.embed_texts.overrides.csharp]
 result_is_simple = true
 options_type = "EmbeddingConfig"
+nested_types = { embedding_model = "EmbeddingModelType" }
 
 [crates.e2e.calls.embed_texts.overrides.java]
 result_is_simple = true
@@ -2619,6 +2623,7 @@ args = [
 [crates.e2e.calls.embed_texts_async.overrides.csharp]
 result_is_simple = true
 options_type = "EmbeddingConfig"
+nested_types = { embedding_model = "EmbeddingModelType" }
 
 [crates.e2e.calls.embed_texts_async.overrides.java]
 result_is_simple = true
