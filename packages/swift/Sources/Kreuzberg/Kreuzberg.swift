@@ -5924,11 +5924,11 @@ public func batchFileItemFromJson<GenericIntoRustString: IntoRustString>(
 
 // MARK: - ExtractionResult Property Accessors
 extension ExtractionResultRef {
-    public var mimeType: RustString {
-        self.mimeType()
+    public var mimeType: String {
+        self.mimeType().toString()
     }
-    public var content: RustString {
-        self.content()
+    public var content: String {
+        self.content().toString()
     }
 }
 
