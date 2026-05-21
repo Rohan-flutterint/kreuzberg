@@ -27,7 +27,10 @@ tasks:
   lint:links:
     desc: Check links with lychee
     cmds:
-      - lychee --offline docs/ README.md
+      # docs/overrides/main.html contains Jinja template variables (e.g.
+      # `{{ page.edit_url }}`) that lychee interprets as broken local file
+      # links — skip that path; the rendered site is link-checked separately.
+      - lychee --offline --root-dir "$PWD/docs" --exclude-path "docs/overrides" docs/ README.md
 
   lint:prose:
     desc: Lint prose with textlint

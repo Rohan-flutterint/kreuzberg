@@ -1,9 +1,6 @@
 ```csharp title="C#"
 using Kreuzberg;
 
-var processor = new PdfOnlyProcessor();
-PostProcessorRegistry.Register(processor);
-
 public class PdfOnlyProcessor : IPostProcessor
 {
     public string Name => "pdf-only-processor";
@@ -43,6 +40,15 @@ public class PdfOnlyProcessor : IPostProcessor
     public int Priority()
     {
         return 50;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var processor = new PdfOnlyProcessor();
+        PostProcessorRegistry.Register(processor);
     }
 }
 ```

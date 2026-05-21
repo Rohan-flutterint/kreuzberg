@@ -3,9 +3,6 @@ using Kreuzberg;
 using System.Net.Http;
 using System.Text.Json;
 
-var backend = new CloudOcrBackend(apiKey: "your-api-key");
-KreuzbergLib.RegisterOcrBackend(backend);
-
 public class CloudOcrBackend : IOcrBackend
 {
     private readonly string _apiKey;
@@ -46,5 +43,14 @@ public class CloudOcrBackend : IOcrBackend
 
     public void Initialize() { }
     public void Shutdown() { }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var backend = new CloudOcrBackend(apiKey: "your-api-key");
+        KreuzbergLib.RegisterOcrBackend(backend);
+    }
 }
 ```

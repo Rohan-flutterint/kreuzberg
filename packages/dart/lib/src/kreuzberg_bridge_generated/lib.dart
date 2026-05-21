@@ -1019,7 +1019,7 @@ abstract class BoxFnStringOcrConfigDartFnFutureExtractionResult
 abstract class BoxFnStringStringDartFnFutureBool
     implements RustOpaqueInterface {}
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Box < dyn Fn (String , String , ExtractionConfig ,) -> DartFnFuture < InternalDocument > + Send + Sync >>>
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Box < dyn Fn (String , String , ExtractionConfig) -> DartFnFuture < InternalDocument > + Send + Sync >>>
 abstract class BoxFnStringStringExtractionConfigDartFnFutureInternalDocument
     implements RustOpaqueInterface {}
 
@@ -1031,7 +1031,7 @@ abstract class BoxFnVecStringDartFnFutureVecVecF64
 abstract class BoxFnVecU8OcrConfigDartFnFutureExtractionResult
     implements RustOpaqueInterface {}
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Box < dyn Fn (Vec < u8 > , String , ExtractionConfig ,) -> DartFnFuture < InternalDocument > + Send + Sync >>>
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Box < dyn Fn (Vec < u8 > , String , ExtractionConfig) -> DartFnFuture < InternalDocument > + Send + Sync >>>
 abstract class BoxFnVecU8StringExtractionConfigDartFnFutureInternalDocument
     implements RustOpaqueInterface {}
 

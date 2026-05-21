@@ -3,33 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// Usage
-using var client = new HttpClient();
-
-var request = new ChunkRequest(
-    Text: "Your long text content here...",
-    ChunkerType: "text",
-    Config: new ChunkConfig(
-        MaxCharacters: 1000,
-        Overlap: 50,
-        Trim: true
-    )
-);
-
-var response = await client.PostAsJsonAsync(
-    "http://localhost:8000/chunk",
-    request
-);
-
-var result = await response.Content.ReadFromJsonAsync<ChunkResponse>();
-
-Console.WriteLine($"Created {result?.ChunkCount} chunks");
-foreach (var chunk in result?.Chunks ?? [])
-{
-    var preview = chunk.Content[..Math.Min(50, chunk.Content.Length)];
-    Console.WriteLine($"Chunk {chunk.ChunkIndex}: {preview}...");
-}
-
 // Request models
 public record ChunkRequest(
     [property: JsonPropertyName("text")] string Text,
@@ -60,4 +33,36 @@ public record ChunkItem(
     [property: JsonPropertyName("first_page")] int? FirstPage,
     [property: JsonPropertyName("last_page")] int? LastPage
 );
+
+class Program
+{
+    static async Task Main()
+    {
+        using var client = new HttpClient();
+
+        var request = new ChunkRequest(
+            Text: "Your long text content here...",
+            ChunkerType: "text",
+            Config: new ChunkConfig(
+                MaxCharacters: 1000,
+                Overlap: 50,
+                Trim: true
+            )
+        );
+
+        var response = await client.PostAsJsonAsync(
+            "http://localhost:8000/chunk",
+            request
+        );
+
+        var result = await response.Content.ReadFromJsonAsync<ChunkResponse>();
+
+        Console.WriteLine($"Created {result?.ChunkCount} chunks");
+        foreach (var chunk in result?.Chunks ?? [])
+        {
+            var preview = chunk.Content[..Math.Min(50, chunk.Content.Length)];
+            Console.WriteLine($"Chunk {chunk.ChunkIndex}: {preview}...");
+        }
+    }
+}
 ```
