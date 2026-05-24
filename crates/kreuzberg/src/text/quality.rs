@@ -124,6 +124,15 @@ fn count_tag_bytes(text: &str, open_needle: &[u8], close_needle: &[u8]) -> usize
     total
 }
 
+/// Score an extracted text on the closed interval `[0.0, 1.0]`, where higher is better.
+///
+/// `1.0` is the neutral score for clean prose; penalties (OCR artifacts, embedded
+/// script/style noise, navigation chrome) subtract, structural cues (headings,
+/// punctuation) add. The result is clamped to `[0.0, 1.0]`.
+///
+/// Pass `metadata` as `None` when the caller has no extraction metadata available;
+/// the metadata bonus simply isn't applied in that case. Texts shorter than
+/// `MIN_TEXT_LENGTH` short-circuit to `0.1` regardless of metadata.
 pub fn calculate_quality_score(text: &str, metadata: Option<&AHashMap<Cow<'static, str>, serde_json::Value>>) -> f64 {
     if text.is_empty() || text.trim().is_empty() {
         return 0.0;
@@ -240,6 +249,11 @@ fn calculate_script_penalty(text: &str, total_chars: f64) -> f64 {
         text
     };
 
+    // Asymmetric input lengths are deliberate: JS_FUNCTION/CSS_RULES use the
+    // truncated 64 KiB slice (their backtracker buffers scale with input length
+    // and the patterns are noise heuristics, so JS leakage past 64 KiB is
+    // acceptably under-counted). `count_tag_bytes` walks the full `text` because
+    // its memmem scanner is linear in input length and cheap regardless of size.
     let script_chars = sum_match_lengths(truncated, &JS_FUNCTION_PATTERN)
         + sum_match_lengths(truncated, &CSS_RULES_PATTERN)
         + count_tag_bytes(text, b"<script", b"</script>")
