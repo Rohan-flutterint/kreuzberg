@@ -5095,6 +5095,41 @@ public enum ChunkSizing: Codable, Sendable, Hashable {
     case characters
     /// Size measured in tokens from a HuggingFace tokenizer.
     case tokenizer(model: String, cacheDir: URL?)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case cacheDir = "cache_dir"
+        case model
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+        switch type {
+        case "characters":
+            self = .characters
+        case "tokenizer":
+            self = .tokenizer(model: try container.decode(String.self, forKey: .model), cacheDir: try container.decodeIfPresent(URL.self, forKey: .cacheDir))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type,
+                in: container,
+                debugDescription: "Unknown ChunkSizing type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .characters:
+            try container.encode("characters", forKey: .type)
+        case .tokenizer(let model, let cacheDir):
+            try container.encode("tokenizer", forKey: .type)
+            try container.encode(model, forKey: .model)
+            try container.encodeIfPresent(cacheDir, forKey: .cacheDir)
+        }
+    }
 }
 extension ChunkSizing {
     func intoRust() throws -> RustBridge.ChunkSizing {
@@ -5135,6 +5170,54 @@ public enum EmbeddingModelType: Codable, Sendable, Hashable {
     ///
     /// See `register_embedding_backend`.
     case plugin(name: String)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case dimensions
+        case llm
+        case modelId = "model_id"
+        case name
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+        switch type {
+        case "preset":
+            self = .preset(name: try container.decode(String.self, forKey: .name))
+        case "custom":
+            self = .custom(modelId: try container.decode(String.self, forKey: .modelId), dimensions: try container.decode(UInt.self, forKey: .dimensions))
+        case "llm":
+            self = .llm(llm: try container.decode(LlmConfig.self, forKey: .llm))
+        case "plugin":
+            self = .plugin(name: try container.decode(String.self, forKey: .name))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type,
+                in: container,
+                debugDescription: "Unknown EmbeddingModelType type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .preset(let name):
+            try container.encode("preset", forKey: .type)
+            try container.encode(name, forKey: .name)
+        case .custom(let modelId, let dimensions):
+            try container.encode("custom", forKey: .type)
+            try container.encode(modelId, forKey: .modelId)
+            try container.encode(dimensions, forKey: .dimensions)
+        case .llm(let llm):
+            try container.encode("llm", forKey: .type)
+            try container.encode(llm, forKey: .llm)
+        case .plugin(let name):
+            try container.encode("plugin", forKey: .type)
+            try container.encode(name, forKey: .name)
+        }
+    }
 }
 extension EmbeddingModelType {
     func intoRust() throws -> RustBridge.EmbeddingModelType {
@@ -5419,6 +5502,157 @@ public enum NodeContent: Codable, Sendable, Hashable {
     case rawBlock(format: String, content: String)
     /// Structured metadata block (email headers, YAML frontmatter, etc.).
     case metadataBlock(entries: [[String]])
+
+    private enum CodingKeys: String, CodingKey {
+        case node_type
+        case content
+        case definition
+        case description
+        case entries
+        case format
+        case grid
+        case headingLevel = "heading_level"
+        case headingText = "heading_text"
+        case imageIndex = "image_index"
+        case key
+        case kind
+        case label
+        case language
+        case level
+        case number
+        case ordered
+        case src
+        case term
+        case text
+        case title
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .node_type)
+        switch type {
+        case "title":
+            self = .title(text: try container.decode(String.self, forKey: .text))
+        case "heading":
+            self = .heading(level: try container.decode(UInt8.self, forKey: .level), text: try container.decode(String.self, forKey: .text))
+        case "paragraph":
+            self = .paragraph(text: try container.decode(String.self, forKey: .text))
+        case "list":
+            self = .list(ordered: try container.decode(Bool.self, forKey: .ordered))
+        case "list_item":
+            self = .listItem(text: try container.decode(String.self, forKey: .text))
+        case "table":
+            self = .table(grid: try container.decode(TableGrid.self, forKey: .grid))
+        case "image":
+            self = .image(description: try container.decodeIfPresent(String.self, forKey: .description), imageIndex: try container.decodeIfPresent(UInt32.self, forKey: .imageIndex), src: try container.decodeIfPresent(String.self, forKey: .src))
+        case "code":
+            self = .code(text: try container.decode(String.self, forKey: .text), language: try container.decodeIfPresent(String.self, forKey: .language))
+        case "quote":
+            self = .quote
+        case "formula":
+            self = .formula(text: try container.decode(String.self, forKey: .text))
+        case "footnote":
+            self = .footnote(text: try container.decode(String.self, forKey: .text))
+        case "group":
+            self = .group(label: try container.decodeIfPresent(String.self, forKey: .label), headingLevel: try container.decodeIfPresent(UInt8.self, forKey: .headingLevel), headingText: try container.decodeIfPresent(String.self, forKey: .headingText))
+        case "page_break":
+            self = .pageBreak
+        case "slide":
+            self = .slide(number: try container.decode(UInt32.self, forKey: .number), title: try container.decodeIfPresent(String.self, forKey: .title))
+        case "definition_list":
+            self = .definitionList
+        case "definition_item":
+            self = .definitionItem(term: try container.decode(String.self, forKey: .term), definition: try container.decode(String.self, forKey: .definition))
+        case "citation":
+            self = .citation(key: try container.decode(String.self, forKey: .key), text: try container.decode(String.self, forKey: .text))
+        case "admonition":
+            self = .admonition(kind: try container.decode(String.self, forKey: .kind), title: try container.decodeIfPresent(String.self, forKey: .title))
+        case "raw_block":
+            self = .rawBlock(format: try container.decode(String.self, forKey: .format), content: try container.decode(String.self, forKey: .content))
+        case "metadata_block":
+            self = .metadataBlock(entries: try container.decode([[String]].self, forKey: .entries))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .node_type,
+                in: container,
+                debugDescription: "Unknown NodeContent type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .title(let text):
+            try container.encode("title", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+        case .heading(let level, let text):
+            try container.encode("heading", forKey: .node_type)
+            try container.encode(level, forKey: .level)
+            try container.encode(text, forKey: .text)
+        case .paragraph(let text):
+            try container.encode("paragraph", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+        case .list(let ordered):
+            try container.encode("list", forKey: .node_type)
+            try container.encode(ordered, forKey: .ordered)
+        case .listItem(let text):
+            try container.encode("list_item", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+        case .table(let grid):
+            try container.encode("table", forKey: .node_type)
+            try container.encode(grid, forKey: .grid)
+        case .image(let description, let imageIndex, let src):
+            try container.encode("image", forKey: .node_type)
+            try container.encodeIfPresent(description, forKey: .description)
+            try container.encodeIfPresent(imageIndex, forKey: .imageIndex)
+            try container.encodeIfPresent(src, forKey: .src)
+        case .code(let text, let language):
+            try container.encode("code", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+            try container.encodeIfPresent(language, forKey: .language)
+        case .quote:
+            try container.encode("quote", forKey: .node_type)
+        case .formula(let text):
+            try container.encode("formula", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+        case .footnote(let text):
+            try container.encode("footnote", forKey: .node_type)
+            try container.encode(text, forKey: .text)
+        case .group(let label, let headingLevel, let headingText):
+            try container.encode("group", forKey: .node_type)
+            try container.encodeIfPresent(label, forKey: .label)
+            try container.encodeIfPresent(headingLevel, forKey: .headingLevel)
+            try container.encodeIfPresent(headingText, forKey: .headingText)
+        case .pageBreak:
+            try container.encode("page_break", forKey: .node_type)
+        case .slide(let number, let title):
+            try container.encode("slide", forKey: .node_type)
+            try container.encode(number, forKey: .number)
+            try container.encodeIfPresent(title, forKey: .title)
+        case .definitionList:
+            try container.encode("definition_list", forKey: .node_type)
+        case .definitionItem(let term, let definition):
+            try container.encode("definition_item", forKey: .node_type)
+            try container.encode(term, forKey: .term)
+            try container.encode(definition, forKey: .definition)
+        case .citation(let key, let text):
+            try container.encode("citation", forKey: .node_type)
+            try container.encode(key, forKey: .key)
+            try container.encode(text, forKey: .text)
+        case .admonition(let kind, let title):
+            try container.encode("admonition", forKey: .node_type)
+            try container.encode(kind, forKey: .kind)
+            try container.encodeIfPresent(title, forKey: .title)
+        case .rawBlock(let format, let content):
+            try container.encode("raw_block", forKey: .node_type)
+            try container.encode(format, forKey: .format)
+            try container.encode(content, forKey: .content)
+        case .metadataBlock(let entries):
+            try container.encode("metadata_block", forKey: .node_type)
+            try container.encode(entries, forKey: .entries)
+        }
+    }
 }
 extension NodeContent {
     func intoRust() throws -> RustBridge.NodeContent {
@@ -5446,6 +5680,87 @@ public enum AnnotationKind: Codable, Sendable, Hashable {
     case fontSize(value: String)
     /// Extensible annotation for format-specific styling.
     case custom(name: String, value: String?)
+
+    private enum CodingKeys: String, CodingKey {
+        case annotation_type
+        case name
+        case title
+        case url
+        case value
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .annotation_type)
+        switch type {
+        case "bold":
+            self = .bold
+        case "italic":
+            self = .italic
+        case "underline":
+            self = .underline
+        case "strikethrough":
+            self = .strikethrough
+        case "code":
+            self = .code
+        case "subscript":
+            self = .`subscript`
+        case "superscript":
+            self = .superscript
+        case "link":
+            self = .link(url: try container.decode(String.self, forKey: .url), title: try container.decodeIfPresent(String.self, forKey: .title))
+        case "highlight":
+            self = .highlight
+        case "color":
+            self = .color(value: try container.decode(String.self, forKey: .value))
+        case "font_size":
+            self = .fontSize(value: try container.decode(String.self, forKey: .value))
+        case "custom":
+            self = .custom(name: try container.decode(String.self, forKey: .name), value: try container.decodeIfPresent(String.self, forKey: .value))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .annotation_type,
+                in: container,
+                debugDescription: "Unknown AnnotationKind type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .bold:
+            try container.encode("bold", forKey: .annotation_type)
+        case .italic:
+            try container.encode("italic", forKey: .annotation_type)
+        case .underline:
+            try container.encode("underline", forKey: .annotation_type)
+        case .strikethrough:
+            try container.encode("strikethrough", forKey: .annotation_type)
+        case .code:
+            try container.encode("code", forKey: .annotation_type)
+        case .`subscript`:
+            try container.encode("subscript", forKey: .annotation_type)
+        case .superscript:
+            try container.encode("superscript", forKey: .annotation_type)
+        case .link(let url, let title):
+            try container.encode("link", forKey: .annotation_type)
+            try container.encode(url, forKey: .url)
+            try container.encodeIfPresent(title, forKey: .title)
+        case .highlight:
+            try container.encode("highlight", forKey: .annotation_type)
+        case .color(let value):
+            try container.encode("color", forKey: .annotation_type)
+            try container.encode(value, forKey: .value)
+        case .fontSize(let value):
+            try container.encode("font_size", forKey: .annotation_type)
+            try container.encode(value, forKey: .value)
+        case .custom(let name, let value):
+            try container.encode("custom", forKey: .annotation_type)
+            try container.encode(name, forKey: .name)
+            try container.encodeIfPresent(value, forKey: .value)
+        }
+    }
 }
 extension AnnotationKind {
     func intoRust() throws -> RustBridge.AnnotationKind {
@@ -5692,6 +6007,47 @@ public enum OcrBoundingGeometry: Codable, Sendable, Hashable {
     /// Points are in clockwise order starting from top-left:
     /// `[top_left, top_right, bottom_right, bottom_left]`
     case quadrilateral(points: String)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case height
+        case left
+        case points
+        case top
+        case width
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+        switch type {
+        case "rectangle":
+            self = .rectangle(left: try container.decode(UInt32.self, forKey: .left), top: try container.decode(UInt32.self, forKey: .top), width: try container.decode(UInt32.self, forKey: .width), height: try container.decode(UInt32.self, forKey: .height))
+        case "quadrilateral":
+            self = .quadrilateral(points: try container.decode(String.self, forKey: .points))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type,
+                in: container,
+                debugDescription: "Unknown OcrBoundingGeometry type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .rectangle(let left, let top, let width, let height):
+            try container.encode("rectangle", forKey: .type)
+            try container.encode(left, forKey: .left)
+            try container.encode(top, forKey: .top)
+            try container.encode(width, forKey: .width)
+            try container.encode(height, forKey: .height)
+        case .quadrilateral(let points):
+            try container.encode("quadrilateral", forKey: .type)
+            try container.encode(points, forKey: .points)
+        }
+    }
 }
 extension OcrBoundingGeometry {
     func intoRust() throws -> RustBridge.OcrBoundingGeometry {
