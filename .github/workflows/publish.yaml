@@ -536,6 +536,12 @@ jobs:
     needs: [prepare, check-npm]
     if: ${{ needs.prepare.outputs.release_wasm == 'true' && (needs.check-npm.outputs.wasm_exists != 'true' || needs.prepare.outputs.force_republish == 'true') }}
     runs-on: ubuntu-latest
+    # WASM cold-build of kreuzberg-wasm (no-ORT feature set) runs ~12-15 min.
+    # GHA cancelled this job at the ~12-min mark with "runner shutdown signal"
+    # in three consecutive runs (preemption, not timeout). Explicit timeout
+    # bounds the budget; a dedicated cache-key-prefix keeps the WASM target
+    # cache warm across runs and brings rebuilds under 5 min.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6.0.2
         with:
@@ -546,6 +552,7 @@ jobs:
       - uses: kreuzberg-dev/actions/setup-rust@v1
         with:
           target: wasm32-unknown-unknown
+          cache-key-prefix: wasm-bindings
 
       - uses: kreuzberg-dev/actions/install-wasi-sdk@v1
 
