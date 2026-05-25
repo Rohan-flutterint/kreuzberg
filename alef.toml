@@ -744,7 +744,13 @@ vendor_mode = "registry"
 nif_versions = ["2.16", "2.17"]
 
 [crates.publish.languages.r]
-vendor_mode = "full"
+vendor_mode = "registry"
+
+[crates.publish.languages.dart]
+# dart/rust/Cargo.toml carries path deps on kreuzberg; rewrite to registry on publish.
+# NOTE: resolve_binding_manifest does not yet resolve the Dart manifest path — the rewrite
+# is a no-op until alef is updated to handle packages/dart/rust/Cargo.toml.
+vendor_mode = "registry"
 
 [crates.publish.languages.ffi]
 pkg_config = true
