@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **dart (ios)**: use `wasm-target` feature set for iOS x86_64 simulator build instead of `android-target`. The x86_64-apple-ios target was pulling in Android ABI pre-built binaries (pdfium, ort) with mismatched CPU types, causing lipo failures during XCFramework assembly. `wasm-target` is ORT-free and cross-compiles cleanly for all iOS simulators.
+
 ## [5.0.0-rc.2] - 2026-05-25
 
 ### Changed
