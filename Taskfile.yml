@@ -116,9 +116,9 @@ tasks:
       - task: rust:build
 
   build:bindings:
-    desc: "Build all language bindings (skip Rust core)"
+    desc: "Build all language bindings"
     cmds:
-      - alef build
+      - task: alef:build
 
   build:cli:
     desc: "Build the kreuzberg CLI binary"
@@ -267,12 +267,12 @@ tasks:
 
   # === Alef lifecycle ===
   alef:generate:
-    desc: "Run full alef pipeline (generate + stubs + scaffold + readme + docs + e2e)"
+    desc: "Regenerate all Alef-managed outputs without formatting or building"
     cmds:
-      - alef all --clean
+      - alef all --clean --format=false
 
   alef:verify:
-    desc: "Check bindings are up-to-date (CI mode)"
+    desc: "Check Alef-generated files are up to date"
     cmds:
       - alef verify --exit-code
 

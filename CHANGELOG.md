@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **deps**: bump alef pin v0.19.14 → v0.19.20. v0.19.15-v0.19.20 ship generator fixes addressing the systemic trait-bridge stub regressions surfaced by v5.0.0-rc.3 CI E2E (11 of 14 lang jobs failing on plugin_api stubs missing super-trait methods, wrong return types, internal type leakage, missing PHP interface emission, etc.) — plus the v0.19.20 hotfix that registers the new PHP interface Jinja templates in alef's embedded `TEMPLATES` array. Affects every binding (`crates/kreuzberg-{node,wasm,ffi}`, `packages/*`) and every e2e suite under `e2e/`.
+
 ## [5.0.0-rc.3] - 2026-05-26
 
 ### Changed

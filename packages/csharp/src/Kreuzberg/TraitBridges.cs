@@ -464,9 +464,9 @@ public static class OcrBackendRegistry
         return userData;
     }
 
-    /// <summary>Register a OcrBackend implementation</summary>
+    /// <summary>Register a OcrBackend implementation and return its native handle</summary>
 
-    public static void Register(IOcrBackend impl)
+    public static IntPtr Register(IOcrBackend impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -493,6 +493,7 @@ public static class OcrBackendRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
@@ -898,9 +899,9 @@ public static class PostProcessorRegistry
         return userData;
     }
 
-    /// <summary>Register a PostProcessor implementation</summary>
+    /// <summary>Register a PostProcessor implementation and return its native handle</summary>
 
-    public static void Register(IPostProcessor impl)
+    public static IntPtr Register(IPostProcessor impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -927,6 +928,7 @@ public static class PostProcessorRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
@@ -1274,9 +1276,9 @@ public static class ValidatorRegistry
         return userData;
     }
 
-    /// <summary>Register a Validator implementation</summary>
+    /// <summary>Register a Validator implementation and return its native handle</summary>
 
-    public static void Register(IValidator impl)
+    public static IntPtr Register(IValidator impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -1303,6 +1305,7 @@ public static class ValidatorRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
@@ -1616,9 +1619,9 @@ public static class EmbeddingBackendRegistry
         return userData;
     }
 
-    /// <summary>Register a EmbeddingBackend implementation</summary>
+    /// <summary>Register a EmbeddingBackend implementation and return its native handle</summary>
 
-    public static void Register(IEmbeddingBackend impl)
+    public static IntPtr Register(IEmbeddingBackend impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -1645,6 +1648,7 @@ public static class EmbeddingBackendRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
@@ -2087,9 +2091,9 @@ public static class DocumentExtractorRegistry
         return userData;
     }
 
-    /// <summary>Register a DocumentExtractor implementation</summary>
+    /// <summary>Register a DocumentExtractor implementation and return its native handle</summary>
 
-    public static void Register(IDocumentExtractor impl)
+    public static IntPtr Register(IDocumentExtractor impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -2116,6 +2120,7 @@ public static class DocumentExtractorRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
@@ -2400,9 +2405,9 @@ public static class RendererRegistry
         return userData;
     }
 
-    /// <summary>Register a Renderer implementation</summary>
+    /// <summary>Register a Renderer implementation and return its native handle</summary>
 
-    public static void Register(IRenderer impl)
+    public static IntPtr Register(IRenderer impl)
     {
         if (impl == null)
             throw new ArgumentNullException(nameof(impl));
@@ -2429,6 +2434,7 @@ public static class RendererRegistry
             }
 
             _bridges.TryAdd(name, bridge);
+            return userData;
         }
         catch
         {
