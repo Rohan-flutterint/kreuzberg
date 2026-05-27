@@ -69,13 +69,11 @@ dependencies {
 }
 
 mavenPublishing {
-    configure(
-        AndroidSingleVariantLibrary(
+    configure(AndroidSingleVariantLibrary(
         variant = "release",
         sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
         javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
-    )
-    )
+    ))
 
     publishToMavenCentral()
     signAllPublications()
@@ -83,7 +81,7 @@ mavenPublishing {
     coordinates(
         groupId = "dev.kreuzberg",
         artifactId = "kreuzberg-android",
-        version = "5.0.0-rc.2",
+        version = "5.0.0-rc.3",
     )
 
     pom {

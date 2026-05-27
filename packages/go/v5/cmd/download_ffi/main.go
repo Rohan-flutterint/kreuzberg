@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	moduleVersion = "5.0.0-rc.2"
+	moduleVersion = "5.0.0-rc.3"
 	repoURL       = "https://github.com/kreuzberg-dev/kreuzberg"
 	assetPrefix   = "kreuzberg"
 )
@@ -74,6 +74,7 @@ func determinePaths() (string, string, error) {
 
 	return libDir, libPath, nil
 }
+
 
 func libFilename(libName, goos string) string {
 	switch goos {

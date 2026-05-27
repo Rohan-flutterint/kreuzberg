@@ -261,6 +261,7 @@ mod ffi {
             max_dpi: i32,
             max_images_per_page: Option<u32>,
             classify: bool,
+            include_page_rasters: bool,
         ) -> ImageExtractionConfig;
         #[swift_bridge(swift_name = "extractImages")]
         fn extract_images(&self) -> bool;
@@ -279,6 +280,8 @@ mod ffi {
         #[swift_bridge(swift_name = "maxImagesPerPage")]
         fn max_images_per_page(&self) -> Option<u32>;
         fn classify(&self) -> bool;
+        #[swift_bridge(swift_name = "includePageRasters")]
+        fn include_page_rasters(&self) -> bool;
     }
 
     extern "Rust" {
@@ -2135,6 +2138,10 @@ mod ffi {
         fn is_blank(&self) -> Option<bool>;
         #[swift_bridge(swift_name = "layoutRegions")]
         fn layout_regions(&self) -> Option<Vec<LayoutRegion>>;
+        #[swift_bridge(swift_name = "speakerNotes")]
+        fn speaker_notes(&self) -> Option<String>;
+        #[swift_bridge(swift_name = "sectionName")]
+        fn section_name(&self) -> Option<String>;
     }
 
     extern "Rust" {
@@ -3778,6 +3785,7 @@ impl ImageExtractionConfig {
         max_dpi: i32,
         max_images_per_page: Option<u32>,
         classify: bool,
+        include_page_rasters: bool,
     ) -> ImageExtractionConfig {
         ImageExtractionConfig(kreuzberg::ImageExtractionConfig {
             extract_images,
@@ -3789,6 +3797,7 @@ impl ImageExtractionConfig {
             max_dpi,
             max_images_per_page,
             classify,
+            include_page_rasters,
         })
     }
     pub fn extract_images(&self) -> bool {
@@ -3842,6 +3851,12 @@ impl ImageExtractionConfig {
     }
     pub fn classify(&self) -> bool {
         ::serde_json::to_value(&self.0.classify)
+            .ok()
+            .and_then(|j| ::serde_json::from_value(j).ok())
+            .unwrap_or_default()
+    }
+    pub fn include_page_rasters(&self) -> bool {
+        ::serde_json::to_value(&self.0.include_page_rasters)
             .ok()
             .and_then(|j| ::serde_json::from_value(j).ok())
             .unwrap_or_default()
@@ -9343,6 +9358,12 @@ impl PageContent {
             .as_ref()
             .map(|v| v.iter().map(|elem| LayoutRegion(elem.clone())).collect())
     }
+    pub fn speaker_notes(&self) -> Option<String> {
+        self.0.speaker_notes.clone()
+    }
+    pub fn section_name(&self) -> Option<String> {
+        self.0.section_name.clone()
+    }
 }
 
 pub struct LayoutRegion(pub kreuzberg::LayoutRegion);
@@ -10898,6 +10919,7 @@ pub enum ImageKind {
     Icon,
     TileFragment,
     Mask,
+    PageRaster,
     Unknown,
 }
 
@@ -10914,6 +10936,7 @@ impl From<kreuzberg::ImageKind> for ImageKind {
             kreuzberg::ImageKind::Icon => Self::Icon,
             kreuzberg::ImageKind::TileFragment => Self::TileFragment,
             kreuzberg::ImageKind::Mask => Self::Mask,
+            kreuzberg::ImageKind::PageRaster => Self::PageRaster,
             kreuzberg::ImageKind::Unknown => Self::Unknown,
         }
     }
@@ -10932,6 +10955,7 @@ impl ImageKind {
             Self::Icon => "icon".to_string(),
             Self::TileFragment => "tile_fragment".to_string(),
             Self::Mask => "mask".to_string(),
+            Self::PageRaster => "page_raster".to_string(),
             Self::Unknown => "unknown".to_string(),
         }
     }

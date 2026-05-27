@@ -3045,6 +3045,13 @@ uint32_t kreuzberg_image_extraction_config_max_images_per_page(const KREUZBERGIm
 int32_t kreuzberg_image_extraction_config_classify(const KREUZBERGImageExtractionConfig *ptr);
 
 /**
+ * Get the `include_page_rasters` field from a `ImageExtractionConfig`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+int32_t kreuzberg_image_extraction_config_include_page_rasters(const KREUZBERGImageExtractionConfig *ptr);
+
+/**
  * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
  * freed with the appropriate free function.
  */
@@ -9876,6 +9883,20 @@ int32_t kreuzberg_page_content_is_blank(const KREUZBERGPageContent *ptr);
  * Pointer must be a valid handle returned by this library.
  */
 char *kreuzberg_page_content_layout_regions(const KREUZBERGPageContent *ptr);
+
+/**
+ * Get the `speaker_notes` field from a `PageContent`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_page_content_speaker_notes(const KREUZBERGPageContent *ptr);
+
+/**
+ * Get the `section_name` field from a `PageContent`.
+ * # Safety
+ * Pointer must be a valid handle returned by this library.
+ */
+char *kreuzberg_page_content_section_name(const KREUZBERGPageContent *ptr);
 
 /**
  * Create a `LayoutRegion` from a JSON string. Returns null on failure.

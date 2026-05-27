@@ -2018,6 +2018,7 @@ Image extraction configuration.
 | `max_dpi` | `integer()` | `600` | Maximum DPI threshold |
 | `max_images_per_page` | `integer() \| nil` | `nil` | Maximum number of image objects to extract per PDF page. Some PDFs (e.g. technical diagrams stored as thousands of raster fragments) can trigger extremely long or indefinite extraction times when every image object on a dense page is decoded individually via the PDF extractor. Setting this limit causes kreuzberg to stop collecting individual images once the count per page reaches the cap and emit a warning instead. `nil` (default) means no limit — all images are extracted. |
 | `classify` | `boolean()` | `true` | When `true` (default), extracted images are classified by kind and grouped into clusters where they appear to belong to one figure. |
+| `include_page_rasters` | `boolean()` | `false` | When `true`, full-page renders produced during OCR preprocessing are captured and returned as `ImageKind.PageRaster` entries in `ExtractionResult.images`. **PDF + OCR only.** No rasters are captured for non-PDF inputs or when the document-level OCR bypass is active (whole-document backend). When OCR is enabled and this flag is set but the active backend skips per-page rendering, a `ProcessingWarning` is emitted in `ExtractionResult.processing_warnings`. Defaults to `false`. Enable when downstream consumers need page thumbnails (e.g. citation previews, visual grounding). |
 
 ### Functions
 
@@ -2978,6 +2979,8 @@ by avoiding redundant copies during serialization.
 | `hierarchy` | `PageHierarchy \| nil` | `nil` | Hierarchy information for the page (when hierarchy extraction is enabled) Contains text hierarchy levels (H1-H6) extracted from the page content. |
 | `is_blank` | `boolean() \| nil` | `nil` | Whether this page is blank (no meaningful text content) Determined during extraction based on text content analysis. A page is blank if it has fewer than 3 non-whitespace characters and contains no tables or images. |
 | `layout_regions` | `list(LayoutRegion) \| nil` | `nil` | Layout detection regions for this page (when layout detection is enabled). Contains detected layout regions with class, confidence, bounding box, and area fraction. Only populated when layout detection is configured. |
+| `speaker_notes` | `String.t() \| nil` | `nil` | Speaker notes for this slide (PPTX only). Contains the text from the slide's notes pane (`ppt/notesSlides/notesSlide{N}.xml`). Only populated when the source is a PPTX file and notes are present. |
+| `section_name` | `String.t() \| nil` | `nil` | Section name this slide belongs to (PPTX only). PowerPoint sections group slides into logical chapters (`<p:sectionLst>` in `ppt/presentation.xml`). Only populated when the source is a PPTX file and the slide belongs to a named section. |
 
 ---
 
@@ -4661,6 +4664,7 @@ Heuristic classification of what an image likely depicts.
 | `icon` | Small icon |
 | `tile_fragment` | Fragment of a larger tiled image (tile of a technical drawing) |
 | `mask` | Mask or transparency map |
+| `page_raster` | Full-page render produced during OCR preprocessing; used as a citation thumbnail. |
 | `unknown` | Could not classify with reasonable confidence |
 
 ---

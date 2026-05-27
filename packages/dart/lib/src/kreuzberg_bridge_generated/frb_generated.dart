@@ -3,6 +3,8 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'dart:isolate';
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -18,6 +20,34 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
   RustLib._();
 
+  /// Resolve the prebuilt native library from this package's own installed
+  /// location so the load works from any working directory and under hardened
+  /// runtimes. Returns `null` to defer to flutter_rust_bridge's default loader.
+  static Future<ExternalLibrary?> _alefResolveExternalLibrary() async {
+    try {
+      final packageRoot = await Isolate.resolvePackageUri(
+        Uri.parse('package:kreuzberg/kreuzberg.dart'),
+      );
+      if (packageRoot != null) {
+        final libDir = packageRoot.resolve('src/kreuzberg_bridge_generated/');
+        const candidates = <String>[
+          'libkreuzberg.dylib',
+          'libkreuzberg.so',
+          'kreuzberg.dll',
+        ];
+        for (final candidate in candidates) {
+          final libPath = libDir.resolve(candidate).toFilePath();
+          if (File(libPath).existsSync()) {
+            return ExternalLibrary.open(libPath);
+          }
+        }
+      }
+    } catch (_) {
+      // Fall through to the default loader on any resolution failure.
+    }
+    return null;
+  }
+
   /// Initialize flutter_rust_bridge
   static Future<void> init({
     RustLibApi? api,
@@ -25,6 +55,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
     ExternalLibrary? externalLibrary,
     bool forceSameCodegenVersion = true,
   }) async {
+    externalLibrary ??= await _alefResolveExternalLibrary();
     await instance.initImpl(
       api: api,
       handler: handler,
@@ -64,7 +95,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1892677340;
+  int get rustContentHash => 1289739951;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -9011,8 +9042,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ImageExtractionConfig dco_decode_image_extraction_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return ImageExtractionConfig(
       extractImages: dco_decode_bool(arr[0]),
       targetDpi: dco_decode_i_64(arr[1]),
@@ -9023,6 +9054,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       maxDpi: dco_decode_i_64(arr[6]),
       maxImagesPerPage: dco_decode_opt_box_autoadd_i_64(arr[7]),
       classify: dco_decode_bool(arr[8]),
+      includePageRasters: dco_decode_bool(arr[9]),
     );
   }
 
@@ -10569,8 +10601,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   PageContent dco_decode_page_content(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
     return PageContent(
       pageNumber: dco_decode_i_64(arr[0]),
       content: dco_decode_String(arr[1]),
@@ -10579,6 +10611,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       hierarchy: dco_decode_opt_box_autoadd_page_hierarchy(arr[4]),
       isBlank: dco_decode_opt_box_autoadd_bool(arr[5]),
       layoutRegions: dco_decode_opt_list_layout_region(arr[6]),
+      speakerNotes: dco_decode_opt_String(arr[7]),
+      sectionName: dco_decode_opt_String(arr[8]),
     );
   }
 
@@ -13849,6 +13883,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_maxDpi = sse_decode_i_64(deserializer);
     var var_maxImagesPerPage = sse_decode_opt_box_autoadd_i_64(deserializer);
     var var_classify = sse_decode_bool(deserializer);
+    var var_includePageRasters = sse_decode_bool(deserializer);
     return ImageExtractionConfig(
       extractImages: var_extractImages,
       targetDpi: var_targetDpi,
@@ -13859,6 +13894,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       maxDpi: var_maxDpi,
       maxImagesPerPage: var_maxImagesPerPage,
       classify: var_classify,
+      includePageRasters: var_includePageRasters,
     );
   }
 
@@ -16352,6 +16388,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_hierarchy = sse_decode_opt_box_autoadd_page_hierarchy(deserializer);
     var var_isBlank = sse_decode_opt_box_autoadd_bool(deserializer);
     var var_layoutRegions = sse_decode_opt_list_layout_region(deserializer);
+    var var_speakerNotes = sse_decode_opt_String(deserializer);
+    var var_sectionName = sse_decode_opt_String(deserializer);
     return PageContent(
       pageNumber: var_pageNumber,
       content: var_content,
@@ -16360,6 +16398,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       hierarchy: var_hierarchy,
       isBlank: var_isBlank,
       layoutRegions: var_layoutRegions,
+      speakerNotes: var_speakerNotes,
+      sectionName: var_sectionName,
     );
   }
 
@@ -19509,6 +19549,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_64(self.maxDpi, serializer);
     sse_encode_opt_box_autoadd_i_64(self.maxImagesPerPage, serializer);
     sse_encode_bool(self.classify, serializer);
+    sse_encode_bool(self.includePageRasters, serializer);
   }
 
   @protected
@@ -21684,6 +21725,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_box_autoadd_page_hierarchy(self.hierarchy, serializer);
     sse_encode_opt_box_autoadd_bool(self.isBlank, serializer);
     sse_encode_opt_list_layout_region(self.layoutRegions, serializer);
+    sse_encode_opt_String(self.speakerNotes, serializer);
+    sse_encode_opt_String(self.sectionName, serializer);
   }
 
   @protected

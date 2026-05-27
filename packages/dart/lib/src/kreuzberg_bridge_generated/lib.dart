@@ -266,23 +266,6 @@ Future<List<String>> listRenderers() =>
 Future<List<String>> listValidators() =>
     RustLib.instance.api.crateListValidators();
 
-/// Score an extracted text on the closed interval `[0.0, 1.0]`, where higher is better.
-///
-/// `1.0` is the neutral score for clean prose; penalties (OCR artifacts, embedded
-/// script/style noise, navigation chrome) subtract, structural cues (headings,
-/// punctuation) add. The result is clamped to `[0.0, 1.0]`.
-///
-/// Pass `metadata` as `null` when the caller has no extraction metadata available;
-/// the metadata bonus simply isn't applied in that case. Texts shorter than
-/// `MIN_TEXT_LENGTH` short-circuit to `0.1` regardless of metadata.
-Future<double> calculateQualityScore({
-  required String text,
-  Map<String, String>? metadata,
-}) => RustLib.instance.api.crateCalculateQualityScore(
-  text: text,
-  metadata: metadata,
-);
-
 /// Generate embeddings asynchronously for a list of text strings.
 ///
 /// This is the async counterpart to `embed_texts`. It offloads the blocking
@@ -4920,6 +4903,18 @@ class ImageExtractionConfig {
   /// into clusters where they appear to belong to one figure.
   final bool classify;
 
+  /// When `true`, full-page renders produced during OCR preprocessing are captured
+  /// and returned as `ImageKind::PageRaster` entries in `ExtractionResult.images`.
+  ///
+  /// **PDF + OCR only.** No rasters are captured for non-PDF inputs or when the
+  /// document-level OCR bypass is active (whole-document backend). When OCR is
+  /// enabled and this flag is set but the active backend skips per-page rendering,
+  /// a `ProcessingWarning` is emitted in `ExtractionResult.processing_warnings`.
+  ///
+  /// Defaults to `false`. Enable when downstream consumers need page thumbnails
+  /// (e.g. citation previews, visual grounding).
+  final bool includePageRasters;
+
   const ImageExtractionConfig({
     required this.extractImages,
     required this.targetDpi,
@@ -4930,6 +4925,7 @@ class ImageExtractionConfig {
     required this.maxDpi,
     this.maxImagesPerPage,
     required this.classify,
+    required this.includePageRasters,
   });
 
   @override
@@ -4942,7 +4938,8 @@ class ImageExtractionConfig {
       minDpi.hashCode ^
       maxDpi.hashCode ^
       maxImagesPerPage.hashCode ^
-      classify.hashCode;
+      classify.hashCode ^
+      includePageRasters.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -4957,7 +4954,8 @@ class ImageExtractionConfig {
           minDpi == other.minDpi &&
           maxDpi == other.maxDpi &&
           maxImagesPerPage == other.maxImagesPerPage &&
-          classify == other.classify;
+          classify == other.classify &&
+          includePageRasters == other.includePageRasters;
 }
 
 /// Heuristic classification of what an image likely depicts.
@@ -4991,6 +4989,9 @@ enum ImageKind {
 
   /// Mask or transparency map
   mask,
+
+  /// Full-page render produced during OCR preprocessing; used as a citation thumbnail.
+  pageRaster,
 
   /// Could not classify with reasonable confidence
   unknown,
@@ -7219,6 +7220,19 @@ class PageContent {
   /// and area fraction. Only populated when layout detection is configured.
   final List<LayoutRegion>? layoutRegions;
 
+  /// Speaker notes for this slide (PPTX only).
+  ///
+  /// Contains the text from the slide's notes pane (`ppt/notesSlides/notesSlide{N}.xml`).
+  /// Only populated when the source is a PPTX file and notes are present.
+  final String? speakerNotes;
+
+  /// Section name this slide belongs to (PPTX only).
+  ///
+  /// PowerPoint sections group slides into logical chapters (`<p:sectionLst>` in
+  /// `ppt/presentation.xml`). Only populated when the source is a PPTX file and
+  /// the slide belongs to a named section.
+  final String? sectionName;
+
   const PageContent({
     required this.pageNumber,
     required this.content,
@@ -7227,6 +7241,8 @@ class PageContent {
     this.hierarchy,
     this.isBlank,
     this.layoutRegions,
+    this.speakerNotes,
+    this.sectionName,
   });
 
   @override
@@ -7237,7 +7253,9 @@ class PageContent {
       imageIndices.hashCode ^
       hierarchy.hashCode ^
       isBlank.hashCode ^
-      layoutRegions.hashCode;
+      layoutRegions.hashCode ^
+      speakerNotes.hashCode ^
+      sectionName.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -7250,7 +7268,9 @@ class PageContent {
           imageIndices == other.imageIndices &&
           hierarchy == other.hierarchy &&
           isBlank == other.isBlank &&
-          layoutRegions == other.layoutRegions;
+          layoutRegions == other.layoutRegions &&
+          speakerNotes == other.speakerNotes &&
+          sectionName == other.sectionName;
 }
 
 /// Page hierarchy structure containing heading levels and block information.

@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1892677340;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1289739951;
 
 // Section: executor
 
@@ -5735,6 +5735,7 @@ const _: fn() = || {
         let _: i64 = ImageExtractionConfig.max_dpi;
         let _: Option<i64> = ImageExtractionConfig.max_images_per_page;
         let _: bool = ImageExtractionConfig.classify;
+        let _: bool = ImageExtractionConfig.include_page_rasters;
     }
     {
         let ImageMetadata = None::<crate::ImageMetadata>.unwrap();
@@ -6150,6 +6151,8 @@ const _: fn() = || {
         let _: Option<crate::PageHierarchy> = PageContent.hierarchy;
         let _: Option<bool> = PageContent.is_blank;
         let _: Option<Vec<crate::LayoutRegion>> = PageContent.layout_regions;
+        let _: Option<String> = PageContent.speaker_notes;
+        let _: Option<String> = PageContent.section_name;
     }
     {
         let PageHierarchy = None::<crate::PageHierarchy>.unwrap();
@@ -8709,6 +8712,7 @@ impl SseDecode for crate::ImageExtractionConfig {
         let mut var_maxDpi = <i64>::sse_decode(deserializer);
         let mut var_maxImagesPerPage = <Option<i64>>::sse_decode(deserializer);
         let mut var_classify = <bool>::sse_decode(deserializer);
+        let mut var_includePageRasters = <bool>::sse_decode(deserializer);
         return crate::ImageExtractionConfig {
             extract_images: var_extractImages,
             target_dpi: var_targetDpi,
@@ -8719,6 +8723,7 @@ impl SseDecode for crate::ImageExtractionConfig {
             max_dpi: var_maxDpi,
             max_images_per_page: var_maxImagesPerPage,
             classify: var_classify,
+            include_page_rasters: var_includePageRasters,
         };
     }
 }
@@ -8738,7 +8743,8 @@ impl SseDecode for crate::ImageKind {
             7 => crate::ImageKind::Icon,
             8 => crate::ImageKind::TileFragment,
             9 => crate::ImageKind::Mask,
-            10 => crate::ImageKind::Unknown,
+            10 => crate::ImageKind::PageRaster,
+            11 => crate::ImageKind::Unknown,
             _ => unreachable!("Invalid variant for ImageKind: {}", inner),
         };
     }
@@ -11153,6 +11159,8 @@ impl SseDecode for crate::PageContent {
         let mut var_hierarchy = <Option<crate::PageHierarchy>>::sse_decode(deserializer);
         let mut var_isBlank = <Option<bool>>::sse_decode(deserializer);
         let mut var_layoutRegions = <Option<Vec<crate::LayoutRegion>>>::sse_decode(deserializer);
+        let mut var_speakerNotes = <Option<String>>::sse_decode(deserializer);
+        let mut var_sectionName = <Option<String>>::sse_decode(deserializer);
         return crate::PageContent {
             page_number: var_pageNumber,
             content: var_content,
@@ -11161,6 +11169,8 @@ impl SseDecode for crate::PageContent {
             hierarchy: var_hierarchy,
             is_blank: var_isBlank,
             layout_regions: var_layoutRegions,
+            speaker_notes: var_speakerNotes,
+            section_name: var_sectionName,
         };
     }
 }
@@ -14182,6 +14192,7 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::ImageExtractionConfig> 
             self.0.max_dpi.into_into_dart().into_dart(),
             self.0.max_images_per_page.into_into_dart().into_dart(),
             self.0.classify.into_into_dart().into_dart(),
+            self.0.include_page_rasters.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -14206,7 +14217,8 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::ImageKind> {
             crate::ImageKind::Icon => 7.into_dart(),
             crate::ImageKind::TileFragment => 8.into_dart(),
             crate::ImageKind::Mask => 9.into_dart(),
-            crate::ImageKind::Unknown => 10.into_dart(),
+            crate::ImageKind::PageRaster => 10.into_dart(),
+            crate::ImageKind::Unknown => 11.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -15179,6 +15191,8 @@ impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::PageContent> {
             self.0.hierarchy.into_into_dart().into_dart(),
             self.0.is_blank.into_into_dart().into_dart(),
             self.0.layout_regions.into_into_dart().into_dart(),
+            self.0.speaker_notes.into_into_dart().into_dart(),
+            self.0.section_name.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -17809,6 +17823,7 @@ impl SseEncode for crate::ImageExtractionConfig {
         <i64>::sse_encode(self.max_dpi, serializer);
         <Option<i64>>::sse_encode(self.max_images_per_page, serializer);
         <bool>::sse_encode(self.classify, serializer);
+        <bool>::sse_encode(self.include_page_rasters, serializer);
     }
 }
 
@@ -17827,7 +17842,8 @@ impl SseEncode for crate::ImageKind {
                 crate::ImageKind::Icon => 7,
                 crate::ImageKind::TileFragment => 8,
                 crate::ImageKind::Mask => 9,
-                crate::ImageKind::Unknown => 10,
+                crate::ImageKind::PageRaster => 10,
+                crate::ImageKind::Unknown => 11,
                 _ => {
                     unimplemented!("");
                 }
@@ -19799,6 +19815,8 @@ impl SseEncode for crate::PageContent {
         <Option<crate::PageHierarchy>>::sse_encode(self.hierarchy, serializer);
         <Option<bool>>::sse_encode(self.is_blank, serializer);
         <Option<Vec<crate::LayoutRegion>>>::sse_encode(self.layout_regions, serializer);
+        <Option<String>>::sse_encode(self.speaker_notes, serializer);
+        <Option<String>>::sse_encode(self.section_name, serializer);
     }
 }
 

@@ -49,9 +49,6 @@ public func listRenderers() throws -> RustVec<RustString> {
 public func listValidators() throws -> RustVec<RustString> {
     try { let val = __swift_bridge__$list_validators(); if val.is_ok { return RustVec(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
-public func calculateQualityScore<GenericIntoRustString: IntoRustString>(_ text: GenericIntoRustString, _ metadata: Optional<GenericIntoRustString>) -> Double {
-    __swift_bridge__$calculate_quality_score({ let rustString = text.intoRustString(); rustString.isOwned = false; return rustString.ptr }(), { if let rustString = optionalStringIntoRustString(metadata) { rustString.isOwned = false; return rustString.ptr } else { return nil } }())
-}
 public func embedTextsAsync<GenericIntoRustString: IntoRustString>(_ texts: RustVec<GenericIntoRustString>, _ config: EmbeddingConfig) throws -> RustString {
     try { let val = __swift_bridge__$embed_texts_async({ let val = texts; val.isOwned = false; return val.ptr }(), {config.isOwned = false; return config.ptr;}()); if val.is_ok { return RustString(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
@@ -1759,8 +1756,8 @@ public class ImageExtractionConfig: ImageExtractionConfigRefMut {
     }
 }
 extension ImageExtractionConfig {
-    public convenience init(_ extract_images: Bool, _ target_dpi: Int32, _ max_image_dimension: Int32, _ inject_placeholders: Bool, _ auto_adjust_dpi: Bool, _ min_dpi: Int32, _ max_dpi: Int32, _ max_images_per_page: Optional<UInt32>, _ classify: Bool) {
-        self.init(ptr: __swift_bridge__$ImageExtractionConfig$new(extract_images, target_dpi, max_image_dimension, inject_placeholders, auto_adjust_dpi, min_dpi, max_dpi, max_images_per_page.intoFfiRepr(), classify))
+    public convenience init(_ extract_images: Bool, _ target_dpi: Int32, _ max_image_dimension: Int32, _ inject_placeholders: Bool, _ auto_adjust_dpi: Bool, _ min_dpi: Int32, _ max_dpi: Int32, _ max_images_per_page: Optional<UInt32>, _ classify: Bool, _ include_page_rasters: Bool) {
+        self.init(ptr: __swift_bridge__$ImageExtractionConfig$new(extract_images, target_dpi, max_image_dimension, inject_placeholders, auto_adjust_dpi, min_dpi, max_dpi, max_images_per_page.intoFfiRepr(), classify, include_page_rasters))
     }
 }
 public class ImageExtractionConfigRefMut: ImageExtractionConfigRef {
@@ -1810,6 +1807,10 @@ extension ImageExtractionConfigRef {
 
     public func classify() -> Bool {
         __swift_bridge__$ImageExtractionConfig$classify(ptr)
+    }
+
+    public func includePageRasters() -> Bool {
+        __swift_bridge__$ImageExtractionConfig$include_page_rasters(ptr)
     }
 }
 extension ImageExtractionConfig: Vectorizable {
@@ -12236,6 +12237,14 @@ extension PageContentRef {
 
     public func layoutRegions() -> Optional<RustVec<LayoutRegion>> {
         { let val = __swift_bridge__$PageContent$layout_regions(ptr); if val != nil { return RustVec(ptr: val!) } else { return nil } }()
+    }
+
+    public func speakerNotes() -> Optional<RustString> {
+        { let val = __swift_bridge__$PageContent$speaker_notes(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
+    }
+
+    public func sectionName() -> Optional<RustString> {
+        { let val = __swift_bridge__$PageContent$section_name(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
     }
 }
 extension PageContent: Vectorizable {

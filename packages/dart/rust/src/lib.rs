@@ -464,6 +464,17 @@ pub struct ImageExtractionConfig {
     /// When `true` (default), extracted images are classified by kind and grouped
     /// into clusters where they appear to belong to one figure.
     pub classify: bool,
+    /// When `true`, full-page renders produced during OCR preprocessing are captured
+    /// and returned as `ImageKind::PageRaster` entries in `ExtractionResult.images`.
+    ///
+    /// **PDF + OCR only.** No rasters are captured for non-PDF inputs or when the
+    /// document-level OCR bypass is active (whole-document backend). When OCR is
+    /// enabled and this flag is set but the active backend skips per-page rendering,
+    /// a `ProcessingWarning` is emitted in `ExtractionResult.processing_warnings`.
+    ///
+    /// Defaults to `false`. Enable when downstream consumers need page thumbnails
+    /// (e.g. citation previews, visual grounding).
+    pub include_page_rasters: bool,
 }
 
 /// Token reduction configuration.
@@ -2859,6 +2870,17 @@ pub struct PageContent {
     /// Contains detected layout regions with class, confidence, bounding box,
     /// and area fraction. Only populated when layout detection is configured.
     pub layout_regions: Option<Vec<LayoutRegion>>,
+    /// Speaker notes for this slide (PPTX only).
+    ///
+    /// Contains the text from the slide's notes pane (`ppt/notesSlides/notesSlide{N}.xml`).
+    /// Only populated when the source is a PPTX file and notes are present.
+    pub speaker_notes: Option<String>,
+    /// Section name this slide belongs to (PPTX only).
+    ///
+    /// PowerPoint sections group slides into logical chapters (`<p:sectionLst>` in
+    /// `ppt/presentation.xml`). Only populated when the source is a PPTX file and
+    /// the slide belongs to a named section.
+    pub section_name: Option<String>,
 }
 
 /// A detected layout region on a page.
@@ -3739,6 +3761,8 @@ pub enum ImageKind {
     TileFragment,
     /// Mask or transparency map
     Mask,
+    /// Full-page render produced during OCR preprocessing; used as a citation thumbnail.
+    PageRaster,
     /// Could not classify with reasonable confidence
     Unknown,
 }
@@ -4053,20 +4077,20 @@ pub enum LayoutClass {
 #[frb(mirror(KreuzbergError))]
 pub enum KreuzbergError {
     Io { field0: String },
-    Parsing { message: String, source: String },
-    Ocr { message: String, source: String },
-    Validation { message: String, source: String },
-    Cache { message: String, source: String },
-    ImageProcessing { message: String, source: String },
-    Serialization { message: String, source: String },
+    Parsing { message: String },
+    Ocr { message: String },
+    Validation { message: String },
+    Cache { message: String },
+    ImageProcessing { message: String },
+    Serialization { message: String },
     MissingDependency { field0: String },
     Plugin { message: String, plugin_name: String },
     LockPoisoned { field0: String },
     UnsupportedFormat { field0: String },
-    Embedding { message: String, source: String },
+    Embedding { message: String },
     Timeout { elapsed_ms: i64, limit_ms: i64 },
     Cancelled,
-    Security { message: String, source: String },
+    Security { message: String },
     Other { field0: String },
 }
 
@@ -4201,6 +4225,7 @@ impl From<kreuzberg::ImageExtractionConfig> for ImageExtractionConfig {
             max_dpi: v.max_dpi as _,
             max_images_per_page: v.max_images_per_page.map(|x| x as _),
             classify: v.classify as _,
+            include_page_rasters: v.include_page_rasters as _,
         }
     }
 }
@@ -5596,6 +5621,8 @@ impl From<kreuzberg::PageContent> for PageContent {
             layout_regions: v
                 .layout_regions
                 .map(|vec| vec.into_iter().map(LayoutRegion::from).collect()),
+            speaker_notes: v.speaker_notes.map(|s| s.into()),
+            section_name: v.section_name.map(|s| s.into()),
         }
     }
 }
@@ -6214,6 +6241,7 @@ impl From<kreuzberg::ImageKind> for ImageKind {
             kreuzberg::ImageKind::Icon => ImageKind::Icon,
             kreuzberg::ImageKind::TileFragment => ImageKind::TileFragment,
             kreuzberg::ImageKind::Mask => ImageKind::Mask,
+            kreuzberg::ImageKind::PageRaster => ImageKind::PageRaster,
             kreuzberg::ImageKind::Unknown => ImageKind::Unknown,
         }
     }
@@ -6623,6 +6651,7 @@ impl From<ImageExtractionConfig> for kreuzberg::ImageExtractionConfig {
             max_dpi: v.max_dpi as _,
             max_images_per_page: v.max_images_per_page.map(|x| x as _),
             classify: v.classify as _,
+            include_page_rasters: v.include_page_rasters as _,
         }
     }
 }
@@ -7766,6 +7795,8 @@ impl From<PageContent> for kreuzberg::PageContent {
             hierarchy: v.hierarchy.map(Into::into),
             is_blank: v.is_blank.map(|x| x as _),
             layout_regions: v.layout_regions.map(|vec| vec.into_iter().map(Into::into).collect()),
+            speaker_notes: v.speaker_notes.map(Into::into),
+            section_name: v.section_name.map(Into::into),
         }
     }
 }
@@ -8231,6 +8262,7 @@ impl From<ImageKind> for kreuzberg::ImageKind {
             ImageKind::Icon => kreuzberg::ImageKind::Icon,
             ImageKind::TileFragment => kreuzberg::ImageKind::TileFragment,
             ImageKind::Mask => kreuzberg::ImageKind::Mask,
+            ImageKind::PageRaster => kreuzberg::ImageKind::PageRaster,
             ImageKind::Unknown => kreuzberg::ImageKind::Unknown,
         }
     }
