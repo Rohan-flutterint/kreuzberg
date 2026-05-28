@@ -40,7 +40,7 @@ final class SwiftOcrBackendAdapter {
 
     func backendTypeCall() -> OcrBackendType {
         let result = self.bridge.backendType()
-        return try JSONEncoder().encode(result)
+        return result
     }
 
 }

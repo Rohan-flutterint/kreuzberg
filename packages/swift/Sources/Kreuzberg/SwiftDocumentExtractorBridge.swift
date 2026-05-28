@@ -34,7 +34,7 @@ final class SwiftDocumentExtractorAdapter {
 
     func supportedMimeTypesCall() -> [String] {
         let result = self.bridge.supportedMimeTypes()
-        return try JSONEncoder().encode(result)
+        return result
     }
 
 }

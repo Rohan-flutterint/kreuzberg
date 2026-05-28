@@ -34,7 +34,7 @@ final class SwiftPostProcessorAdapter {
 
     func processingStageCall() -> ProcessingStage {
         let result = self.bridge.processingStage()
-        return try JSONEncoder().encode(result)
+        return result
     }
 
 }
