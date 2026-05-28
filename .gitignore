@@ -269,6 +269,9 @@ e2e/dart/.dart_tool/
 e2e/dart/build/
 e2e/dart/pubspec.lock
 
+# Dart FRB codegen cache (incremental build optimization)
+packages/dart/rust/.frb_codegen_hash
+
 # Go e2e build artifacts
 e2e/go/vendor/
 
