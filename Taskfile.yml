@@ -397,9 +397,8 @@ tasks:
       - cd packages/dart/rust && flutter_rust_bridge_codegen generate --config-file flutter_rust_bridge.yaml
 
   dart:setup:
-    desc: "Setup Dart binding (codegen + native lib build + post-processing)"
+    desc: "Setup Dart binding (codegen + native lib build + post-processing via alef)"
     cmds:
-      - task: dart:codegen
       - alef build --lang dart --release
 
   dart:e2e:
