@@ -1,7 +1,7 @@
 # C# Binding Audit — Security & FFI Correctness
 
-**Audit Date:** 2026-05-30  
-**Status:** 100/100 e2e green (current)  
+**Audit Date:** 2026-05-30
+**Status:** 100/100 e2e green (current)
 **Scope:** `packages/csharp/`, `e2e/csharp/`
 
 ---
@@ -10,7 +10,7 @@
 
 ### 1. GCHandle Leak in Exception Paths (HIGH)
 
-**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`  
+**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`
 **Functions affected:**
 - `ExtractBytesAsync` (line 53)
 - `ExtractBytesSync` (line ~212)
@@ -40,7 +40,7 @@ try {
     if (configHandle == IntPtr.Zero) {
         var ec = NativeMethods.LastErrorCode();
         var ctxPtr = NativeMethods.LastErrorContext();
-        var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) 
+        var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr)
                   ?? "ExtractionConfigFromJson failed";
         throw new KreuzbergException(ec, msg);
     }
@@ -54,7 +54,7 @@ try {
 
 ### 2. HGlobal Leak in Exception Paths (HIGH)
 
-**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`  
+**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`
 **Functions affected:**
 - `BatchExtractFilesSync` (line ~242-264)
 - `BatchExtractBytesSync` (line ~281-305)
@@ -99,7 +99,7 @@ try {
 
 ### 3. ConfigHandle Leak in Exception Paths (MEDIUM)
 
-**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`  
+**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`
 **Functions affected:** All extraction functions (ExtractBytesAsync, ExtractFileAsync, etc.)
 
 **Problem:**
@@ -128,7 +128,7 @@ if (configHandle == IntPtr.Zero) throw new KreuzbergException(...);
 try {
     var nativeResult = NativeMethods.ExtractBytes(..., configHandle);
     if (nativeResult == IntPtr.Zero) throw GetLastError();
-    
+
     var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
     var json = Marshal.PtrToStringUTF8(jsonPtr);
     Marshal.FreeString(jsonPtr);
@@ -162,9 +162,9 @@ NativeMethods.DocumentExtractorFree(handle);  // Forgotten
 ```csharp
 internal sealed class ExtractionConfigHandle : SafeHandle {
     public override bool IsInvalid => handle == IntPtr.Zero;
-    
+
     public ExtractionConfigHandle() : base(IntPtr.Zero, true) { }
-    
+
     protected override bool ReleaseHandle() {
         if (!IsInvalid) {
             NativeMethods.ExtractionConfigFree(handle);
@@ -186,12 +186,12 @@ if (configHandle.IsInvalid) throw new KreuzbergException(...);
 
 ### 5. Bool Marshalling ABI Mismatch (MEDIUM)
 
-**File:** `packages/csharp/src/Kreuzberg/NativeMethods.cs`  
+**File:** `packages/csharp/src/Kreuzberg/NativeMethods.cs`
 **Lines:** 343, 498, etc.
 
 **Problem:**
 ```csharp
-[DllImport(LibName, CallingConvention = CallingConvention.Cdecl, 
+[DllImport(LibName, CallingConvention = CallingConvention.Cdecl,
     EntryPoint = "kreuzberg_detect_mime_type")]
 internal static extern IntPtr DetectMimeType(
     [MarshalAs(UnmanagedType.LPStr)] string path,
@@ -214,7 +214,7 @@ Check the C FFI header to see what type is actually used in the Rust signature.
 
 ### 6. Missing Error Validation on JSON Conversions (MEDIUM)
 
-**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`  
+**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`
 **Example:** Line 441, 466, 485, etc.
 
 **Problem:**
@@ -303,7 +303,7 @@ JsonSerializer.Serialize(config, KreuzbergJsonContext.Default.ExtractionConfig)
 
 ### 9. Inconsistent Error Message Retrieval (LOW)
 
-**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`  
+**File:** `packages/csharp/src/Kreuzberg/KreuzbergLib.cs`
 **Lines:** ~209, 250, 289, etc.
 
 **Problem:** Error context pointer is not validated before use:
@@ -317,7 +317,7 @@ If `ctxPtr` is invalid (non-null but not a valid UTF-8 string), `PtrToStringUTF8
 **Fix:** Always validate:
 ```csharp
 var ctxPtr = NativeMethods.LastErrorContext();
-var msg = ctxPtr != IntPtr.Zero 
+var msg = ctxPtr != IntPtr.Zero
     ? Marshal.PtrToStringUTF8(ctxPtr) ?? "Unknown error"
     : "ExtractionConfigFromJson failed";
 ```
@@ -351,8 +351,31 @@ var msg = ctxPtr != IntPtr.Zero
 
 ---
 
+## Status: Fixes Applied
+
+**Commit:** 59a36286be "fix(csharp): add try-finally guards for all P/Invoke handle cleanup"
+
+**Critical leaks FIXED:**
+- ExtractBytesAsync: GCHandle + ConfigHandle + ExtractionResult leaks
+- ExtractFileAsync: ConfigHandle + ExtractionResult leaks
+- ExtractFileSync: ConfigHandle + ExtractionResult leaks
+- ExtractBytesSync: GCHandle + ConfigHandle + ExtractionResult leaks
+- BatchExtractFilesSync: HGlobal + ConfigHandle leaks
+- BatchExtractBytesSync: HGlobal + ConfigHandle leaks
+- BatchExtractFilesAsync: HGlobal + ConfigHandle leaks
+- BatchExtractBytesAsync: HGlobal + ConfigHandle leaks
+- DetectMimeTypeFromBytes: GCHandle leak
+
+All changes are **backward-compatible** (internal try-finally guards only). No public API changes.
+
+**Remaining work (for future PRs):**
+- SafeHandle refactoring (medium effort, not blocking v5)
+- Native AOT support (medium effort)
+- Bool marshalling ABI validation (low effort)
+- Analyzer configuration (low effort)
+
 ## Notes on v5 RC Cycle
 
-All changes except (4) SafeHandle refactoring are breaking only if public API changes. The core fixes are internal and backward-compatible. SafeHandle refactoring may require public API change if exposing handles.
+All fixes committed are internal and backward-compatible. They address correctness bugs without requiring public API changes. The remaining priorities (SafeHandle, Native AOT) can follow in separate PRs after v5.0.0 release.
 
-Given current 100/100 green status, these bugs are latent — they manifest under error conditions or in long-running processes with error churn.
+Given current 100/100 green status, these bugs are latent — they manifest under error conditions or in long-running processes with error churn. The fixes ensure all handles are freed on all exit paths.
