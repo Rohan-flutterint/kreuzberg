@@ -447,6 +447,7 @@ No binding bugs or test fixture issues were found. The hand-edits are production
 
 - **Added**: `base64 = "0.22"` to `Cargo.toml` dependencies
 - **Replaced**: Manual Base64 alphabet mapping (lines 37–66) with:
+
   ```rust
   use base64::engine::general_purpose::STANDARD;
   use base64::Engine;
@@ -455,6 +456,7 @@ No binding bugs or test fixture issues were found. The hand-edits are production
       STANDARD.decode(input).map_err(|e| format!("Invalid Base64: {}", e))
   }
   ```
+
 - **Rationale**: Eliminates 30 lines of hand-rolled code; uses well-tested standard library
 
 #### 2. Improve Exception Handling Pattern
@@ -462,10 +464,12 @@ No binding bugs or test fixture issues were found. The hand-edits are production
 **File**: `crates/kreuzberg-jni/src/lib.rs`
 
 - **Refactored**: Early return patterns to use `return throw_exception(...)` instead of:
+
   ```rust
   throw_exception(&mut env, &e);
   return std::ptr::null_mut();
   ```
+
 - **Scope**: Fixed in `nativeRenderPdfPageToPngImpl` (lines 1121–1150)
 - **Impact**: Cleaner code, no functional change (throw_exception already returns the null value)
 

@@ -31,11 +31,13 @@ return blk: {
 ```
 
 **Problems**:
+
 1. **Line 3885 / 3968**: The `_result.?` force-unwrap will crash if `_result` is null. The error-code check assumes that if error code is non-zero, the result is null. But if the error code is zero AND the result is null, this crashes.
 2. **Line 3888 / 3971**: After calling `kreuzberg_extraction_result_to_json(_result)`, the returned `_json_ptr` can be null but the code immediately dereferences it with `std.mem.sliceTo(_json_ptr, 0)`, which crashes.
 3. **Resource leak**: If `_json_ptr` is null and `_result` was successfully freed, but we never reach the owned allocation, we have a dangling JSON pointer.
 
 **Affected Functions**:
+
 - `extract_bytes` (line 3871)
 - `extract_file` (line 3897)
 - `extract_bytes_sync` (line 3938)
@@ -54,6 +56,7 @@ return blk: {
 For each extract function:
 
 1. **Check `_result` before unwrap**:
+
    ```zig
    const _result = c.kreuzberg_extract_bytes(...);
    if (_result == null) {
@@ -66,6 +69,7 @@ For each extract function:
    ```
 
 2. **Check `_json_ptr` before dereference**:
+
    ```zig
    const _json_ptr = c.kreuzberg_extraction_result_to_json(_result.?);
    if (_json_ptr == null) {
@@ -83,6 +87,7 @@ For each extract function:
 For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 
 1. **Null-check before cast**:
+
    ```zig
    const self: *T = if (ud) |u| @ptrCast(@alignCast(u)) else {
        // Handle null user_data - should not happen in normal operation
@@ -101,6 +106,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Type Safety
 
 **Status**: ✅ PASS
+
 - All Zig-side type declarations correctly match the C header (kreuzberg.h)
 - Opaque handle types (e.g., `*KREUZBERGExtractionResult`) are properly declared
 - Struct definitions have correct field types and layouts
@@ -108,6 +114,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Allocator Lifetime
 
 **Status**: ⚠️ PASS WITH CAVEATS
+
 - Proper use of `std.heap.c_allocator` for FFI allocations
 - All `defer` blocks correctly paired
 - Example (line 3889): `std.heap.c_allocator.dupe(u8, slice)` returns owned slice that caller must free
@@ -117,6 +124,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Error Return Convention
 
 **Status**: ❌ FAIL
+
 - Error-code checks exist but don't fully validate all return states
 - The pattern `if (error_code != 0) return error` assumes result is null, but doesn't verify
 - Inverse situation (error_code == 0 but result == null) is not handled
@@ -125,6 +133,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Null Pointer Checks
 
 **Status**: ❌ FAIL
+
 - Force-unwrap (`_result.?`) assumes `_result` is never null when error_code == 0
 - JSON conversion return (`_json_ptr`) is never checked for null
 - String conversion (`std.mem.sliceTo(_json_ptr, 0)`) dereferences unchecked pointer
@@ -132,6 +141,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Config Handle Freeing
 
 **Status**: ✅ PASS
+
 - Lines 3883, 3929, 3966, 3997, 4027, 4057, 4110, 4157: Consistent patterns
 - All extraction functions properly free config_handle on all code paths
 - Conditional: `if (config_handle) |h| c.kreuzberg_extraction_config_free(h);` is correct
@@ -139,6 +149,7 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Batch Operations
 
 **Status**: ❌ FAIL
+
 - `batch_extract_bytes_sync`, `batch_extract_files_sync` (lines 3978, 4005) follow same buggy pattern
 - Additional complexity: iteration over batch items adds risk if conversions fail mid-loop
 
@@ -147,11 +158,14 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 ### Vtable Function Pointers
 
 **Status**: ❌ FAIL
+
 - **Locations**: Lines 4710, 4724, 4737, 4744, 4755, 4766, 4773, 4780, 5019, 5033, 5044, 5051, 5058, 5306, 5320, 5327, 5456, 5463, 5669, 5683, 5696, 5707, 5714, 5846 (24 occurrences)
 - **Issue**: All vtable thunks cast `ud: ?*anyopaque` to `*T` without null-check:
+
   ```zig
   const self: *T = @ptrCast(@alignCast(ud));  // CRASH if ud is null
   ```
+
 - **Root Cause**: The thunks assume `ud` is never null (always points to the user data passed at registration). But if Rust code calls the thunk with null ud, this crashes.
 - **Affected Vtables**: DocumentExtractor, OcrBackend, PostProcessor, Validator, Renderer, EmbeddingBackend (all plugin trait implementations)
 
@@ -163,10 +177,12 @@ For each vtable thunk that casts `ud: ?*anyopaque` to `*T`:
 
 **Baseline**: Currently 0/100 green (all 22 tests crash with SIGABRT + 23 skipped due to linking)
 
-**Crash Signature**: 
-```
+**Crash Signature**:
+
+```text
 dyld[XXXX]: Library not loaded: @rpath/libkreuzberg_ffi.dylib
 ```
+
 **Resolution**: Built FFI with `task rust:ffi:build`, tests now run and crash on first null-deref.
 
 ---

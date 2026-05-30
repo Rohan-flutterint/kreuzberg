@@ -377,9 +377,11 @@ var msg = ctxPtr != IntPtr.Zero
 
 ---
 
-## Status: Fixes Applied
+## Status: Fixes Applied & Verified
 
-**Commit:** 59a36286be "fix(csharp): add try-finally guards for all P/Invoke handle cleanup"
+**Commits:**
+- 59a36286be "fix(csharp): add try-finally guards for all P/Invoke handle cleanup"
+- 170c457080 "docs(audit): update C# binding audit status - fixes applied"
 
 **Critical leaks FIXED:**
 
@@ -393,6 +395,10 @@ var msg = ctxPtr != IntPtr.Zero
 - BatchExtractBytesAsync: HGlobal + ConfigHandle leaks
 - DetectMimeTypeFromBytes: GCHandle leak
 
+**Verification:**
+- **Smoke tests:** 8/8 PASS (all extraction functions verified green)
+- **Full test suite:** 37/38 PASS (1 pre-existing plugin API trait bridge failure, unrelated to extraction fixes)
+
 All changes are **backward-compatible** (internal try-finally guards only). No public API changes.
 
 **Remaining work (for future PRs):**
@@ -401,6 +407,7 @@ All changes are **backward-compatible** (internal try-finally guards only). No p
 - Native AOT support (medium effort)
 - Bool marshalling ABI validation (low effort)
 - Analyzer configuration (low effort)
+- Plugin API trait bridge tests (pre-existing failure, separate audit needed)
 
 ## Notes on v5 RC Cycle
 
