@@ -51,36 +51,48 @@ public static class KreuzbergLib
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(mimeType);
         var contentHandle = GCHandle.Alloc(content, GCHandleType.Pinned);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
-        }
-        return await Task.Run(() =>
-        {
-            var nativeResult = NativeMethods.ExtractBytes(
-                contentHandle.AddrOfPinnedObject(),
-                (UIntPtr)content.Length,
-                mimeType,
-                configHandle
-            );
-            if (nativeResult == IntPtr.Zero)
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
             {
-                throw GetLastError();
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
             }
-            var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
-            var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
-            NativeMethods.FreeString(jsonPtr);
-            NativeMethods.ExtractionResultFree(nativeResult);
-            var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var nativeResult = NativeMethods.ExtractBytes(
+                        contentHandle.AddrOfPinnedObject(),
+                        (UIntPtr)content.Length,
+                        mimeType,
+                        configHandle
+                    );
+                    if (nativeResult == IntPtr.Zero)
+                    {
+                        throw GetLastError();
+                    }
+                    var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
+                    var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
+                    NativeMethods.FreeString(jsonPtr);
+                    NativeMethods.ExtractionResultFree(nativeResult);
+                    var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
+                    return returnValue;
+                }
+                finally
+                {
+                    NativeMethods.ExtractionConfigFree(configHandle);
+                }
+            });
+        }
+        finally
+        {
             contentHandle.Free();
-            NativeMethods.ExtractionConfigFree(configHandle);
-            return returnValue;
-        });
+        }
     }
 
     /// <summary>
@@ -118,25 +130,39 @@ public static class KreuzbergLib
             var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
             throw new KreuzbergException(ec, msg);
         }
-        return await Task.Run(() =>
+        try
         {
-            var nativeResult = NativeMethods.ExtractFile(
-                path,
-                mimeType!,
-                configHandle
-            );
-            if (nativeResult == IntPtr.Zero)
+            return await Task.Run(() =>
             {
-                throw GetLastError();
-            }
-            var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
-            var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
-            NativeMethods.FreeString(jsonPtr);
-            NativeMethods.ExtractionResultFree(nativeResult);
-            var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
-            NativeMethods.ExtractionConfigFree(configHandle);
-            return returnValue;
-        });
+                try
+                {
+                    var nativeResult = NativeMethods.ExtractFile(
+                        path,
+                        mimeType!,
+                        configHandle
+                    );
+                    if (nativeResult == IntPtr.Zero)
+                    {
+                        throw GetLastError();
+                    }
+                    var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
+                    var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
+                    NativeMethods.FreeString(jsonPtr);
+                    NativeMethods.ExtractionResultFree(nativeResult);
+                    var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
+                    return returnValue;
+                }
+                finally
+                {
+                    NativeMethods.ExtractionConfigFree(configHandle);
+                }
+            });
+        }
+        catch
+        {
+            // configHandle is freed in finally block of Task.Run
+            throw;
+        }
     }
 
     /// <summary>
@@ -165,22 +191,28 @@ public static class KreuzbergLib
             var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
             throw new KreuzbergException(ec, msg);
         }
-        var nativeResult = NativeMethods.ExtractFileSync(
-            path,
-            mimeType!,
-            configHandle
-        );
-        if (nativeResult == IntPtr.Zero)
+        try
         {
-            throw GetLastError();
+            var nativeResult = NativeMethods.ExtractFileSync(
+                path,
+                mimeType!,
+                configHandle
+            );
+            if (nativeResult == IntPtr.Zero)
+            {
+                throw GetLastError();
+            }
+            var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
+            var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
+            NativeMethods.FreeString(jsonPtr);
+            NativeMethods.ExtractionResultFree(nativeResult);
+            var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
+            return returnValue;
         }
-        var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
-        var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
-        NativeMethods.FreeString(jsonPtr);
-        NativeMethods.ExtractionResultFree(nativeResult);
-        var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
-        NativeMethods.ExtractionConfigFree(configHandle);
-        return returnValue;
+        finally
+        {
+            NativeMethods.ExtractionConfigFree(configHandle);
+        }
     }
 
     /// <summary>
@@ -200,33 +232,45 @@ public static class KreuzbergLib
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(mimeType);
         var contentHandle = GCHandle.Alloc(content, GCHandleType.Pinned);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
+            {
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
+            }
+            try
+            {
+                var nativeResult = NativeMethods.ExtractBytesSync(
+                    contentHandle.AddrOfPinnedObject(),
+                    (UIntPtr)content.Length,
+                    mimeType,
+                    configHandle
+                );
+                if (nativeResult == IntPtr.Zero)
+                {
+                    throw GetLastError();
+                }
+                var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
+                var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
+                NativeMethods.FreeString(jsonPtr);
+                NativeMethods.ExtractionResultFree(nativeResult);
+                var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
+                return returnValue;
+            }
+            finally
+            {
+                NativeMethods.ExtractionConfigFree(configHandle);
+            }
         }
-        var nativeResult = NativeMethods.ExtractBytesSync(
-            contentHandle.AddrOfPinnedObject(),
-            (UIntPtr)content.Length,
-            mimeType,
-            configHandle
-        );
-        if (nativeResult == IntPtr.Zero)
+        finally
         {
-            throw GetLastError();
+            contentHandle.Free();
         }
-        var jsonPtr = NativeMethods.ExtractionResultToJson(nativeResult);
-        var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(jsonPtr);
-        NativeMethods.FreeString(jsonPtr);
-        NativeMethods.ExtractionResultFree(nativeResult);
-        var returnValue = JsonSerializer.Deserialize<ExtractionResult>(json ?? "null", JsonOptions)!;
-        contentHandle.Free();
-        NativeMethods.ExtractionConfigFree(configHandle);
-        return returnValue;
     }
 
     /// <summary>
@@ -241,29 +285,41 @@ public static class KreuzbergLib
     {
         var itemsJson = JsonSerializer.Serialize(items, JsonSerializationOptions);
         var itemsHandle = global::System.Runtime.InteropServices.Marshal.StringToHGlobalAnsi(itemsJson);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
+            {
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
+            }
+            try
+            {
+                var nativeResult = NativeMethods.BatchExtractFilesSync(
+                    itemsHandle,
+                    configHandle
+                );
+                if (nativeResult == IntPtr.Zero)
+                {
+                    throw GetLastError();
+                }
+                var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
+                NativeMethods.FreeString(nativeResult);
+                var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+                return returnValue;
+            }
+            finally
+            {
+                NativeMethods.ExtractionConfigFree(configHandle);
+            }
         }
-        var nativeResult = NativeMethods.BatchExtractFilesSync(
-            itemsHandle,
-            configHandle
-        );
-        if (nativeResult == IntPtr.Zero)
+        finally
         {
-            throw GetLastError();
+            global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
         }
-        var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
-        NativeMethods.FreeString(nativeResult);
-        var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
-        global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
-        NativeMethods.ExtractionConfigFree(configHandle);
-        return returnValue;
     }
 
     /// <summary>
@@ -280,29 +336,41 @@ public static class KreuzbergLib
     {
         var itemsJson = JsonSerializer.Serialize(items, JsonSerializationOptions);
         var itemsHandle = global::System.Runtime.InteropServices.Marshal.StringToHGlobalAnsi(itemsJson);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
+            {
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
+            }
+            try
+            {
+                var nativeResult = NativeMethods.BatchExtractBytesSync(
+                    itemsHandle,
+                    configHandle
+                );
+                if (nativeResult == IntPtr.Zero)
+                {
+                    throw GetLastError();
+                }
+                var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
+                NativeMethods.FreeString(nativeResult);
+                var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+                return returnValue;
+            }
+            finally
+            {
+                NativeMethods.ExtractionConfigFree(configHandle);
+            }
         }
-        var nativeResult = NativeMethods.BatchExtractBytesSync(
-            itemsHandle,
-            configHandle
-        );
-        if (nativeResult == IntPtr.Zero)
+        finally
         {
-            throw GetLastError();
+            global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
         }
-        var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
-        NativeMethods.FreeString(nativeResult);
-        var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
-        global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
-        NativeMethods.ExtractionConfigFree(configHandle);
-        return returnValue;
     }
 
     /// <summary>
@@ -332,32 +400,44 @@ public static class KreuzbergLib
     {
         var itemsJson = JsonSerializer.Serialize(items, JsonSerializationOptions);
         var itemsHandle = global::System.Runtime.InteropServices.Marshal.StringToHGlobalAnsi(itemsJson);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
-        }
-        return await Task.Run(() =>
-        {
-            var nativeResult = NativeMethods.BatchExtractFiles(
-                itemsHandle,
-                configHandle
-            );
-            if (nativeResult == IntPtr.Zero)
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
             {
-                throw GetLastError();
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
             }
-            var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
-            NativeMethods.FreeString(nativeResult);
-            var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var nativeResult = NativeMethods.BatchExtractFiles(
+                        itemsHandle,
+                        configHandle
+                    );
+                    if (nativeResult == IntPtr.Zero)
+                    {
+                        throw GetLastError();
+                    }
+                    var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
+                    NativeMethods.FreeString(nativeResult);
+                    var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+                    return returnValue;
+                }
+                finally
+                {
+                    NativeMethods.ExtractionConfigFree(configHandle);
+                }
+            });
+        }
+        finally
+        {
             global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
-            NativeMethods.ExtractionConfigFree(configHandle);
-            return returnValue;
-        });
+        }
     }
 
     /// <summary>
@@ -383,32 +463,44 @@ public static class KreuzbergLib
     {
         var itemsJson = JsonSerializer.Serialize(items, JsonSerializationOptions);
         var itemsHandle = global::System.Runtime.InteropServices.Marshal.StringToHGlobalAnsi(itemsJson);
-        var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
-        var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
-        if (configHandle == IntPtr.Zero)
+        try
         {
-            var ec = NativeMethods.LastErrorCode();
-            var ctxPtr = NativeMethods.LastErrorContext();
-            var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
-            throw new KreuzbergException(ec, msg);
-        }
-        return await Task.Run(() =>
-        {
-            var nativeResult = NativeMethods.BatchExtractBytes(
-                itemsHandle,
-                configHandle
-            );
-            if (nativeResult == IntPtr.Zero)
+            var configJson = JsonSerializer.Serialize((config ?? new ExtractionConfig()), JsonSerializationOptions);
+            var configHandle = NativeMethods.ExtractionConfigFromJson(configJson);
+            if (configHandle == IntPtr.Zero)
             {
-                throw GetLastError();
+                var ec = NativeMethods.LastErrorCode();
+                var ctxPtr = NativeMethods.LastErrorContext();
+                var msg = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(ctxPtr) ?? "ExtractionConfigFromJson failed";
+                throw new KreuzbergException(ec, msg);
             }
-            var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
-            NativeMethods.FreeString(nativeResult);
-            var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var nativeResult = NativeMethods.BatchExtractBytes(
+                        itemsHandle,
+                        configHandle
+                    );
+                    if (nativeResult == IntPtr.Zero)
+                    {
+                        throw GetLastError();
+                    }
+                    var json = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult);
+                    NativeMethods.FreeString(nativeResult);
+                    var returnValue = JsonSerializer.Deserialize<List<ExtractionResult>>(json ?? "null", JsonOptions)!;
+                    return returnValue;
+                }
+                finally
+                {
+                    NativeMethods.ExtractionConfigFree(configHandle);
+                }
+            });
+        }
+        finally
+        {
             global::System.Runtime.InteropServices.Marshal.FreeHGlobal(itemsHandle);
-            NativeMethods.ExtractionConfigFree(configHandle);
-            return returnValue;
-        });
+        }
     }
 
     /// <summary>
@@ -430,18 +522,24 @@ public static class KreuzbergLib
     {
         ArgumentNullException.ThrowIfNull(content);
         var contentHandle = GCHandle.Alloc(content, GCHandleType.Pinned);
-        var nativeResult = NativeMethods.DetectMimeTypeFromBytes(
-            contentHandle.AddrOfPinnedObject(),
-            (UIntPtr)content.Length
-        );
-        if (nativeResult == IntPtr.Zero)
+        try
         {
-            throw GetLastError();
+            var nativeResult = NativeMethods.DetectMimeTypeFromBytes(
+                contentHandle.AddrOfPinnedObject(),
+                (UIntPtr)content.Length
+            );
+            if (nativeResult == IntPtr.Zero)
+            {
+                throw GetLastError();
+            }
+            var returnValue = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult) ?? string.Empty;
+            NativeMethods.FreeString(nativeResult);
+            return returnValue;
         }
-        var returnValue = global::System.Runtime.InteropServices.Marshal.PtrToStringUTF8(nativeResult) ?? string.Empty;
-        NativeMethods.FreeString(nativeResult);
-        contentHandle.Free();
-        return returnValue;
+        finally
+        {
+            contentHandle.Free();
+        }
     }
 
     /// <summary>
