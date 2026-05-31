@@ -257,6 +257,9 @@ impl ExcelExtractor {
             ..Default::default()
         };
 
+        // Transfer revision headers extracted from xl/revisions/revisionHeaders.xml.
+        doc.revisions = workbook.revisions.clone();
+
         doc
     }
 }
@@ -440,6 +443,7 @@ mod tests {
         ExcelWorkbook {
             sheets,
             metadata: HashMap::new(),
+            revisions: None,
         }
     }
 

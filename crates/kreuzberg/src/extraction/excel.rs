@@ -35,6 +35,7 @@ use std::path::Path;
 
 use crate::error::{KreuzbergError, Result};
 use crate::extraction::capacity;
+use crate::types::revisions::{DocumentRevision, RevisionDelta, RevisionKind};
 use crate::types::{ExcelSheet, ExcelWorkbook};
 
 /// Maximum number of cells in a Range's bounding box before we consider it pathological.
@@ -73,7 +74,9 @@ pub(crate) fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
         let file = std::fs::File::open(file_path)?;
         let workbook = calamine::Xlsx::new(std::io::BufReader::new(file))
             .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
-        return process_xlsx_workbook(workbook, office_metadata);
+        let mut result = process_xlsx_workbook(workbook, office_metadata)?;
+        result.revisions = extract_xlsx_revisions_from_file(file_path);
+        return Ok(result);
     }
 
     // For .xlam (Excel add-in), try XLSX parsing but gracefully return empty workbook on failure
@@ -88,6 +91,7 @@ pub(crate) fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
                 return Ok(ExcelWorkbook {
                     sheets: vec![],
                     metadata: office_metadata.unwrap_or_default(),
+                    revisions: None,
                 });
             }
         }
@@ -104,6 +108,7 @@ pub(crate) fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
                 return Ok(ExcelWorkbook {
                     sheets: vec![],
                     metadata: office_metadata.unwrap_or_default(),
+                    revisions: None,
                 });
             }
         }
@@ -152,7 +157,9 @@ pub(crate) fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<Exce
             let cursor = Cursor::new(data);
             let workbook = calamine::Xlsx::new(cursor)
                 .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
-            process_xlsx_workbook(workbook, office_metadata)
+            let mut result = process_xlsx_workbook(workbook, office_metadata)?;
+            result.revisions = extract_xlsx_revisions_from_bytes(data);
+            Ok(result)
         }
         // Exotic format: .xlam (Excel add-in) - may not contain proper workbook data
         ".xlam" => {
@@ -164,6 +171,7 @@ pub(crate) fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<Exce
                     Ok(ExcelWorkbook {
                         sheets: vec![],
                         metadata: office_metadata.unwrap_or_default(),
+                        revisions: None,
                     })
                 }
             }
@@ -185,6 +193,7 @@ pub(crate) fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<Exce
                     Ok(ExcelWorkbook {
                         sheets: vec![],
                         metadata: office_metadata.unwrap_or_default(),
+                        revisions: None,
                     })
                 }
             }
@@ -235,7 +244,11 @@ fn process_xlsx_workbook<RS: Read + Seek>(
     }
 
     let metadata = extract_metadata(&workbook, &sheet_names, office_metadata);
-    Ok(ExcelWorkbook { sheets, metadata })
+    Ok(ExcelWorkbook {
+        sheets,
+        metadata,
+        revisions: None,
+    })
 }
 
 /// Process a single XLSX sheet safely by pre-checking the bounding box.
@@ -463,7 +476,11 @@ where
 
     let metadata = extract_metadata(&workbook, &sheet_names, office_metadata);
 
-    Ok(ExcelWorkbook { sheets, metadata })
+    Ok(ExcelWorkbook {
+        sheets,
+        metadata,
+        revisions: None,
+    })
 }
 
 #[inline]
@@ -852,6 +869,119 @@ fn extract_xlsx_office_metadata_from_archive<R: std::io::Read + std::io::Seek>(
     Ok(metadata)
 }
 
+// ── xl/revisions parsing ──────────────────────────────────────────────────────
+
+/// Extract revision headers from an in-memory `.xlsx`/`.xlsm`/`.xltm` blob.
+///
+/// Returns `None` when `xl/revisions/revisionHeaders.xml` is absent (the
+/// common case for modern files that don't use legacy shared-workbook mode).
+/// Returns `Some(vec![])` when the file exists but contains no `<header>`
+/// elements. On any parse error the function logs a warning and returns `None`
+/// so that the rest of extraction succeeds.
+fn extract_xlsx_revisions_from_bytes(data: &[u8]) -> Option<Vec<DocumentRevision>> {
+    let cursor = Cursor::new(data);
+    let mut archive = zip::ZipArchive::new(cursor).ok()?;
+    extract_xlsx_revisions_from_archive(&mut archive)
+}
+
+/// Extract revision headers from an `.xlsx`/`.xlsm`/`.xltm` file on disk.
+///
+/// Same semantics as [`extract_xlsx_revisions_from_bytes`].
+fn extract_xlsx_revisions_from_file(file_path: &str) -> Option<Vec<DocumentRevision>> {
+    let file = std::fs::File::open(file_path).ok()?;
+    let mut archive = zip::ZipArchive::new(file).ok()?;
+    extract_xlsx_revisions_from_archive(&mut archive)
+}
+
+/// Core revision-header parser shared by the file and bytes paths.
+fn extract_xlsx_revisions_from_archive<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+) -> Option<Vec<DocumentRevision>> {
+    const HEADERS_PATH: &str = "xl/revisions/revisionHeaders.xml";
+
+    // Check presence without consuming; if absent this is not a shared workbook.
+    let xml_bytes = {
+        let mut entry = match archive.by_name(HEADERS_PATH) {
+            Ok(e) => e,
+            Err(zip::result::ZipError::FileNotFound) => return None,
+            Err(e) => {
+                tracing::warn!(
+                    path = HEADERS_PATH,
+                    error = %e,
+                    "failed to open xl/revisions/revisionHeaders.xml"
+                );
+                return None;
+            }
+        };
+        let mut buf = Vec::new();
+        if entry.read_to_end(&mut buf).is_err() {
+            return None;
+        }
+        buf
+    };
+
+    match parse_revision_headers_xml(&xml_bytes) {
+        Ok(revisions) => Some(revisions),
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to parse xl/revisions/revisionHeaders.xml");
+            None
+        }
+    }
+}
+
+/// Parse `xl/revisions/revisionHeaders.xml` and emit one `DocumentRevision`
+/// per `<header>` element.
+///
+/// Each header carries a `guid` (→ `revision_id`), `userName` (→ `author`),
+/// and `dateTime` (→ `timestamp`). `anchor` and `delta` are empty for v1;
+/// per-cell log parsing (`revisionLog*.xml`) is a future follow-up.
+///
+/// `RevisionKind::FormatChange` is used as the closest available variant
+/// because the header file does not distinguish what *kind* of changes the
+/// revision contains — that information is in the per-revision log file.
+fn parse_revision_headers_xml(xml_bytes: &[u8]) -> Result<Vec<DocumentRevision>> {
+    let xml_str = crate::text::utf8_validation::from_utf8(xml_bytes)
+        .map_err(|e| KreuzbergError::parsing(format!("invalid UTF-8 in revisionHeaders.xml: {e}")))?;
+
+    let doc = roxmltree::Document::parse(xml_str)
+        .map_err(|e| KreuzbergError::parsing(format!("failed to parse revisionHeaders.xml: {e}")))?;
+
+    // Spreadsheet ML namespace for revision headers
+    const SPREADSHEETML_NS: &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+
+    let mut revisions = Vec::new();
+    for node in doc.descendants() {
+        if !node.has_tag_name((SPREADSHEETML_NS, "header")) {
+            continue;
+        }
+        let revision_id = node
+            .attribute("guid")
+            .unwrap_or("")
+            .trim_matches(|c| c == '{' || c == '}')
+            .to_string();
+        let revision_id = if revision_id.is_empty() {
+            format!("xlsx-rev-{}", revisions.len())
+        } else {
+            revision_id
+        };
+        let author = node.attribute("userName").filter(|s| !s.is_empty()).map(str::to_string);
+        let timestamp = node.attribute("dateTime").filter(|s| !s.is_empty()).map(str::to_string);
+        revisions.push(DocumentRevision {
+            revision_id,
+            author,
+            timestamp,
+            // The header file does not tell us what kind of change was made;
+            // FormatChange is the closest neutral variant. Per-cell kind data
+            // requires parsing the corresponding revisionLog*.xml (follow-up).
+            kind: RevisionKind::FormatChange,
+            anchor: None,
+            delta: RevisionDelta::default(),
+        });
+    }
+
+    Ok(revisions)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1087,5 +1217,209 @@ mod tests {
         assert_eq!(sheet.row_count, 10);
         assert_eq!(sheet.col_count, 5);
         assert_eq!(sheet.cell_count, 50);
+    }
+
+    // ── xl/revisions tests ────────────────────────────────────────────────────
+
+    /// Build a minimal in-memory `.xlsx` zip that contains a synthetic
+    /// `xl/revisions/revisionHeaders.xml` with the given `<header>` elements.
+    ///
+    /// `headers` is a slice of `(guid, user_name, date_time)` tuples.
+    fn make_xlsx_with_revision_headers(headers: &[(&str, &str, &str)]) -> Vec<u8> {
+        use std::io::Write;
+        use zip::write::{SimpleFileOptions, ZipWriter};
+
+        let mut buffer = Vec::new();
+        {
+            let mut zip = ZipWriter::new(Cursor::new(&mut buffer));
+            let opts = SimpleFileOptions::default();
+
+            zip.start_file("[Content_Types].xml", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="rels"
+    ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Override PartName="/xl/workbook.xml"
+    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+</Types>"#,
+            )
+            .unwrap();
+
+            zip.start_file("_rels/.rels", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+    Target="xl/workbook.xml"/>
+</Relationships>"#,
+            )
+            .unwrap();
+
+            zip.start_file("xl/workbook.xml", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Sheet1" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>"#,
+            )
+            .unwrap();
+
+            zip.start_file("xl/_rels/workbook.xml.rels", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+    Target="worksheets/sheet1.xml"/>
+</Relationships>"#,
+            )
+            .unwrap();
+
+            zip.start_file("xl/worksheets/sheet1.xml", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData/>
+</worksheet>"#,
+            )
+            .unwrap();
+
+            // Build revisionHeaders.xml
+            let mut headers_xml = String::from(
+                r#"<?xml version="1.0" encoding="UTF-8"?>
+<headers xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">"#,
+            );
+            for (guid, user, dt) in headers {
+                use std::fmt::Write as FmtWrite;
+                let _ = write!(
+                    headers_xml,
+                    r#"<header guid="{{{guid}}}" dateTime="{dt}" userName="{user}" maxSheetId="1"/>"#,
+                );
+            }
+            headers_xml.push_str("\n</headers>");
+
+            zip.start_file("xl/revisions/revisionHeaders.xml", opts).unwrap();
+            zip.write_all(headers_xml.as_bytes()).unwrap();
+
+            let _ = zip.finish().unwrap();
+        }
+        buffer
+    }
+
+    #[test]
+    fn should_return_none_revisions_when_xl_revisions_absent() {
+        // A plain xlsx without xl/revisions/ must yield revisions = None.
+        use std::io::Write;
+        use zip::write::{SimpleFileOptions, ZipWriter};
+
+        let mut buffer = Vec::new();
+        {
+            let mut zip = ZipWriter::new(Cursor::new(&mut buffer));
+            let opts = SimpleFileOptions::default();
+
+            zip.start_file("[Content_Types].xml", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="xml" ContentType="application/xml"/>
+</Types>"#,
+            )
+            .unwrap();
+
+            zip.start_file("xl/workbook.xml", opts).unwrap();
+            zip.write_all(br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets/></workbook>"#).unwrap();
+
+            let _ = zip.finish().unwrap();
+        }
+
+        let result = extract_xlsx_revisions_from_bytes(&buffer);
+        assert!(result.is_none(), "expected None when xl/revisions/ is absent");
+    }
+
+    #[test]
+    fn should_parse_two_revision_headers_with_correct_fields() {
+        let xlsx = make_xlsx_with_revision_headers(&[
+            ("11111111-2222-3333-4444-555555555555", "Alice", "2024-01-15T09:00:00Z"),
+            ("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", "Bob", "2024-01-16T14:30:00Z"),
+        ]);
+
+        let revisions = extract_xlsx_revisions_from_bytes(&xlsx)
+            .expect("revisions should be Some when xl/revisions/revisionHeaders.xml is present");
+
+        assert_eq!(revisions.len(), 2, "expected 2 revisions from 2 headers");
+
+        // First header
+        assert_eq!(
+            revisions[0].revision_id, "11111111-2222-3333-4444-555555555555",
+            "guid should be stored without braces"
+        );
+        assert_eq!(revisions[0].author.as_deref(), Some("Alice"));
+        assert_eq!(revisions[0].timestamp.as_deref(), Some("2024-01-15T09:00:00Z"));
+        assert!(
+            matches!(revisions[0].kind, RevisionKind::FormatChange),
+            "kind should be FormatChange for v1 headers"
+        );
+        assert!(revisions[0].anchor.is_none(), "anchor should be None for v1");
+        assert!(
+            revisions[0].delta.content.is_empty(),
+            "delta.content should be empty for v1"
+        );
+
+        // Second header
+        assert_eq!(revisions[1].revision_id, "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE");
+        assert_eq!(revisions[1].author.as_deref(), Some("Bob"));
+        assert_eq!(revisions[1].timestamp.as_deref(), Some("2024-01-16T14:30:00Z"));
+    }
+
+    #[test]
+    fn should_return_some_empty_vec_when_headers_xml_exists_but_has_no_header_elements() {
+        // File with xl/revisions/revisionHeaders.xml that has no <header> children.
+        use std::io::Write;
+        use zip::write::{SimpleFileOptions, ZipWriter};
+
+        let mut buffer = Vec::new();
+        {
+            let mut zip = ZipWriter::new(Cursor::new(&mut buffer));
+            let opts = SimpleFileOptions::default();
+            zip.start_file("[Content_Types].xml", opts).unwrap();
+            zip.write_all(b"<?xml version=\"1.0\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>").unwrap();
+
+            zip.start_file("xl/revisions/revisionHeaders.xml", opts).unwrap();
+            zip.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8"?>
+<headers xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>
+"#,
+            )
+            .unwrap();
+            let _ = zip.finish().unwrap();
+        }
+
+        let revisions = extract_xlsx_revisions_from_bytes(&buffer).expect("revisions should be Some when file exists");
+        assert!(revisions.is_empty(), "expected empty vec when no <header> elements");
+    }
+
+    #[test]
+    fn should_surface_revisions_in_full_xlsx_extraction() {
+        // Round-trip: build an xlsx with 1 revision header and verify
+        // read_excel_bytes populates workbook.revisions.
+        let xlsx = make_xlsx_with_revision_headers(&[(
+            "DEADBEEF-0000-0000-0000-000000000001",
+            "Carol",
+            "2024-03-01T12:00:00Z",
+        )]);
+
+        let workbook = read_excel_bytes(&xlsx, ".xlsx").expect("should parse workbook");
+        let revisions = workbook
+            .revisions
+            .as_ref()
+            .expect("revisions should be Some after full extraction");
+        assert_eq!(revisions.len(), 1);
+        assert_eq!(revisions[0].author.as_deref(), Some("Carol"));
     }
 }

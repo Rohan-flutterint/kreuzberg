@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   this adds the per-comment structured surface. `revisions` is `None` when no
   `ppt/comments/comment{N}.xml` parts exist.
 
+- **excel/revisions**: Excel extraction now parses `xl/revisions/revisionHeaders.xml` when
+  present (legacy shared-workbook collaborative-edit headers) and surfaces each `<header>` as a
+  `DocumentRevision` with guid, author, and timestamp. Modern xlsx files without
+  `xl/revisions/` continue to produce `revisions = None`. Per-cell change extraction from
+  `revisionLog*.xml` is deferred to a follow-up.
+
 - **pdf/revisions**: PDF extraction now exposes incremental-update history in
   `ExtractionResult.revisions`. Each historical `xref` section in the file's xref chain becomes one
   `DocumentRevision` carrying the byte offset as `revision_id` (`xref-offset-<N>`), and (when

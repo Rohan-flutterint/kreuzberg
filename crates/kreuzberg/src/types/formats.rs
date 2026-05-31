@@ -19,6 +19,16 @@ pub struct ExcelWorkbook {
     pub sheets: Vec<ExcelSheet>,
     /// Workbook-level metadata (author, creation date, etc.)
     pub metadata: HashMap<String, String>,
+    /// Collaborative-edit revision headers from `xl/revisions/revisionHeaders.xml`.
+    ///
+    /// Populated for legacy shared-workbook `.xlsx` files that contain the
+    /// `xl/revisions/` directory. Each `<header>` element maps to one
+    /// `DocumentRevision { kind: FormatChange }` carrying the header's `guid`
+    /// (→ `revision_id`), `userName` (→ `author`), and `dateTime` (→ `timestamp`).
+    /// `anchor` and `delta` are `None`/empty for v1 (per-cell log parsing is a
+    /// follow-up). `None` when `xl/revisions/revisionHeaders.xml` is absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub revisions: Option<Vec<super::revisions::DocumentRevision>>,
 }
 
 /// Single Excel worksheet.
