@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **diff**: new optional `diff` Cargo feature exposes `kreuzberg::diff::compare(a, b, opts) -> ExtractionDiff`
+  over two `ExtractionResult` values. Backed by `similar` (Myers/LCS). Surfaces content hunks (unified-diff
+  format), table cell-level diffs, metadata changes (add/remove/change map), and embedded-children
+  add/remove/change (recursive). Aggregate features `analysis` and `full` now include `diff`.
+
 - **types**: bidirectional `From` impls between `InternalDocument` (rich pipeline type) and `ExtractionResult` (public output type). Lossy conversions used at FFI/trait-bridge boundaries where foreign-language plugins return `ExtractionResult` but the canonical Rust trait signature requires `InternalDocument`. `ExtractionResult → InternalDocument` stashes content in `pre_rendered_content`; `InternalDocument → ExtractionResult` runs `derive_extraction_result` with `OutputFormat::Plain`.
 
 ### Fixed
@@ -42,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **node**: `JsOcrBackendBridge` now uses a persistent `napi_ref` to keep the JS object alive after `registerOcrBackend` returns, and a `ThreadsafeFunction` for `process_image` so the callback is invokable from tokio worker threads with the actual image bytes (previously the bytes were passed as a debug string, making the bridge non-functional for real binary payloads). (#1017)
 
 - **pptx**: `PageContent` gains two optional fields populated during PPTX per-page extraction (requires `page_config` to be set): `speaker_notes` (text from `ppt/notesSlides/notesSlideN.xml`) and `section_name` (from `<p14:sectionLst>` in `ppt/presentation.xml`). Both serialize with `skip_serializing_if = "Option::is_none"` and are `None` for all non-PPTX formats. (#960)
+- **excel**: XLSX extraction now populates `ExtractionResult.pages` with one `PageContent` per
+  sheet. Top-level `content` remains the concatenation of all sheets, preserving backward compat
+  for callers that do not read `pages`. Sheet name surfaces as `PageContent.section_name`. Empty
+  sheets still emit a `PageContent` so the page index aligns with the sheet index; they are marked
+  `is_blank = true` and carry no tables. Mirrors the PDF/PPTX per-page model and enables cloud
+  billing per sheet (`billable_pages = sheet_count`).
 - **pdf**: opt-in capture of full-page renders produced during PDF OCR preprocessing. When `ImageExtractionConfig.include_page_rasters = true`, per-page PNG renders are returned as `ImageKind::PageRaster` entries in `ExtractionResult.images`, enabling citation thumbnails and visual grounding downstream. Capture covers all three OCR entry paths (`force_ocr`, `force_ocr_pages`, `RunFallback`); document-level backend bypass emits a `ProcessingWarning`. (#1018)
 
 ### Changed

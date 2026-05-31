@@ -65,6 +65,9 @@ pub mod mcp;
 #[cfg(feature = "chunking")]
 pub mod chunking;
 
+#[cfg(feature = "diff")]
+pub mod diff;
+
 // TODO(wasm-llm): `liter-llm` stays in no-ORT/wasm target presets because the
 // dependency supports hosted HTTP providers on wasm. The runtime module remains
 // disabled until the wasm request/runtime integration is wired and tested.
@@ -198,6 +201,11 @@ pub use keywords::RakeParams;
 
 #[cfg(feature = "keywords-yake")]
 pub use keywords::YakeParams;
+
+#[cfg(feature = "diff")]
+pub use diff::{
+    CellChange, DiffHunk, DiffLine, DiffOptions, EmbeddedChanges, EmbeddedDiff, ExtractionDiff, TableDiff, compare,
+};
 
 #[cfg(feature = "tree-sitter")]
 pub use core::config::{CodeContentMode, TreeSitterConfig, TreeSitterProcessConfig};

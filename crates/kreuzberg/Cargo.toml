@@ -180,6 +180,8 @@ keywords-yake = ["stopwords"]
 keywords-rake = ["dep:rake", "stopwords"]
 keywords = ["keywords-yake", "keywords-rake"]
 
+diff = ["dep:similar"]
+
 tower-service = ["dep:tower", "tokio-runtime"]
 
 api-types = []
@@ -261,7 +263,7 @@ formats = [
     "mdx",
 ]
 # Text processing and analysis capabilities.
-analysis = ["language-detection", "chunking", "quality", "keywords"]
+analysis = ["language-detection", "chunking", "quality", "keywords", "diff"]
 # Network services and observability infrastructure.
 services = ["api", "mcp", "otel"]
 # Everything — all formats, analysis, services, OCR, ML, and code intelligence.
@@ -277,6 +279,7 @@ full = [
     "tree-sitter",
     "liter-llm",
     "tokio-runtime",
+    "diff",
 ]
 # Server deployment preset — formats + analysis + services + OCR.
 server = ["formats", "analysis", "services", "ocr", "paddle-ocr", "layout-detection"]
@@ -389,6 +392,7 @@ serde_yaml_ng = "0.10.0"
 sevenz-rust2 = { version = "0.20.2", optional = true }
 sha2 = { version = "0.11", optional = true }
 simdutf8 = { version = "0.1", optional = true }
+similar = { version = "2", optional = true }
 snap = { version = "1.1", optional = true }
 strum = { version = "0.28", features = ["derive"], optional = true }
 tar = { version = "^0.4", optional = true }
