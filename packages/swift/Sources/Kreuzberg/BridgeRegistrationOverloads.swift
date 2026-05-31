@@ -88,14 +88,27 @@ private final class _OcrBackendBridgeAdapter: OcrBackend {
     func initialize() throws {}
     func shutdown() throws {}
 
-    func processImage(image_bytes: Data, config: OcrConfig) async throws -> String {
-        throw _BridgeStubError(description: "async bridge processImage cannot be invoked from sync FFI stub")
+    func processImage(_ image_bytes: [UInt8], config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge processImage cannot be invoked from stub")
     }
 
-    func supportsLanguage(lang: String) -> Bool { false }
+    func processImageFile(path: String, config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge processImageFile cannot be invoked from stub")
+    }
 
-    // TODO: Implement backendType stub
+    func supportsLanguage(_ lang: String) -> Bool { false }
 
+    func backendTypeJson() -> String { "" }
+
+    func supportedLanguages() -> [String] { [] }
+
+    func supportsTableDetection() -> Bool { false }
+
+    func supportsDocumentProcessing() -> Bool { false }
+
+    func processDocument(path: String, config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge processDocument cannot be invoked from stub")
+    }
 }
 
 private final class _PostProcessorBridgeAdapter: PostProcessor {
@@ -107,12 +120,17 @@ private final class _PostProcessorBridgeAdapter: PostProcessor {
     func initialize() throws {}
     func shutdown() throws {}
 
-    func process(result: ExtractionResult, config: ExtractionConfig) async throws -> String {
-        throw _BridgeStubError(description: "async bridge process cannot be invoked from sync FFI stub")
+    func processJson(result: String, config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge processJson cannot be invoked from stub")
     }
 
-    // TODO: Implement processingStage stub
+    func processingStageJson() -> String { "" }
 
+    func shouldProcess(result: String, config: String) -> Bool { false }
+
+    func estimatedDurationMs(result: String) -> UInt64 { 0 }
+
+    func priority() -> Int32 { 0 }
 }
 
 private final class _ValidatorBridgeAdapter: Validator {
@@ -124,10 +142,11 @@ private final class _ValidatorBridgeAdapter: Validator {
     func initialize() throws {}
     func shutdown() throws {}
 
-    func validate(result: ExtractionResult, config: ExtractionConfig) async throws -> String {
-        throw _BridgeStubError(description: "async bridge validate cannot be invoked from sync FFI stub")
-    }
+    func validate(result: String, config: String) throws {}
 
+    func shouldValidate(result: String, config: String) -> Bool { false }
+
+    func priority() -> Int32 { 0 }
 }
 
 private final class _EmbeddingBackendBridgeAdapter: EmbeddingBackend {
@@ -139,12 +158,11 @@ private final class _EmbeddingBackendBridgeAdapter: EmbeddingBackend {
     func initialize() throws {}
     func shutdown() throws {}
 
-    // TODO: Implement dimensions stub
+    func dimensions() -> UInt { 0 }
 
-    func embed(texts: [String]) async throws -> String {
-        throw _BridgeStubError(description: "async bridge embed cannot be invoked from sync FFI stub")
+    func embed(_ texts: [String]) throws -> String {
+        throw _BridgeStubError(description: "bridge embed cannot be invoked from stub")
     }
-
 }
 
 private final class _DocumentExtractorBridgeAdapter: DocumentExtractor {
@@ -156,12 +174,17 @@ private final class _DocumentExtractorBridgeAdapter: DocumentExtractor {
     func initialize() throws {}
     func shutdown() throws {}
 
-    func extractBytes(content: Data, mime_type: String, config: ExtractionConfig) async throws -> String {
-        throw _BridgeStubError(description: "async bridge extractBytes cannot be invoked from sync FFI stub")
+    func extractBytes(content: [UInt8], mimeType: String, config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge extractBytes cannot be invoked from stub")
     }
 
-    // TODO: Implement supportedMimeTypes stub
+    func extractFile(path: String, mimeType: String, config: String) throws -> String {
+        throw _BridgeStubError(description: "bridge extractFile cannot be invoked from stub")
+    }
 
+    func supportedMimeTypes() -> [String] { [] }
+
+    func priority() -> Int32 { 0 }
 }
 
 private final class _RendererBridgeAdapter: Renderer {
@@ -173,6 +196,5 @@ private final class _RendererBridgeAdapter: Renderer {
     func initialize() throws {}
     func shutdown() throws {}
 
-    func render(doc: InternalDocument) -> String { "" }
-
+    func render(doc: String) -> String { "" }
 }

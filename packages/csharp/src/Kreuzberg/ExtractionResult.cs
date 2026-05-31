@@ -230,7 +230,7 @@ public sealed record ExtractionResult
     /// The underlying type is `tree_sitter_language_pack.ProcessResult`.
     /// </summary>
     [JsonPropertyName("code_intelligence")]
-    public string? CodeIntelligence { get; init; } = null;
+    public JsonElement? CodeIntelligence { get; init; } = null;
 
     /// <summary>
     /// LLM token usage and cost data for all LLM calls made during this extraction.

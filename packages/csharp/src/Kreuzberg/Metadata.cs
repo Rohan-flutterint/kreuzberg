@@ -164,9 +164,10 @@ public sealed record Metadata
     ///
     /// Serialized as a nested `"additional"` object (not flattened at root level).
     /// Uses `Cow&lt;'static, str&gt;` keys so static string keys avoid allocation.
+    /// Accepts both string and numeric values from JSON.
     /// </summary>
     [JsonPropertyName("additional")]
-    public Dictionary<string, string> Additional { get; init; } = new Dictionary<string, string>();
+    public Dictionary<string, object> Additional { get; init; } = new Dictionary<string, object>();
 
 
     /// <summary>

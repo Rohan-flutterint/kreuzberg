@@ -66,9 +66,10 @@ public sealed record OcrElement
 
     /// <summary>
     /// Backend-specific metadata that doesn't fit the unified schema.
+    /// Accepts both string, numeric, and boolean values from JSON.
     /// </summary>
     [JsonPropertyName("backend_metadata")]
-    public Dictionary<string, string> BackendMetadata { get; init; } = new Dictionary<string, string>();
+    public Dictionary<string, object> BackendMetadata { get; init; } = new Dictionary<string, object>();
 
 
     /// <summary>

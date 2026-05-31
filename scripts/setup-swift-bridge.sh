@@ -13,6 +13,12 @@ fi
 
 echo "Using swift-bridge output from: $OUT"
 
+# Fix swift-bridge visibility: make 'var ptr' and 'var isOwned' properties public for internal type conversion
+fixVisibility() {
+    sed -e 's/^    var ptr: UnsafeMutableRawPointer$/    public var ptr: UnsafeMutableRawPointer/g' \
+        -e 's/^    var isOwned: Bool = true$/    public var isOwned: Bool = true/g'
+}
+
 # Ensure target directories exist
 mkdir -p packages/swift/Sources/RustBridgeC
 mkdir -p packages/swift/Sources/RustBridge
@@ -24,11 +30,11 @@ cat "$OUT/SwiftBridgeCore.h" "$OUT/kreuzberg-swift/kreuzberg-swift.h" \
 # Copy Swift bridge files with import statement prepended
 {
   printf 'import RustBridgeC\n'
-  cat "$OUT/SwiftBridgeCore.swift"
+  cat "$OUT/SwiftBridgeCore.swift" | fixVisibility
 } >packages/swift/Sources/RustBridge/SwiftBridgeCore.swift
 {
   printf 'import RustBridgeC\n'
-  cat "$OUT/kreuzberg-swift/kreuzberg-swift.swift"
+  cat "$OUT/kreuzberg-swift/kreuzberg-swift.swift" | fixVisibility
 } >packages/swift/Sources/RustBridge/kreuzberg-swift.swift
 
 echo "Swift-bridge files setup complete"

@@ -179,8 +179,8 @@ namespace Kreuzberg
             public string Version => "1.0.0";
 
             public void Process(ExtractionResult result, ExtractionConfig config) { }
-            public ProcessingStage ProcessingStage()
-                => ProcessingStage.Early;
+            public global::Kreuzberg.ProcessingStage ProcessingStage()
+                => global::Kreuzberg.ProcessingStage.Early;
             public bool ShouldProcess(ExtractionResult result, ExtractionConfig config)
                 => false;
             public ulong EstimatedDurationMs(ExtractionResult result)
