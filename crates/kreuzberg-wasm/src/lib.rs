@@ -13841,7 +13841,10 @@ mod __alef_wasm_bridge_ocrbackend {
             // Convert bare enum string (non-JSON) to kreuzberg::OcrBackendType
             result
                 .as_string()
-                .and_then(|s| serde_json::from_str::<kreuzberg::OcrBackendType>(&format!("\"{}\"", s)).ok())
+                .and_then(|s| {
+                    serde_json::from_str::<kreuzberg::OcrBackendType>(&format!("\"{}\"", s))
+                        .map_err(|_| kreuzberg::KreuzbergError::Other(format!("Failed to deserialize result: {}", e)))
+                })
                 .unwrap_or_default()
         }
     }
@@ -14092,7 +14095,10 @@ mod __alef_wasm_bridge_postprocessor {
             // Convert bare enum string (non-JSON) to kreuzberg::ProcessingStage
             result
                 .as_string()
-                .and_then(|s| serde_json::from_str::<kreuzberg::ProcessingStage>(&format!("\"{}\"", s)).ok())
+                .and_then(|s| {
+                    serde_json::from_str::<kreuzberg::ProcessingStage>(&format!("\"{}\"", s))
+                        .map_err(|_| kreuzberg::KreuzbergError::Other(format!("Failed to deserialize result: {}", e)))
+                })
                 .unwrap_or_default()
         }
     }
@@ -14517,7 +14523,10 @@ mod __alef_wasm_bridge_embeddingbackend {
             // Convert JS result to usize
             result
                 .as_string()
-                .and_then(|s| serde_json::from_str::<usize>(&s).ok())
+                .and_then(|s| {
+                    serde_json::from_str::<usize>(&s)
+                        .map_err(|_| kreuzberg::KreuzbergError::Other(format!("Failed to deserialize result: {}", e)))
+                })
                 .unwrap_or_default()
         }
 
@@ -14817,7 +14826,11 @@ mod __alef_wasm_bridge_documentextractor {
                 // Convert JS result to Vec<String>
                 result
                     .as_string()
-                    .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+                    .and_then(|s| {
+                        serde_json::from_str::<Vec<String>>(&s).map_err(|_| {
+                            kreuzberg::KreuzbergError::Other(format!("Failed to deserialize result: {}", e))
+                        })
+                    })
                     .unwrap_or_default()
             };
             let __strs: Vec<&'static str> = __types
