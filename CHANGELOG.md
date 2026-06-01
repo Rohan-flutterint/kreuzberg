@@ -122,6 +122,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **java**: JVM SIGSEGV (exit 134) in `PluginApiTest.testRegisterDocumentExtractorTraitBridge`.
+  Two Panama FFM bugs in the alef-generated trait bridges: (1) `free_user_data` vtable slot was
+  set to `MemorySegment.NULL` instead of a proper upcall stub — Rust dereferenced NULL on drop
+  causing SIGBUS; (2) the `DocumentExtractor` vtable's `MemoryLayout.structLayout` declared 10
+  ADDRESS fields where the Rust `#[repr(C)]` struct has 11, mis-aligning every offset past the
+  missing slot. Both fixed at the alef template level + regenerated bindings. Java e2e now 100/100.
+
+- **wasm**: `task wasm:e2e` failed before tests ran with `getrandom 0.2: the wasm32-unknown-unknown
+  targets are not supported by default, you may need to enable the "js" feature`. Transitive deps
+  (`const-random-macro`, `redox_users`, `ring`) pull `getrandom 0.2.17` into the wasm build; the
+  pre-existing `getrandom 0.3`/`0.4` pins in the wasm crate manifest don't unify features back to
+  0.2. alef now emits a third `getrandom_02` alias pinning the 0.2 entry with the `js` feature.
+
+- **wasm**: `Swift{Trait}Bridge`-style JSON deserialization in the wasm trait-bridge sync/async
+  method bodies. Four template sites used `.as_string().and_then(|s| serde_json::from_str(&s).ok())
+  .unwrap_or_default()` for enum and struct return decoding, silently swallowing decode errors
+  and returning `Default::default()`. Replaced `.ok()` with `.map_err(|_| {{ error_deser }})` so
+  decode failures surface during testing while the no-error return contract is preserved.
+
 - **excel**: split `PageContent.sheet_name` from `PageContent.section_name` (the latter is PPTX-only)
   so the type's doc-comment matches the data again. Escape markdown-significant characters in sheet
   names when rendering per-page headings, preventing double-heading or broken-link rendering on
