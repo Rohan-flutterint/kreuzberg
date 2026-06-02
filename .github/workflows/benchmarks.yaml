@@ -1002,6 +1002,77 @@ jobs:
           path: benchmark-results/
           retention-days: 30
 
+  bench-liteparse:
+    name: liteparse (${{ matrix.output_format }}, ${{ matrix.mode }})
+    needs: bench-rust
+    if: ${{ !cancelled() }}
+    runs-on: runner-medium-arm64
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        mode: [single-file]
+        output_format: [markdown, plaintext]
+        exclude:
+          - output_format: markdown
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+          submodules: recursive
+      - name: Free disk space
+        uses: kreuzberg-dev/actions/free-disk-space-linux@v1
+
+      - name: Download benchmark harness binary
+        uses: actions/download-artifact@v8
+        with:
+          name: benchmark-harness-binary
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
+
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+
+      - name: Setup Rust toolchain
+        uses: kreuzberg-dev/actions/setup-rust@v1
+        with:
+          cache-key-prefix: benchmarks-liteparse
+          use-sccache: "true"
+
+      - name: Install system tesseract (liteparse default feature)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng libtesseract-dev libleptonica-dev
+
+      - name: Install liteparse CLI (lit)
+        run: |
+          cargo install liteparse --locked
+          lit --version
+
+      - name: Run benchmark
+        env:
+          FRAMEWORK: liteparse
+          MODE: ${{ matrix.mode }}
+          OUTPUT_FORMAT: ${{ matrix.output_format }}
+          ITERATIONS: ${{ env.ITERATIONS }}
+          TIMEOUT: ${{ github.event.inputs.timeout }}
+        run: scripts/benchmarks/run-benchmark.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmarks-liteparse-${{ matrix.output_format }}-${{ matrix.mode }}-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30
+
   aggregate-and-publish:
     name: Aggregate & Release Results
     needs:
@@ -1016,6 +1087,7 @@ jobs:
         bench-pdfplumber,
         bench-mineru,
         bench-pypdf,
+        bench-liteparse,
         bench-pdfminer,
         bench-pdftotext,
         bench-playa-pdf,
@@ -1156,8 +1228,8 @@ jobs:
           #   competitors  →  "{framework}:{output_format}:{mode}"
           #
           # kreuzberg: 3 pipelines × 2 output formats × 2 modes = 12
-          # competitors: 16 entries (format varies per tool — see SCHEMA.md for derivation)
-          # total expected: 28
+          # competitors: 17 entries (format varies per tool — see SCHEMA.md for derivation)
+          # total expected: 29
           EXPECTED_FRAMEWORKS=(
             # kreuzberg-* (slim keys — format encoded in name)
             "kreuzberg-markdown-baseline:single"   "kreuzberg-markdown-baseline:batch"
@@ -1179,6 +1251,7 @@ jobs:
             "pdfminer:plaintext:single"
             "pdftotext:plaintext:single"
             "playa-pdf:plaintext:single"
+            "liteparse:plaintext:single"
           )
 
           # Get actual frameworks from aggregated.json

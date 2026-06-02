@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+# LiteParse (run-llama/liteparse) CLI wrapper for the benchmark harness.
+#
+# Calls `lit parse <file> --format text` for the same fairness as the other
+# competitor wrappers: default options only, no preloaded model server, no
+# OCR opt-out unless the caller explicitly asks. Matches the per-file
+# invocation pattern used by pandoc_extract.sh.
+
+set -euo pipefail
+
+FORMAT="plaintext"
+OCR_FLAG=""
+FILE_PATH=""
+for arg in "$@"; do
+  case "$arg" in
+  --format=*)
+    FORMAT="${arg#--format=}"
+    ;;
+  --ocr)
+    OCR_FLAG=""
+    ;;
+  --no-ocr)
+    OCR_FLAG="--no-ocr"
+    ;;
+  *)
+    FILE_PATH="$arg"
+    ;;
+  esac
+done
+
+if [ -z "$FILE_PATH" ]; then
+  echo "Usage: liteparse_extract.sh [--format=plaintext] [--ocr|--no-ocr] <file_path>" >&2
+  exit 1
+fi
+
+# liteparse v2 only supports 'text' and 'json'; we benchmark plaintext only.
+if [ "$FORMAT" != "plaintext" ]; then
+  echo "Error: liteparse only supports plaintext output; got '$FORMAT'" >&2
+  exit 64
+fi
+
+if [ ! -f "$FILE_PATH" ]; then
+  echo "Error: File not found: $FILE_PATH" >&2
+  exit 1
+fi
+
+START=$(date +%s%N)
+
+if command -v timeout &>/dev/null; then
+  CONTENT=$(timeout 180s lit parse "$FILE_PATH" --format text $OCR_FLAG --quiet 2>/dev/null || echo "")
+elif command -v gtimeout &>/dev/null; then
+  CONTENT=$(gtimeout 180s lit parse "$FILE_PATH" --format text $OCR_FLAG --quiet 2>/dev/null || echo "")
+else
+  CONTENT=$(lit parse "$FILE_PATH" --format text $OCR_FLAG --quiet 2>/dev/null || echo "")
+fi
+
+END=$(date +%s%N)
+DURATION_MS=$(((END - START) / 1000000))
+
+if command -v jq &>/dev/null; then
+  jq -n \
+    --arg content "$CONTENT" \
+    --arg fmt "$FORMAT" \
+    --argjson duration "$DURATION_MS" \
+    '{
+      content: $content,
+      metadata: {framework: "liteparse", output_format: $fmt},
+      _extraction_time_ms: $duration
+    }'
+else
+  ESCAPED_CONTENT=$(echo "$CONTENT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed '$ s/\\n$//')
+  cat <<EOF
+{"content":"$ESCAPED_CONTENT","metadata":{"framework":"liteparse","output_format":"$FORMAT"},"_extraction_time_ms":$DURATION_MS}
+EOF
+fi

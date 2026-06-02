@@ -61,6 +61,9 @@ fn get_supported_formats(framework_name: &str) -> Vec<String> {
         // pdftotext: PDF-only (Python binding for poppler's pdftotext)
         "pdftotext" => vec!["pdf".to_string()],
 
+        // LiteParse (run-llama/liteparse): PDF-only Rust CLI (`lit parse`).
+        "liteparse" => vec!["pdf".to_string()],
+
         // PyMuPDF4LLM: PDF + formats via PyMuPDF/fitz
         // See: https://pymupdf.readthedocs.io/en/latest/how-to-open-a-file.html
         // Note: many non-PDF formats return empty content — tracked as EmptyContent errors
@@ -212,6 +215,28 @@ pub fn create_markitdown_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     let supported_formats = get_supported_formats("markitdown");
     Ok(
         SubprocessAdapter::new("markitdown", command, args, vec![], supported_formats)
+            .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
+    )
+}
+
+/// Creates a subprocess adapter for LiteParse (run-llama/liteparse) Rust CLI.
+///
+/// Requires the `lit` binary on PATH. Install with `cargo install liteparse`.
+/// Wrapper invokes `lit parse <file> --format text` per file — no persistent
+/// server, default options only, matching the fairness applied to pandoc.
+pub fn create_liteparse_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
+    which::which("lit").map_err(|_| {
+        crate::Error::Config("lit (liteparse) not found. Install with: cargo install liteparse".to_string())
+    })?;
+
+    let script_path = get_script_path("liteparse_extract.sh")?;
+    let command = PathBuf::from("bash");
+    let mut args = vec![script_path.to_string_lossy().to_string()];
+    args.push(ocr_flag(ocr_enabled));
+
+    let supported_formats = get_supported_formats("liteparse");
+    Ok(
+        SubprocessAdapter::new("liteparse", command, args, vec![], supported_formats)
             .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
     )
 }
@@ -502,5 +527,6 @@ mod tests {
         let _ = create_pdfminer_adapter(true);
         let _ = create_pdftotext_adapter(true);
         let _ = create_playa_pdf_adapter(true);
+        let _ = create_liteparse_adapter(true);
     }
 }

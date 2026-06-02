@@ -79,6 +79,7 @@ const FRAMEWORKS: &[(&str, &str, &str)] = &[
     ("pdfminer", "pip_package", "pdfminer.six PDF text extraction"),
     ("pdftotext", "pip_package", "pdftotext poppler Python binding"),
     ("playa-pdf", "pip_package", "playa-pdf PDF extraction"),
+    ("liteparse", "binary_size", "LiteParse (run-llama) Rust PDF parser"),
 ];
 
 /// Verified installation footprints for third-party frameworks.
@@ -151,6 +152,11 @@ const KNOWN_THIRD_PARTY_SIZES: &[(&str, u64, u64, u64, &str)] = &[
     // playa-pdf: pure Python PDF library, very lightweight.
     // pip-weigh: ~2.5 MB total (playa-pdf + pdfminer.six dependency).
     ("playa-pdf", 2_500_000, 0, 0, "playa-pdf PDF extraction"),
+    // liteparse (run-llama): Rust CLI installed via `cargo install liteparse`.
+    // Binary is statically linked against pdfium-sys + tesseract-rs (default feature),
+    // approx ~35 MB on Linux x86_64. No persistent model footprint at rest; tessdata
+    // lives in the system's tesseract install (~30 MB shared with other backends).
+    ("liteparse", 35_000_000, 0, 0, "LiteParse (run-llama) Rust PDF parser"),
     // kreuzberg-cli: single statically-linked Rust binary on Linux x86_64 release build with
     // --features ocr,paddle-ocr,layout-detection,embeddings. Measured 57.7 MB on the local
     // dev machine (ARM macOS); CI Linux release build is within ±5 MB. Bundles Tesseract +
@@ -1043,8 +1049,8 @@ mod tests {
 
     #[test]
     fn test_frameworks_list_complete() {
-        // 13 kreuzberg bindings + 12 third-party = 25 total
-        assert_eq!(FRAMEWORKS.len(), 25);
+        // 13 kreuzberg bindings + 13 third-party = 26 total
+        assert_eq!(FRAMEWORKS.len(), 26);
 
         // Check all kreuzberg bindings present
         let names: Vec<&str> = FRAMEWORKS.iter().map(|(n, _, _)| *n).collect();
