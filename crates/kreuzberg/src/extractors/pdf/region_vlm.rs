@@ -198,17 +198,11 @@ pub(crate) fn inject_region_results(
     use crate::types::internal::{ElementKind, InternalElement};
 
     for result in results {
-        let page_num = Some((result.page_index + 1) as u32);
-        document.elements.push(InternalElement {
-            kind: ElementKind::Paragraph,
-            text: result.markdown,
-            page: page_num,
-            ..Default::default()
-        });
-        tracing::debug!(
-            page = result.page_index + 1,
-            "injected VLM region result into document"
-        );
+        let page_num = (result.page_index + 1) as u32;
+        document
+            .elements
+            .push(InternalElement::text(ElementKind::Paragraph, result.markdown, 0).with_page(page_num));
+        tracing::debug!(page = page_num, "injected VLM region result into document");
     }
 }
 

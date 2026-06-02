@@ -44,10 +44,7 @@ pub struct Metrics {
 /// # Returns
 /// `true` if valid, `false` otherwise
 pub fn is_valid_against_schema(value: &Value, schema: &Value) -> bool {
-    match jsonschema::validate(schema, value) {
-        Ok(()) => true,
-        Err(_) => false,
-    }
+    jsonschema::is_valid(schema, value)
 }
 
 /// Compute schema validity rate: fraction of predictions passing validation.
@@ -100,11 +97,7 @@ fn collect_leaves<'a>(value: &'a Value, prefix: &str) -> Vec<(String, &'a Value)
     leaves
 }
 
-fn collect_leaves_recursive<'a>(
-    value: &'a Value,
-    path: &str,
-    leaves: &mut Vec<(String, &'a Value)>,
-) {
+fn collect_leaves_recursive<'a>(value: &'a Value, path: &str, leaves: &mut Vec<(String, &'a Value)>) {
     match value {
         Value::Object(map) => {
             for (key, val) in map {
@@ -136,10 +129,8 @@ fn collect_leaves_recursive<'a>(
 /// # Returns
 /// `Metrics { precision, recall, f1 }`
 pub fn field_precision_recall_f1(predicted: &Value, ground_truth: &Value) -> Metrics {
-    let pred_leaves: std::collections::HashMap<String, _> =
-        collect_leaves(predicted, "").into_iter().collect();
-    let gt_leaves: std::collections::HashMap<String, _> =
-        collect_leaves(ground_truth, "").into_iter().collect();
+    let pred_leaves: std::collections::HashMap<String, _> = collect_leaves(predicted, "").into_iter().collect();
+    let gt_leaves: std::collections::HashMap<String, _> = collect_leaves(ground_truth, "").into_iter().collect();
 
     let mut tp = 0usize;
     let mut fp = 0usize;
@@ -197,10 +188,8 @@ pub fn field_precision_recall_f1(predicted: &Value, ground_truth: &Value) -> Met
 /// # Returns
 /// Type correctness rate in [0.0, 1.0]
 pub fn type_correctness_rate(predicted: &Value, ground_truth: &Value) -> f64 {
-    let pred_leaves: std::collections::HashMap<String, _> =
-        collect_leaves(predicted, "").into_iter().collect();
-    let gt_leaves: std::collections::HashMap<String, _> =
-        collect_leaves(ground_truth, "").into_iter().collect();
+    let pred_leaves: std::collections::HashMap<String, _> = collect_leaves(predicted, "").into_iter().collect();
+    let gt_leaves: std::collections::HashMap<String, _> = collect_leaves(ground_truth, "").into_iter().collect();
 
     let mut matched = 0usize;
     let mut type_correct = 0usize;
@@ -244,11 +233,7 @@ fn same_json_type(a: &Value, b: &Value) -> bool {
 ///
 /// # Returns
 /// `true` if values match within tolerance
-pub fn numeric_match(
-    predicted: &Value,
-    ground_truth: &Value,
-    tolerance: &NumericTolerance,
-) -> bool {
+pub fn numeric_match(predicted: &Value, ground_truth: &Value, tolerance: &NumericTolerance) -> bool {
     let pred_num = match predicted {
         Value::Number(n) => n.as_f64(),
         _ => return false,
@@ -289,10 +274,7 @@ mod tests {
             }
         });
 
-        let predictions = vec![
-            json!({"name": "Alice", "age": 30}),
-            json!({"name": "Bob", "age": 25}),
-        ];
+        let predictions = vec![json!({"name": "Alice", "age": 30}), json!({"name": "Bob", "age": 25})];
 
         let rate = schema_validity_rate(&predictions, &schema);
         assert_eq!(rate, 1.0);
