@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **ci(e2e)**: `Validate PR` and `Validate Issues` workflows no longer fail with `startup_failure`. Both reusable callers now declare the `permissions:` block (`contents: read, pull-requests: read` for the PR validator; `issues: write, repository-projects: write` for the issue validator) that the reusable workflows in `kreuzberg-dev/actions@v1` require.
+- **ci(e2e/kotlin_android)**: `setup-android@v3` no longer fails with `sdkmanager exit 1`. Replaced the deprecated `api-level` / `build-tools-version` inputs (which the action ignored with a workflow warning and which forced the legacy `sdkmanager tools` install path that Google removed) with the modern `packages: "platforms;android-35 build-tools;35.0.0"` input.
+
 ### Added
 
 - **ner-onnx**: switched the `ner-onnx` Cargo feature from the upstream `gline-rs` (pinned to `ort = "=2.0.0-rc.9"`) to the published `kreuzberg-gliner-rs` fork (pinned to `ort = "=2.0.0-rc.12"`). The ONNX NER backend is now functional and coexists with the workspace ORT version. The default model (`urchade/gliner_multi-v2.1`) downloads lazily on first use via `hf-hub`.

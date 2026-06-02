@@ -298,8 +298,13 @@ jobs:
         if: matrix.lang == 'kotlin_android'
         uses: android-actions/setup-android@v3
         with:
-          api-level: 35
-          build-tools-version: "35.0.0"
+          # setup-android@v3 dropped the `api-level` / `build-tools-version`
+          # inputs (they were ignored with a workflow warning) and the legacy
+          # `sdkmanager tools` install path now fails with exit code 1 because
+          # Google removed the "tools" package. Use the modern `packages`
+          # input to declare exactly what we need.
+          packages: "platforms;android-35 build-tools;35.0.0"
+          accept-android-sdk-licenses: true
 
       - name: Setup Gradle
         if: matrix.lang == 'kotlin_android'

@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened, edited]
 
+permissions:
+  issues: write
+  repository-projects: write
+
 jobs:
   validate:
     uses: kreuzberg-dev/actions/.github/workflows/reusable-validate-issues.yml@v1
