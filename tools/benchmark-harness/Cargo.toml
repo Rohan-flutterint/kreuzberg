@@ -31,6 +31,7 @@ chrono = { workspace = true }
 
 clap = { workspace = true }
 futures = { workspace = true }
+jsonschema = "0.18"
 kreuzberg = { path = "../../crates/kreuzberg", features = ["full"] }
 num_cpus = { workspace = true }
 
