@@ -80,7 +80,7 @@ pub mod security;
 #[cfg(test)]
 mod security_tests;
 
-#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+#[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
 pub mod image;
 
 #[cfg(feature = "archives")]
@@ -183,7 +183,7 @@ pub use markdown::MarkdownExtractor;
 pub use structured::StructuredExtractor;
 pub use text::PlainTextExtractor;
 
-#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+#[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
 pub use image::ImageExtractor;
 
 #[cfg(feature = "archives")]
@@ -331,7 +331,7 @@ pub(crate) fn register_default_extractors() -> Result<()> {
     registry.register(Arc::new(StructuredExtractor::new()))?;
     registry.register(Arc::new(CsvExtractor::new()))?;
 
-    #[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+    #[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
     registry.register(Arc::new(ImageExtractor::new()))?;
 
     #[cfg(feature = "xml")]
@@ -438,7 +438,7 @@ mod tests {
         assert!(extractor_names.contains(&"djot-extractor".to_string()));
         assert!(extractor_names.contains(&"csv-extractor".to_string()));
 
-        #[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+        #[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
         {
             expected_count += 1;
             assert!(extractor_names.contains(&"image-extractor".to_string()));

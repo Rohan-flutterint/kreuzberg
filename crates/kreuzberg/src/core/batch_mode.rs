@@ -26,6 +26,7 @@ task_local! {
     feature = "excel-wasm",
     feature = "archives"
 ))]
+#[allow(dead_code)]
 pub(crate) fn is_batch_mode() -> bool {
     BATCH_MODE.try_with(|cell| cell.get()).unwrap_or(false)
 }

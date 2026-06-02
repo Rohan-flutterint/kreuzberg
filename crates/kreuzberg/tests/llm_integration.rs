@@ -221,6 +221,8 @@ async fn test_vlm_fallback_always_routes_to_vlm() {
             ..Default::default()
         }),
         force_ocr: true,
+        // Multi-page scanned PDFs sent to VLM require more than the default 60 s.
+        extraction_timeout_secs: Some(300),
         ..Default::default()
     };
     let result = kreuzberg::extract_file(SCANNED_PDF, None, &config)
@@ -258,6 +260,8 @@ async fn test_vlm_fallback_on_low_quality() {
             ..Default::default()
         }),
         force_ocr: true,
+        // Multi-page scanned PDFs sent to VLM require more than the default 60 s.
+        extraction_timeout_secs: Some(300),
         ..Default::default()
     };
     let result = kreuzberg::extract_file(SCANNED_PDF, None, &config)
@@ -283,6 +287,17 @@ async fn test_vlm_fallback_on_low_quality() {
 #[tokio::test]
 async fn test_vlm_fallback_disabled_does_not_call_llm() {
     init();
+    // Skip if Tesseract is not available in the current feature set (e.g. liter-llm
+    // only, without the full `ocr` feature which pulls in the Tesseract backend).
+    {
+        use kreuzberg::plugins::registry::get_ocr_backend_registry;
+        let registry = get_ocr_backend_registry();
+        let registry = registry.read();
+        if !registry.list().iter().any(|n| n == "tesseract") {
+            eprintln!("SKIP: tesseract backend not registered in this feature set");
+            return;
+        }
+    }
     // No API key required — Disabled must not contact any provider.
     let config = ExtractionConfig {
         ocr: Some(OcrConfig {
@@ -299,7 +314,7 @@ async fn test_vlm_fallback_disabled_does_not_call_llm() {
         .await
         .expect("Disabled-fallback extraction failed");
     assert!(
-        result.llm_usage.as_ref().map_or(true, |u| u.is_empty()),
+        result.llm_usage.as_ref().is_none_or(|u| u.is_empty()),
         "Disabled policy must not produce LLM usage records, got {:?}",
         result.llm_usage
     );

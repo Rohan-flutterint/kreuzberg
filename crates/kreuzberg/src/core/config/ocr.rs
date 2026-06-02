@@ -472,7 +472,7 @@ impl OcrConfig {
     }
 
     /// Returns the effective quality thresholds, using configured values or defaults.
-    #[cfg(feature = "ocr")]
+    #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
     pub(crate) fn effective_thresholds(&self) -> OcrQualityThresholds {
         self.quality_thresholds.clone().unwrap_or_default()
     }
@@ -486,16 +486,16 @@ impl OcrConfig {
     ///    - `OnLowQuality { quality_threshold }` → `[classical_stage @ 100, vlm_stage @ 50]`
     ///      with `quality_thresholds.pipeline_min_quality = quality_threshold`.
     ///    - `Always` → `[vlm_stage @ 100]` only (no classical stage).
-    ///    Returns `None` if `vlm_config` is not set (misconfiguration; surfaces at
-    ///    call-time as a logged warning rather than a panic — [`validate`] catches it
-    ///    at config-load time).
+    ///      Returns `None` if `vlm_config` is not set (misconfiguration; surfaces at
+    ///      call-time as a logged warning rather than a panic — [`validate`] catches it
+    ///      at config-load time).
     /// 3. If `paddle-ocr` is compiled in and the backend is the default (tesseract),
     ///    auto-constructs `[tesseract @ 100, paddleocr @ 50]`.
     /// 4. Otherwise returns `None` (single-backend mode).
     ///
     /// Explicit non-default backend selections are honored as-is — a silent
     /// paddleocr fallback would mask errors from the chosen backend.
-    #[cfg(feature = "ocr")]
+    #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
     pub(crate) fn effective_pipeline(&self) -> Option<OcrPipelineConfig> {
         // Rule 1: explicit pipeline always wins.
         if self.pipeline.is_some() {
@@ -571,7 +571,7 @@ impl OcrConfig {
     ///
     /// Extracted so the vlm_fallback paths can fall through cleanly without
     /// duplicating the paddle-ocr conditional compilation block.
-    #[cfg(feature = "ocr")]
+    #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
     fn effective_pipeline_classical(&self) -> Option<OcrPipelineConfig> {
         #[cfg(feature = "paddle-ocr")]
         {
@@ -900,10 +900,16 @@ mod tests {
         };
 
         let synthesised = config.effective_pipeline().expect("must synthesise a pipeline");
-        let hand_written = explicit.effective_pipeline().expect("explicit pipeline must be returned");
+        let hand_written = explicit
+            .effective_pipeline()
+            .expect("explicit pipeline must be returned");
 
         // Stage count matches.
-        assert_eq!(synthesised.stages.len(), hand_written.stages.len(), "stage count mismatch");
+        assert_eq!(
+            synthesised.stages.len(),
+            hand_written.stages.len(),
+            "stage count mismatch"
+        );
 
         // Stage 0: classical backend.
         assert_eq!(synthesised.stages[0].backend, hand_written.stages[0].backend);
@@ -912,8 +918,14 @@ mod tests {
         // Stage 1: VLM backend with matching model.
         assert_eq!(synthesised.stages[1].backend, hand_written.stages[1].backend);
         assert_eq!(synthesised.stages[1].priority, hand_written.stages[1].priority);
-        let s_vlm = synthesised.stages[1].vlm_config.as_ref().expect("synthesised stage 1 must have vlm_config");
-        let h_vlm = hand_written.stages[1].vlm_config.as_ref().expect("hand-written stage 1 must have vlm_config");
+        let s_vlm = synthesised.stages[1]
+            .vlm_config
+            .as_ref()
+            .expect("synthesised stage 1 must have vlm_config");
+        let h_vlm = hand_written.stages[1]
+            .vlm_config
+            .as_ref()
+            .expect("hand-written stage 1 must have vlm_config");
         assert_eq!(s_vlm.model, h_vlm.model);
 
         // Quality threshold propagated correctly.
@@ -922,9 +934,7 @@ mod tests {
             "threshold must be 0.6, got {}",
             synthesised.quality_thresholds.pipeline_min_quality
         );
-        assert!(
-            (hand_written.quality_thresholds.pipeline_min_quality - 0.6).abs() < f64::EPSILON,
-        );
+        assert!((hand_written.quality_thresholds.pipeline_min_quality - 0.6).abs() < f64::EPSILON,);
     }
 
     /// `Always` synthesises a single-stage VLM-only pipeline.
@@ -1009,7 +1019,9 @@ mod tests {
 
     #[test]
     fn test_vlm_fallback_policy_serde_roundtrip_on_low_quality() {
-        let policy = VlmFallbackPolicy::OnLowQuality { quality_threshold: 0.42 };
+        let policy = VlmFallbackPolicy::OnLowQuality {
+            quality_threshold: 0.42,
+        };
         let json = serde_json::to_string(&policy).unwrap();
         let deserialized: VlmFallbackPolicy = serde_json::from_str(&json).unwrap();
         match deserialized {

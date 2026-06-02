@@ -1,7 +1,7 @@
 //! SROIE (ICDAR 2019 Scanned Receipts OCR and Information Extraction) dataset loader.
 
 use super::{DatasetError, Result, Split, StructuredFixture};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::fs;
 use std::path::Path;
 

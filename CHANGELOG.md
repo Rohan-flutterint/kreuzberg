@@ -61,6 +61,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scanner only fires when the raw formula string is stored verbatim — but that is exactly
   the case for the highest-risk DDE injection payloads.
 
+### Fixed
+
+- **ocr/image**: `UnsupportedFormat("image/png")` when calling `extract_file` on a PNG/JPEG
+  image with `OcrConfig { backend: "vlm", .. }` and `--features "liter-llm,pdf"` (no `ocr`
+  feature). `ImageExtractor` was gated on `#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]`
+  and therefore not registered in the extractor registry under the `liter-llm`-only feature
+  set. Fixed by introducing a new `ocr-pipeline` Cargo marker feature — implied by both
+  `liter-llm` and `ocr`/`ocr-wasm` — that gates the shared OCR pipeline infrastructure
+  (image extractor registration, quality scoring, page rendering) without requiring the
+  Tesseract binary.
+
+- **ocr/pdf**: `VlmFallbackPolicy::Always` and `VlmFallbackPolicy::OnLowQuality` produced
+  empty content when processing PDFs with `--features "liter-llm,pdf"`. The entire OCR
+  dispatch path in `extract_core_oxide` was gated on `#[cfg(feature = "ocr")]`; without
+  it the native-text fallback always ran and no VLM call was made. All affected cfg gates
+  in `pdf/mod.rs` and `pdf/ocr.rs` now include `feature = "ocr-pipeline"`. Integration
+  tests increased `extraction_timeout_secs` to 300 for multi-page scanned PDFs sent to VLM.
+
 ### Changed
 
 - **api/openapi**: Tuple-typed fields that derive `ToSchema` now emit codegen-compatible

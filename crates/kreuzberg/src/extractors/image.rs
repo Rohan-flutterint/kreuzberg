@@ -32,7 +32,7 @@ impl ImageExtractor {
     }
 
     /// Extract text from image using OCR with optional page tracking for multi-frame TIFFs.
-    #[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+    #[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
     async fn extract_with_ocr(
         &self,
         content: &[u8],
@@ -499,7 +499,7 @@ impl DocumentExtractor for ImageExtractor {
                 }
             }
 
-            #[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+            #[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
             {
                 let mut doc = self.extract_with_ocr(content, mime_type, config).await?;
                 doc.metadata.format = Some(crate::types::FormatMetadata::Image(image_metadata));
@@ -508,7 +508,7 @@ impl DocumentExtractor for ImageExtractor {
             }
         }
 
-        #[cfg(not(any(feature = "ocr", feature = "ocr-wasm")))]
+        #[cfg(not(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline")))]
         {
             let mut doc = build_image_internal_document(None, Some(extracted_image));
             doc.metadata = Metadata {

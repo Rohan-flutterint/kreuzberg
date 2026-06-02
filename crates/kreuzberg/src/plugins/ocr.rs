@@ -468,7 +468,7 @@ pub fn clear_ocr_backends() -> crate::Result<()> {
 /// callers always see a usable registry. It is a no-op when the registry
 /// already has at least one backend, so callers may invoke it cheaply before
 /// every OCR dispatch.
-#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+#[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
 pub(crate) fn ensure_ocr_backends_initialized() {
     use crate::plugins::registry::get_ocr_backend_registry;
 

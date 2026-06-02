@@ -9,7 +9,7 @@ pub mod transform;
 #[cfg(feature = "hwp")]
 pub mod hwp;
 
-#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+#[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
 pub mod image;
 
 /// Capacity estimation utilities for string pre-allocation.

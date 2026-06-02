@@ -73,12 +73,19 @@ xml = ["dep:quick-xml", "dep:roxmltree"]
 archives = ["dep:zip", "dep:tar", "dep:sevenz-rust2", "dep:flate2"]
 mdx = []
 
-liter-llm = ["dep:liter-llm", "dep:minijinja"]
+liter-llm = ["dep:liter-llm", "dep:minijinja", "ocr-pipeline"]
+
+# Lightweight marker feature: shared OCR pipeline infrastructure (quality scoring,
+# page rendering, multi-backend pipeline) usable without the Tesseract binary.
+# Implied by `liter-llm` so VLM-only OCR works without enabling the full `ocr` feature.
+# Also implied by `ocr` and `ocr-wasm` (see those feature definitions).
+ocr-pipeline = []
 
 tree-sitter = ["dep:tree-sitter-language-pack"]
 tree-sitter-wasm = ["tree-sitter"]
 
 ocr = [
+    "ocr-pipeline",
     "dep:kreuzberg-tesseract",
     "dep:image",
     "dep:tiff",
@@ -91,6 +98,7 @@ ocr = [
 # WASM OCR: Minimal Tesseract backend without html-to-markdown (which has WASI imports)
 # Includes only the core OCR processing dependencies needed for Tesseract on WASM
 ocr-wasm = [
+    "ocr-pipeline",
     "dep:kreuzberg-tesseract",
     "dep:image",
     "dep:hayro-jpeg2000",

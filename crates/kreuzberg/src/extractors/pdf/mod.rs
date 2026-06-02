@@ -23,7 +23,7 @@ use async_trait::async_trait;
 use std::path::Path;
 
 use extraction::extract_all_from_oxide_document;
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 use ocr::extract_with_ocr;
 use pages::{assign_hierarchy_to_pages, assign_tables_and_images_to_pages};
 
@@ -32,7 +32,7 @@ use pages::{assign_hierarchy_to_pages, assign_tables_and_images_to_pages};
 /// Returns `None` when layout detection is not configured or fails.
 /// Failures are logged as warnings but do not propagate — extraction
 /// continues without layout hints (graceful degradation).
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 async fn run_ocr_with_layout(
     content: &[u8],
     config: &ExtractionConfig,
@@ -217,22 +217,22 @@ impl PdfExtractor {
         )?;
 
         // --- OCR evaluation ---
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_tables: Vec<crate::types::Table> = Vec::new();
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_elements: Vec<crate::types::OcrElement> = Vec::new();
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_internal_doc: Option<InternalDocument> = None;
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_llm_usage: Vec<crate::types::LlmUsage> = Vec::new();
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_page_texts: Option<Vec<String>> = None;
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_results_map: Option<ahash::AHashMap<u32, String>> = None;
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut ocr_page_rasters: Option<Vec<crate::types::ExtractedImage>> = None;
 
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let (text, extraction_method) = if config.effective_disable_ocr() {
             (native_text, ExtractionMethod::Native)
         } else if config.force_ocr {
@@ -366,10 +366,10 @@ impl PdfExtractor {
             (native_text, ExtractionMethod::Native)
         };
 
-        #[cfg(not(feature = "ocr"))]
+        #[cfg(not(any(feature = "ocr", feature = "ocr-pipeline")))]
         let (text, extraction_method) = (native_text, ExtractionMethod::Native);
 
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if !ocr_tables.is_empty() {
             tables.extend(ocr_tables);
             tables.sort_by_key(|t| t.page_number);
@@ -381,10 +381,10 @@ impl PdfExtractor {
             Option<crate::types::ProcessingWarning>,
         ) = (extracted_images, None);
 
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut page_contents = page_contents;
 
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         {
             if let Some(pts) = ocr_page_texts {
                 if let Some(ref mut pages) = page_contents {
@@ -445,7 +445,7 @@ impl PdfExtractor {
         let used_ocr = extraction_method.used_ocr();
         let use_structured_doc = !used_ocr && pre_rendered_doc.is_some();
 
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let mut doc = if let Some(mut ocr_doc) = ocr_internal_doc.take() {
             ocr_doc.mime_type = mime_type.to_string();
             ocr_doc
@@ -463,7 +463,7 @@ impl PdfExtractor {
             }
             d
         };
-        #[cfg(not(feature = "ocr"))]
+        #[cfg(not(any(feature = "ocr", feature = "ocr-pipeline")))]
         let mut doc = if let Some(mut pre_doc) = pre_rendered_doc {
             pre_doc.mime_type = mime_type.to_string();
             pre_doc
@@ -537,9 +537,9 @@ impl PdfExtractor {
 
         // Append OCR page rasters after embedded images; reindex to keep image_index contiguous.
         // None → document-level bypass; Some([]) → zero-page PDF; Some([..]) → rasters captured.
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         let ocr_rasters_bypass = ocr_page_rasters.is_none();
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if let Some(rasters) = ocr_page_rasters {
             let base_idx = doc.images.len() as u32;
             for (offset, mut raster) in rasters.into_iter().enumerate() {
@@ -551,7 +551,7 @@ impl PdfExtractor {
         // Warn only on the document-level bypass path (ExtractionMethod::Ocr) — not when
         // force_ocr_pages resolved to an empty set because all requested pages were out of
         // range (ExtractionMethod::Mixed returns None rasters without document-level bypass).
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if used_ocr
             && ocr_rasters_bypass
             && extraction_method == ExtractionMethod::Ocr
@@ -572,7 +572,7 @@ impl PdfExtractor {
         //
         // Note: positional interleaving within the text stream is not yet implemented on
         // this path; all image elements are appended after the text content.
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if used_ocr && !doc.images.is_empty() {
             let images_enabled = config.images.as_ref().map(|c| c.extract_images).unwrap_or(false)
                 || config.pdf_options.as_ref().map(|p| p.extract_images).unwrap_or(false);
@@ -688,13 +688,13 @@ impl PdfExtractor {
         doc.prebuilt_pages = final_pages;
 
         // Attach OCR elements so downstream pipeline can use per-word bounding boxes.
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if !ocr_elements.is_empty() {
             doc.prebuilt_ocr_elements = Some(ocr_elements);
         }
 
         // Attach LLM usage accumulated during OCR so derive_extraction_result can transfer it.
-        #[cfg(feature = "ocr")]
+        #[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
         if !ocr_llm_usage.is_empty() {
             doc.llm_usage = Some(ocr_llm_usage);
         }
@@ -720,24 +720,23 @@ impl PdfExtractor {
                 .map(|o| o.vlm_fallback != crate::core::config::VlmFallbackPolicy::Disabled && o.vlm_config.is_some())
                 .unwrap_or(false);
 
-            if vlm_enabled {
-                if let (Some(layout_images), Some(hints)) =
+            if vlm_enabled
+                && let (Some(layout_images), Some(hints)) =
                     (markdown_layout_images.as_deref(), markdown_layout_hints.as_deref())
-                {
-                    let vlm_cfg = config
-                        .ocr
-                        .as_ref()
-                        .and_then(|o| o.vlm_config.as_ref())
-                        .expect("vlm_config checked above");
+            {
+                let vlm_cfg = config
+                    .ocr
+                    .as_ref()
+                    .and_then(|o| o.vlm_config.as_ref())
+                    .expect("vlm_config checked above");
 
-                    let region_results = region_vlm::extract_vlm_regions(layout_images, hints, vlm_cfg).await;
-                    if !region_results.is_empty() {
-                        tracing::debug!(
-                            count = region_results.len(),
-                            "injecting VLM region results into document"
-                        );
-                        region_vlm::inject_region_results(&mut doc, region_results);
-                    }
+                let region_results = region_vlm::extract_vlm_regions(layout_images, hints, vlm_cfg).await;
+                if !region_results.is_empty() {
+                    tracing::debug!(
+                        count = region_results.len(),
+                        "injecting VLM region results into document"
+                    );
+                    region_vlm::inject_region_results(&mut doc, region_results);
                 }
             }
         }

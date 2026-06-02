@@ -2,17 +2,17 @@
 //!
 //! Handles text quality evaluation, OCR fallback decision logic, and OCR processing.
 
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 use std::borrow::Cow;
 
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 use crate::core::config::ExtractionConfig;
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 use crate::core::config::OcrQualityThresholds;
 
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Default)]
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub struct NativeTextStats {
     pub non_whitespace: usize,
     pub alnum: usize,
@@ -32,7 +32,7 @@ pub struct NativeTextStats {
     pub word_count: usize,
 }
 
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub struct OcrFallbackDecision {
     pub stats: NativeTextStats,
     pub avg_non_whitespace: f64,
@@ -42,7 +42,7 @@ pub struct OcrFallbackDecision {
 
 /// Which branch the OCR skip gate selects, given pre-rendered doc presence,
 /// text statistics, and the per-page fallback decision.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum OcrGateOutcome {
     /// Content is non-textual and a pre-rendered doc is available — skip OCR.
@@ -61,7 +61,7 @@ pub(crate) enum OcrGateOutcome {
 /// independently. Fixes #917: `has_substantive_doc` alone must not suppress
 /// OCR when `decision_fallback` is true (a scanned page was detected despite
 /// good aggregate text).
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn evaluate_ocr_skip_gate(
     pre_rendered_doc_present: bool,
     total_chars: usize,
@@ -88,7 +88,7 @@ pub(crate) fn evaluate_ocr_skip_gate(
     }
 }
 
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 impl NativeTextStats {
     pub(crate) fn compute(text: &str, thresholds: &OcrQualityThresholds) -> Self {
         let mut non_whitespace = 0usize;
@@ -173,7 +173,7 @@ impl NativeTextStats {
 /// Evaluates native PDF text quality to determine if OCR fallback is needed.
 ///
 /// Uses the provided quality thresholds (or defaults) to make the decision.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn evaluate_native_text_for_ocr(
     native_text: &str,
     page_count: Option<u32>,
@@ -246,7 +246,7 @@ pub(crate) fn evaluate_native_text_for_ocr(
 ///
 /// Used by the pipeline to decide whether to accept a result or try the next backend.
 /// Higher is better. Combines multiple signal dimensions into a single score.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn compute_quality_score(text: &str, thresholds: &OcrQualityThresholds) -> f64 {
     let trimmed = text.trim();
     if trimmed.is_empty() {
@@ -287,7 +287,7 @@ pub(crate) fn compute_quality_score(text: &str, thresholds: &OcrQualityThreshold
         .clamp(0.0, 1.0)
 }
 
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn evaluate_per_page_ocr(
     native_text: &str,
     boundaries: Option<&[crate::types::PageBoundary]>,
@@ -322,7 +322,7 @@ pub(crate) fn evaluate_per_page_ocr(
 ///
 /// `page_indices` are 0-indexed. Only the requested pages are rendered,
 /// returned as `(page_index, image)` pairs.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn render_selected_pages_for_ocr(
     content: &[u8],
     page_indices: &[usize],
@@ -374,7 +374,7 @@ pub(crate) fn render_selected_pages_for_ocr(
 ///
 /// Page numbers must be >= 1 (invalid values are filtered out with a warning).
 /// An `ocr` config is recommended but not required; defaults are used if absent.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) async fn extract_mixed_ocr_native(
     native_text: &str,
     boundaries: &[crate::types::PageBoundary],
@@ -541,7 +541,7 @@ pub(crate) async fn extract_mixed_ocr_native(
 /// # Returns
 ///
 /// Concatenated text from all pages, with markdown structure when layout is available
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) async fn extract_with_ocr(
     content: Option<&[u8]>,
     images: Option<&[image::DynamicImage]>,
@@ -1031,7 +1031,7 @@ pub(crate) async fn extract_with_ocr(
 ///
 /// `image_index` is set to 0; the caller must reindex after merging into
 /// the document's image collection.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) fn build_page_raster_image(
     page_idx: usize,
     png_bytes: bytes::Bytes,
@@ -1068,7 +1068,7 @@ pub(crate) fn build_page_raster_image(
 /// - ~50MB for render + encode working set (RGB buffer briefly, then PNG)
 /// - ~100MB for OCR working set per concurrent page
 /// - Plus the document itself and base allocations
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 fn adapt_batch_size_to_memory(configured: usize, document_size: usize) -> usize {
     let available_bytes = get_available_memory();
 
@@ -1106,7 +1106,7 @@ fn adapt_batch_size_to_memory(configured: usize, document_size: usize) -> usize 
 /// On Linux (including Docker), reads `/proc/meminfo` for `MemAvailable`.
 /// On macOS, uses `sysctl hw.memsize` for total memory (conservative fallback).
 /// Returns 0 if the query fails, signaling the caller to use the default batch size.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 fn get_available_memory() -> usize {
     #[cfg(target_os = "linux")]
     {
@@ -1132,7 +1132,7 @@ fn get_available_memory() -> usize {
         0
     }
 }
-#[cfg(all(feature = "ocr", target_os = "linux"))]
+#[cfg(all(any(feature = "ocr", feature = "ocr-pipeline"), target_os = "linux"))]
 fn parse_meminfo_available(contents: &str) -> usize {
     contents
         .lines()
@@ -1148,12 +1148,12 @@ fn parse_meminfo_available(contents: &str) -> usize {
         .unwrap_or(0)
 }
 
-#[cfg(all(feature = "ocr", target_os = "linux"))]
+#[cfg(all(any(feature = "ocr", feature = "ocr-pipeline"), target_os = "linux"))]
 fn read_meminfo_available() -> usize {
     parse_meminfo_available(&std::fs::read_to_string("/proc/meminfo").unwrap_or_default())
 }
 
-#[cfg(all(feature = "ocr", target_os = "linux"))]
+#[cfg(all(any(feature = "ocr", feature = "ocr-pipeline"), target_os = "linux"))]
 fn parse_cgroup_v2(max: &str, current: &str) -> Option<usize> {
     let max = max.trim();
     if max == "max" {
@@ -1164,7 +1164,7 @@ fn parse_cgroup_v2(max: &str, current: &str) -> Option<usize> {
     Some(limit.saturating_sub(usage))
 }
 
-#[cfg(all(feature = "ocr", target_os = "linux"))]
+#[cfg(all(any(feature = "ocr", feature = "ocr-pipeline"), target_os = "linux"))]
 fn parse_cgroup_v1(limit: &str, usage: &str) -> Option<usize> {
     let limit = limit.trim().parse::<usize>().ok()?;
     let usage = usage.trim().parse::<usize>().ok()?;
@@ -1172,7 +1172,7 @@ fn parse_cgroup_v1(limit: &str, usage: &str) -> Option<usize> {
     (limit < (isize::MAX as usize)).then(|| limit.saturating_sub(usage))
 }
 
-#[cfg(all(feature = "ocr", target_os = "linux"))]
+#[cfg(all(any(feature = "ocr", feature = "ocr-pipeline"), target_os = "linux"))]
 fn cgroup_headroom() -> Option<usize> {
     // cgroup v2 (unified): /sys/fs/cgroup/memory.{max,current}
     if let (Ok(max), Ok(cur)) = (
@@ -1192,7 +1192,7 @@ fn cgroup_headroom() -> Option<usize> {
 /// Each stage produces OCR output that is scored; if the score meets the
 /// pipeline's quality threshold, the result is accepted. Otherwise, the next
 /// backend is tried. Returns the best result seen across all stages.
-#[cfg(feature = "ocr")]
+#[cfg(any(feature = "ocr", feature = "ocr-pipeline"))]
 pub(crate) async fn run_ocr_pipeline(
     content: Option<&[u8]>,
     images: Option<&[image::DynamicImage]>,

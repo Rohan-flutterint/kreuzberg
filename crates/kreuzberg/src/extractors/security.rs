@@ -529,6 +529,7 @@ impl SecurityBudget {
 /// assert!(has_path_traversal("word/../../etc/passwd"));
 /// assert!(!has_path_traversal("word/images/photo.png"));
 /// ```
+#[allow(dead_code)]
 pub(crate) fn has_path_traversal(path_str: &str) -> bool {
     use std::path::{Component, Path};
     Path::new(path_str).components().any(|c| c == Component::ParentDir)

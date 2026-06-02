@@ -440,8 +440,9 @@ fn extract_exif_data(bytes: &[u8]) -> HashMap<String, String> {
     exif_map
 }
 
-/// Stub EXIF extraction for `ocr-wasm` (kamadak-exif not available on WASM).
-#[cfg(all(feature = "ocr-wasm", not(feature = "ocr")))]
+/// Stub EXIF extraction for `ocr-wasm` and `ocr-pipeline` without full `ocr`
+/// (kamadak-exif not compiled in those configurations).
+#[cfg(all(any(feature = "ocr-wasm", feature = "ocr-pipeline"), not(feature = "ocr")))]
 fn extract_exif_data(_bytes: &[u8]) -> HashMap<String, String> {
     HashMap::new()
 }

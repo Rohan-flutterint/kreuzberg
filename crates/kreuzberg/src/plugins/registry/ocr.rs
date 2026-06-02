@@ -1,6 +1,6 @@
 //! OCR backend registry.
 
-#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+#[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
 use crate::KreuzbergError;
 use crate::Result;
 use crate::plugins::OcrBackend;
@@ -181,7 +181,7 @@ impl OcrBackendRegistry {
     /// # Returns
     ///
     /// The backend if found, or an error if not registered.
-    #[cfg(any(feature = "ocr", feature = "ocr-wasm"))]
+    #[cfg(any(feature = "ocr", feature = "ocr-wasm", feature = "ocr-pipeline"))]
     #[tracing::instrument(skip(self), fields(registered_backends = ?self.backends.keys().collect::<Vec<_>>()))]
     pub(crate) fn get(&self, name: &str) -> Result<Arc<dyn OcrBackend>> {
         // Normalize common aliases: "paddleocr" → "paddle-ocr"
