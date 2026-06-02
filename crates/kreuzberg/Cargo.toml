@@ -254,6 +254,7 @@ android-target = [
     "mcp",
     "liter-llm",
     "hwpx",
+    "diff",
 ]
 # Mobile deployment preset — formats + analysis + Tesseract OCR + code intelligence + API types.
 # Excludes ORT-dependent features (paddle-ocr, layout-detection, embeddings, auto-rotate)
