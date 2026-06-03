@@ -72,7 +72,10 @@ async fn abstractive_summary_runs_against_real_provider() {
         ..Default::default()
     };
 
-    processor.process(&mut result, &config).await.expect("abstractive summary succeeds");
+    processor
+        .process(&mut result, &config)
+        .await
+        .expect("abstractive summary succeeds");
 
     let summary = result.summary.as_ref().expect("summary populated");
     assert_eq!(summary.strategy, SummaryStrategy::Abstractive);

@@ -89,15 +89,30 @@ mod tests {
     #[test]
     fn test_mask_strategy() {
         let mut counter = TokenCounter::new();
-        let token = apply_strategy(RedactionStrategy::Mask, "alice@example.com", &PiiCategory::Email, &mut counter);
+        let token = apply_strategy(
+            RedactionStrategy::Mask,
+            "alice@example.com",
+            &PiiCategory::Email,
+            &mut counter,
+        );
         assert_eq!(token, "[REDACTED]");
     }
 
     #[test]
     fn test_hash_strategy_is_deterministic() {
         let mut counter = TokenCounter::new();
-        let a = apply_strategy(RedactionStrategy::Hash, "alice@example.com", &PiiCategory::Email, &mut counter);
-        let b = apply_strategy(RedactionStrategy::Hash, "alice@example.com", &PiiCategory::Email, &mut counter);
+        let a = apply_strategy(
+            RedactionStrategy::Hash,
+            "alice@example.com",
+            &PiiCategory::Email,
+            &mut counter,
+        );
+        let b = apply_strategy(
+            RedactionStrategy::Hash,
+            "alice@example.com",
+            &PiiCategory::Email,
+            &mut counter,
+        );
         assert_eq!(a, b);
         assert!(a.starts_with("[HASH:"));
         assert_eq!(a.len(), "[HASH:0123456789abcdef]".len());

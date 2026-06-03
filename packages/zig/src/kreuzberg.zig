@@ -49,7 +49,7 @@ inline fn _first_error(comptime E: type) E {
 /// - `LockPoisoned` - Mutex/RwLock poisoning (should not happen in normal operation)
 /// - `UnsupportedFormat` - Unsupported MIME type or file format
 /// - `Other` - Catch-all for uncommon errors
-pub const KreuzbergError = error {
+pub const KreuzbergError = error{
     Io,
     Parsing,
     Ocr,
@@ -86,6 +86,31 @@ pub const AccelerationConfig = struct {
     provider: ExecutionProviderType,
     /// GPU device ID (for CUDA/TensorRT). Ignored for CPU/CoreML/Auto.
     device_id: u32,
+};
+
+/// Configuration for the VLM captioning post-processor.
+pub const CaptioningConfig = struct {
+    /// LLM configuration used for the VLM call.
+    llm: LlmConfig,
+    /// Optional custom caption prompt. `null` uses the default `RegionKind.Caption`
+    /// prompt that ships with `crate.llm.region_extractor`.
+    prompt: ?[]const u8,
+    /// Skip images whose `width * height` is below this threshold (in pixels).
+    /// Default `1_000` filters out icons and decorations.
+    min_image_area: u32,
+};
+
+/// Configuration for the page-classification post-processor.
+pub const PageClassificationConfig = struct {
+    /// Minijinja prompt template. Receives `{{ labels }}` (joined list), `{{ page_text }}`
+    /// and `{{ multi_label }}` variables. `null` lets the backend pick a sensible default.
+    prompt_template: ?[]const u8,
+    /// The set of labels the classifier may emit. Must contain at least one entry.
+    labels: []const []const u8,
+    /// Allow multiple labels per page. Single-label mode returns at most one label.
+    multi_label: bool,
+    /// LLM configuration used for classification.
+    llm: LlmConfig,
 };
 
 /// Cross-extractor content filtering configuration.
@@ -360,6 +385,29 @@ pub const ExtractionConfig = struct {
     /// provided JSON schema. The structured response is stored in
     /// `ExtractionResult.structured_output`.
     structured_extraction: ?StructuredExtractionConfig,
+    /// Named-entity recognition configuration. When set, the NER post-processor runs at
+    /// the Middle stage and populates `ExtractionResult.entities`.
+    ner: ?NerConfig,
+    /// Redaction / anonymisation configuration. When set, the redaction post-processor
+    /// runs at the Late stage and rewrites every textual field in `ExtractionResult`,
+    /// emitting an audit trail in `ExtractionResult.redaction_report`.
+    redaction: ?RedactionConfig,
+    /// Summarisation configuration. When set, the summarisation post-processor runs at
+    /// the Middle stage and populates `ExtractionResult.summary`.
+    summarization: ?SummarizationConfig,
+    /// Translation configuration. When set, the translation post-processor runs at the
+    /// Middle stage and populates `ExtractionResult.translation`.
+    translation: ?TranslationConfig,
+    /// Per-page classification configuration. When set, the classification post-processor
+    /// runs at the Middle stage and populates `ExtractionResult.page_classifications`.
+    page_classification: ?PageClassificationConfig,
+    /// VLM captioning configuration for extracted images. When set, the captioning
+    /// post-processor runs at the Middle stage and writes a caption into each
+    /// `ExtractedImage.caption`.
+    captioning: ?CaptioningConfig,
+    /// Enable QR-code detection in extracted images. When `true`, the QR post-processor
+    /// runs at the Middle stage and populates `ExtractedImage.qr_codes`.
+    qr_codes: ?bool,
     /// Cancellation token for this extraction (None = no external cancellation).
     ///
     /// Pass a `CancellationToken` clone here and call `CancellationToken.cancel`
@@ -644,6 +692,32 @@ pub const StructuredExtractionConfig = struct {
     llm: LlmConfig,
 };
 
+/// Configuration for the NER post-processor.
+pub const NerConfig = struct {
+    /// Backend that runs the entity detection.
+    backend: NerBackendKind,
+    /// Entity categories to detect. Defaults to a sensible PERSON/ORG/LOCATION/EMAIL set
+    /// when empty.
+    categories: []const EntityCategory,
+    /// Override the default model — only used by `NerBackendKind.Onnx`.
+    /// `null` lets the backend pick its pinned default
+    /// (`urchade/gliner_multi-v2.1` for gline-rs).
+    model: ?[]const u8,
+    /// Optional LLM configuration — only used by `NerBackendKind.Llm`. Token usage
+    /// for LLM backends is recorded in `ExtractionResult.llm_usage`.
+    llm: ?LlmConfig,
+    /// Arbitrary user-supplied entity labels for zero-shot detection.
+    ///
+    /// gline-rs natively supports zero-shot inference over caller-supplied labels —
+    /// this is the primary value of GLiNER. The LLM backend also honours these
+    /// labels by including them in the structured-output schema. Custom labels
+    /// surface as `EntityCategory.Custom` in the resulting `Entity` stream.
+    ///
+    /// Use this when you need domain-specific entity types (e.g. `"Treatment"`,
+    /// `"Product"`, `"Vessel"`) without forking GLiNER's taxonomy.
+    custom_labels: []const []const u8,
+};
+
 /// Quality thresholds for OCR fallback decisions and pipeline quality gating.
 ///
 /// All fields default to the values that match the previous hardcoded behavior,
@@ -783,10 +857,25 @@ pub const OcrConfig = struct {
     /// rotated with high confidence, the image is corrected before recognition.
     /// This is critical for handling rotated scanned documents.
     auto_rotate: bool,
+    /// Ergonomic VLM fallback policy.
+    ///
+    /// When set to anything other than `VlmFallbackPolicy.Disabled` and
+    /// `OcrConfig.pipeline` is `null`, a multi-stage pipeline is synthesised
+    /// automatically:
+    ///
+    /// - `VlmFallbackPolicy.OnLowQuality` → `[classical_stage, vlm_stage]` with the
+    ///   `quality_threshold` mapped onto `OcrQualityThresholds.pipeline_min_quality`.
+    ///
+    /// - `VlmFallbackPolicy.Always` → `[vlm_stage]` only.
+    ///
+    /// Requires `OcrConfig.vlm_config` to be `Some` when not `Disabled`.
+    /// When `OcrConfig.pipeline` is explicitly set, this field is ignored.
+    vlm_fallback: VlmFallbackPolicy,
     /// VLM (Vision Language Model) OCR configuration.
     ///
-    /// Required when `backend` is `"vlm"`. Uses liter-llm to send page
-    /// images to a vision model for text extraction.
+    /// Required when `backend` is `"vlm"` or when `vlm_fallback` is not
+    /// `VlmFallbackPolicy.Disabled`. Uses liter-llm to send page images to a
+    /// vision model for text extraction.
     vlm_config: ?LlmConfig,
     /// Custom Jinja2 prompt template for VLM OCR.
     ///
@@ -997,6 +1086,90 @@ pub const EmbeddingConfig = struct {
     /// for common in-process inference; increase for large batches on slow
     /// hardware.
     max_embed_duration_secs: ?u64,
+};
+
+/// Configuration for the redaction post-processor.
+pub const RedactionConfig = struct {
+    /// Categories to redact. Empty means "every category supported by the engine."
+    categories: []const PiiCategory,
+    /// Strategy applied to every match.
+    strategy: RedactionStrategy,
+    /// Optional NER backend — required to redact PERSON / ORGANIZATION / LOCATION
+    /// categories (the pure-Rust pattern engine only covers regex-detectable PII).
+    ner: ?NerConfig,
+    /// When `true`, chunk byte ranges are kept consistent with the rewritten content by
+    /// adjusting `byte_start` / `byte_end` after replacement. When `false`, chunk byte
+    /// ranges still refer to the *original* content offsets — useful when downstream
+    /// consumers want to map findings back to the original document.
+    preserve_offsets: bool,
+    /// Arbitrary user-supplied literal terms to redact.
+    ///
+    /// Each term is treated as a regex hit against the document, surfacing as
+    /// `PiiCategory.Custom(label)` in `RedactionFinding`
+    /// where `label` is the per-term label (defaulting to the literal value itself).
+    /// Case-insensitive by default; set `RedactionTerm.case_sensitive` for exact match.
+    ///
+    /// Use this when you need to redact tenant-specific tokens (employee IDs,
+    /// project codes, internal product names) without writing a custom plugin.
+    custom_terms: []const RedactionTerm,
+    /// Arbitrary user-supplied regex patterns to redact.
+    ///
+    /// Same surfacing semantics as `custom_terms`: each
+    /// hit becomes a `PiiCategory.Custom(label)` finding. Patterns are validated
+    /// at config-construction time via `RedactionConfig.validate`.
+    custom_patterns: []const RedactionPattern,
+};
+
+/// One user-supplied literal term to redact.
+///
+/// Matched as a regex-escaped substring (so callers do not need to escape
+/// metacharacters themselves). Case-insensitive by default — set
+/// `Self.case_sensitive` to `true` for exact byte-match semantics.
+pub const RedactionTerm = struct {
+    /// Custom category label surfaced in `RedactionFinding.category`.
+    label: []const u8,
+    /// Literal value to match. Regex metacharacters are escaped automatically.
+    value: []const u8,
+    /// When `true`, match the value as-is; otherwise match ASCII-case-insensitively.
+    case_sensitive: bool,
+};
+
+/// One user-supplied regex pattern to redact.
+///
+/// The pattern is compiled with the Rust `regex` crate (no look-around). Case
+/// sensitivity is encoded in the pattern via the `(?i)` inline flag when
+/// `Self.case_sensitive` is `false`.
+pub const RedactionPattern = struct {
+    /// Custom category label surfaced in `RedactionFinding.category`.
+    label: []const u8,
+    /// Regex pattern (Rust `regex` crate dialect — no look-around).
+    pattern: []const u8,
+    /// When `true`, match case-sensitively; otherwise prepend `(?i)` to the regex.
+    case_sensitive: bool,
+};
+
+/// Configuration for the summarisation post-processor.
+pub const SummarizationConfig = struct {
+    /// Summarisation strategy.
+    strategy: SummaryStrategy,
+    /// Maximum summary length in tokens. `null` lets the backend pick a default.
+    max_tokens: ?u32,
+    /// LLM configuration for the abstractive backend. Ignored when
+    /// `strategy = Extractive`. Required when `strategy = Abstractive`.
+    llm: ?LlmConfig,
+};
+
+/// Configuration for the translation post-processor.
+pub const TranslationConfig = struct {
+    /// BCP-47 language tag for the target language (e.g. `"de"`, `"fr-CA"`).
+    target_lang: []const u8,
+    /// Optional explicit source language. `null` asks the backend to auto-detect.
+    source_lang: ?[]const u8,
+    /// Translate the formatted (Markdown/HTML) rendition alongside plain text when
+    /// `formatted_content` is present.
+    preserve_markup: bool,
+    /// LLM configuration used for translation.
+    llm: LlmConfig,
 };
 
 /// Configuration for tree-sitter language pack integration.
@@ -1293,6 +1466,24 @@ pub const PdfAnnotation = struct {
     bounding_box: ?BoundingBox,
 };
 
+/// Classification result for a single page.
+pub const PageClassification = struct {
+    /// 1-indexed page number this classification belongs to.
+    page_number: u32,
+    /// Labels assigned to the page. Single-label classification yields exactly one
+    /// entry; multi-label classification yields any subset of the configured label set.
+    labels: []const ClassificationLabel,
+};
+
+/// A single label + confidence pair.
+pub const ClassificationLabel = struct {
+    /// Label name as configured in `PageClassificationConfig.labels`.
+    label: []const u8,
+    /// Backend-reported confidence in `[0.0, 1.0]`. `null` when the backend (e.g. an LLM
+    /// prompt without explicit confidence schema) did not report one.
+    confidence: ?f32,
+};
+
 /// Comprehensive Djot document structure with semantic preservation.
 ///
 /// This type captures the full richness of Djot markup, including:
@@ -1509,6 +1700,21 @@ pub const TextAnnotation = struct {
     kind: AnnotationKind,
 };
 
+/// A single named entity detected in the extracted text.
+pub const Entity = struct {
+    /// Canonical category the entity belongs to (PERSON, ORG, LOCATION, etc.).
+    category: EntityCategory,
+    /// Raw mention text exactly as it appeared in the source.
+    text: []const u8,
+    /// Byte-offset span in `ExtractionResult.content` where the mention starts.
+    start: u32,
+    /// Byte-offset span in `ExtractionResult.content` where the mention ends (exclusive).
+    end: u32,
+    /// Backend-reported confidence in `[0.0, 1.0]`. `null` when the backend does not
+    /// expose confidence scores.
+    confidence: ?f32,
+};
+
 /// General extraction result used by the core extraction API.
 ///
 /// This is the main result type returned by all extraction functions.
@@ -1659,6 +1865,32 @@ pub const ExtractionResult = struct {
     ///
     /// `null` when no LLM was used.
     llm_usage: ?[]const LlmUsage,
+    /// Named entities detected in `content` by the NER post-processor.
+    ///
+    /// `null` when no NER backend is configured. Populated by the gline-rs ONNX
+    /// backend or the LLM-driven backend (see `crates/kreuzberg/src/text/ner/`).
+    entities: ?[]const Entity,
+    /// Summary of `content` produced by the summarisation post-processor.
+    ///
+    /// `null` when summarisation is not configured. Populated by the TextRank
+    /// extractive backend (deterministic, no external service) or by the
+    /// liter-llm-driven abstractive backend.
+    summary: ?DocumentSummary,
+    /// Translation of `content` produced by the translation post-processor.
+    ///
+    /// `null` when translation is not configured.
+    translation: ?Translation,
+    /// Per-page classifications produced by the page-classification post-processor.
+    ///
+    /// `null` when classification is not configured.
+    page_classifications: ?[]const PageClassification,
+    /// Audit report of redactions applied by the redaction post-processor.
+    ///
+    /// The redaction processor rewrites `content`, `formatted_content`, every
+    /// chunk's text, and the textual fields of `entities` / `summary` / `translation` /
+    /// `page_classifications` in place. This report describes what was found and how it
+    /// was replaced. `null` when redaction is not configured.
+    redaction_report: ?RedactionReport,
     /// Pre-rendered content in the requested output format.
     ///
     /// Populated during `derive_extraction_result` before tree derivation consumes
@@ -1842,6 +2074,19 @@ pub const ExtractedImage = struct {
     /// Identifier shared across images that form a single logical figure
     /// (e.g. all raster tiles of one technical drawing). `null` for singletons.
     cluster_id: ?u32,
+    /// VLM-generated caption describing the image, when captioning is configured.
+    ///
+    /// Populated by the captioning post-processor
+    /// (`crates/kreuzberg/src/plugins/processor/builtin/captioning.rs`), which routes
+    /// each image through `crate.llm.region_extractor.extract_region_with_vlm` in
+    /// caption mode. `null` when captioning is disabled or the VLM declined to caption.
+    caption: ?[]const u8,
+    /// QR codes decoded from this image, when QR detection is enabled.
+    ///
+    /// Populated by the QR post-processor (`crates/kreuzberg/src/extractors/qr.rs`) via
+    /// the pure-Rust `rqrr` decoder. `null` when QR detection is disabled; an empty
+    /// `Some(vec![])` when detection ran but found nothing.
+    qr_codes: ?[]const QrCode,
 };
 
 /// Bounding box coordinates for element positioning.
@@ -2869,6 +3114,56 @@ pub const HierarchicalBlock = struct {
     bbox: ?[]const f32,
 };
 
+/// One QR code decoded from an extracted image.
+pub const QrCode = struct {
+    /// Decoded payload (text, URL, vCard string, …).
+    payload: []const u8,
+    /// Detector-reported confidence in `[0.0, 1.0]`. `null` when the decoder
+    /// does not expose confidence (the default `rqrr` backend always reports
+    /// `Some` because successful decode implies high confidence).
+    confidence: ?f32,
+    /// Bounding box of the QR code inside the source image, in pixel coordinates
+    /// (`x`, `y` of the top-left corner; `width`, `height` of the rectangle).
+    /// `null` if the decoder did not report a bounding box.
+    bbox: ?QrBoundingBox,
+};
+
+/// Pixel-space bounding box of a QR code inside its source image.
+pub const QrBoundingBox = struct {
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+};
+
+/// Audit report describing what the redaction processor found and how it replaced it.
+///
+/// The redactor returns this alongside the rewritten content so compliance, replay, and
+/// audit-log consumers can see exactly what fired. Offsets are relative to the *original*
+/// pre-redaction `content` and are intended for audit reconstruction only — the original
+/// bytes are dropped at the end of the pipeline.
+pub const RedactionReport = struct {
+    /// Individual redaction findings in original-source byte order.
+    findings: []const RedactionFinding,
+    /// Total number of redactions applied across the document.
+    total_redacted: u32,
+};
+
+/// One redaction event: which span was rewritten, why, and with what.
+pub const RedactionFinding = struct {
+    /// Byte-offset start in the original (pre-redaction) `ExtractionResult.content`.
+    start: u32,
+    /// Byte-offset end (exclusive) in the original `ExtractionResult.content`.
+    end: u32,
+    /// PII category that fired this redaction.
+    category: PiiCategory,
+    /// Strategy applied to this finding (mask, hash, token-replace, drop).
+    strategy: RedactionStrategy,
+    /// String that replaced the original mention. Always present; for `Drop` the
+    /// replacement is the empty string.
+    replacement_token: []const u8,
+};
+
 /// A single changed cell within a table.
 ///
 /// Defined here (rather than only in `crate.diff`) so `RevisionDelta` can
@@ -2932,6 +3227,16 @@ pub const RevisionDelta = struct {
     table_changes: []const CellChange,
 };
 
+/// Summary of an extracted document.
+pub const DocumentSummary = struct {
+    /// Summary text (plain prose).
+    text: []const u8,
+    /// Strategy that produced this summary.
+    strategy: SummaryStrategy,
+    /// Approximate token count of the summary, when known.
+    token_count: ?u32,
+};
+
 /// Extracted table structure.
 ///
 /// Represents a table detected and extracted from a document (PDF, image, etc.).
@@ -2960,6 +3265,24 @@ pub const TableCell = struct {
     col_span: u32,
     /// Whether this is a header cell
     is_header: bool,
+};
+
+/// Translation of the extracted content.
+///
+/// Holds the translated rendition of `ExtractionResult.content` and (when
+/// `preserve_markup` was requested) the translated `formatted_content`. Chunks
+/// are translated in place inside `ExtractionResult.chunks[*].content` rather
+/// than duplicated here.
+pub const Translation = struct {
+    /// BCP-47 language tag the translation was produced into (e.g. `"de"`, `"fr-CA"`).
+    target_lang: []const u8,
+    /// BCP-47 source language. `null` when the translation backend was asked to detect.
+    source_lang: ?[]const u8,
+    /// Translated plain-text body. Matches the shape of `ExtractionResult.content`.
+    content: []const u8,
+    /// Translated markup body (Markdown / HTML / etc.) when `preserve_markup` was
+    /// enabled on the config. `null` otherwise.
+    formatted_content: ?[]const u8,
 };
 
 /// A URI extracted from a document.
@@ -3291,11 +3614,11 @@ pub const ExecutionProviderType = enum {
     /// CPU execution provider (always available).
     cpu,
     /// Apple CoreML (macOS/iOS Neural Engine + GPU).
-    core_ml,
+    coreml,
     /// NVIDIA CUDA GPU acceleration.
     cuda,
     /// NVIDIA TensorRT (optimized CUDA inference).
-    tensor_rt,
+    tensorrt,
 };
 
 /// Output format for extraction results.
@@ -3330,7 +3653,7 @@ pub const HtmlTheme = enum {
     /// can override individual values.
     default,
     /// GitHub Markdown-inspired palette and spacing.
-    git_hub,
+    github,
     /// Dark background, light text.
     dark,
     /// Minimal light theme with generous whitespace.
@@ -3359,6 +3682,52 @@ pub const TableModel = enum {
     slanet_auto,
     /// Disable table structure model inference entirely; use heuristic path only.
     disabled,
+};
+
+/// NER backend selector.
+pub const NerBackendKind = enum {
+    /// gline-rs ONNX inference. Requires `ner-onnx` feature. Models download lazily from
+    /// HuggingFace via `model_download.hf_download`.
+    onnx,
+    /// liter-llm zero-shot NER via structured-output prompts. Requires `ner-llm`
+    /// feature. Useful when domain-specific categories outstrip the ONNX taxonomy.
+    llm,
+};
+
+/// Policy controlling when VLM (Vision Language Model) OCR is used as a fallback.
+///
+/// This knob is syntactic sugar over the explicit `OcrPipelineConfig` stage
+/// ordering. When `vlm_fallback` is set and `pipeline` is `null`, an equivalent
+/// pipeline is synthesised at extraction time:
+///
+/// - `VlmFallbackPolicy.Disabled` — no synthesis; single-backend mode (default).
+/// - `VlmFallbackPolicy.OnLowQuality` — tries the classical backend first; if the
+///   result scores below `quality_threshold`, tries VLM.
+///
+/// - `VlmFallbackPolicy.Always` — skips the classical backend and sends every page
+///   to the VLM.
+///
+/// When `OcrConfig.pipeline` is explicitly set, `vlm_fallback` is ignored — the
+/// explicit pipeline takes precedence.
+///
+/// **Errors:**
+///
+/// Both `OnLowQuality` and `Always` require `OcrConfig.vlm_config` to be `Some`.
+/// Constructing an `OcrConfig` with one of these policies but no `vlm_config` is
+/// detected by `OcrConfig.validate` and will surface as a
+/// `Validation` error at extraction time, not a panic.
+pub const VlmFallbackPolicy = union(enum) {
+    /// No VLM fallback (default). Behaves identically to the pre-policy single-backend mode.
+    disabled: void,
+    /// Try the classical OCR backend first. If the quality score is below
+    /// `quality_threshold`, send the page to the VLM.
+    ///
+    /// `quality_threshold` is in the `[0.0, 1.0]` range produced by
+    /// `calculate_quality_score`. A value of `0.5` is a
+    /// reasonable starting point; calibrate with the Stage 0 benchmark harness.
+    on_low_quality: f64,
+    /// Skip the classical OCR backend entirely. Every page is sent to the VLM.
+    always: void,
 };
 
 /// Type of text chunker to use.
@@ -3715,6 +4084,24 @@ pub const AnnotationKind = union(enum) {
     },
 };
 
+/// Standard entity categories produced by built-in NER backends.
+///
+/// The `Custom(String)` variant lets caller-supplied categories (e.g. LLM
+/// schemas) flow through without losing fidelity to the consumer.
+pub const EntityCategory = union(enum) {
+    person: void,
+    organization: void,
+    location: void,
+    date: void,
+    time: void,
+    money: void,
+    percent: void,
+    email: void,
+    phone: void,
+    url: void,
+    custom: []const u8,
+};
+
 /// How the extracted text was produced.
 pub const ExtractionMethod = enum {
     native,
@@ -3946,6 +4333,49 @@ pub const PageUnitType = enum {
     sheet,
 };
 
+/// Strategy applied when a PII match is rewritten.
+pub const RedactionStrategy = enum {
+    /// Replace the matched span with a fixed mask token (default `"[REDACTED]"`).
+    mask,
+    /// Replace with a SHA-256 hash of the original value (truncated to 16 hex chars).
+    /// Lets downstream consumers do equality joins without recovering the source.
+    hash,
+    /// Replace with a per-category running token (`"[PERSON_1]"`, `"[PERSON_2]"`, …)
+    /// so the same person referenced twice gets the same token within the document.
+    token_replace,
+    /// Delete the matched span entirely.
+    drop,
+};
+
+/// PII categories the pattern engine recognises.
+pub const PiiCategory = union(enum) {
+    email: void,
+    phone: void,
+    ssn: void,
+    credit_card: void,
+    postal_code: void,
+    ip_address: void,
+    iban: void,
+    swift_bic: void,
+    date_of_birth: void,
+    /// Person name, surfaced by the optional NER backend.
+    person: void,
+    /// Organization name, surfaced by the optional NER backend.
+    organization: void,
+    /// Location, surfaced by the optional NER backend.
+    location: void,
+    /// Caller-supplied custom category (e.g. internal employee IDs).
+    ///
+    /// Surfaced by the redaction engine when a hit comes from
+    /// `RedactionConfig.custom_terms`
+    /// or `RedactionConfig.custom_patterns`.
+    /// The string is the label passed alongside the term/pattern. Use those
+    /// fields rather than constructing `Custom` directly via the
+    /// `categories` filter — the pattern engine cannot detect arbitrary text
+    /// from a category name alone.
+    custom: []const u8,
+};
+
 /// A single line in a unified-diff hunk.
 ///
 /// Defined here (rather than only in `crate.diff`) so `RevisionDelta` can
@@ -3993,6 +4423,17 @@ pub const RevisionAnchor = union(enum) {
     },
 };
 
+/// Summarisation strategy.
+pub const SummaryStrategy = enum {
+    /// Pure-Rust extractive summary (TextRank over the chunk graph). Deterministic,
+    /// fast, no external service required.
+    extractive,
+    /// Abstractive summary produced by liter-llm. Requires `liter-llm` feature and
+    /// a configured `LlmConfig`. Token usage is captured in
+    /// `ExtractionResult.llm_usage`.
+    abstractive,
+};
+
 /// Semantic classification of an extracted URI.
 pub const UriKind = enum {
     /// A clickable hyperlink (web URL, file link).
@@ -4007,6 +4448,36 @@ pub const UriKind = enum {
     reference,
     /// An email address (`mailto:` link or bare email).
     email,
+};
+
+/// Classification of a detected layout region that warrants VLM extraction.
+///
+/// Each variant maps to a specific prompt optimised for that content type.
+/// The mapping is intentionally narrow — only region kinds for which VLM
+/// extraction provides a clear quality benefit over classical suppression.
+pub const RegionKind = enum {
+    /// A figure, diagram, chart, or image region.
+    ///
+    /// VLM prompt: describe the diagram / chart, including axis labels,
+    /// legend entries, and any embedded text.
+    figure,
+    /// A densely formatted or complex table that classical extraction garbles.
+    ///
+    /// VLM prompt: extract the table as GitHub-Flavoured Markdown.
+    dense_table,
+    /// A region whose layout the classical pipeline cannot handle (multi-column
+    /// insets, heavily annotated forms, mixed text+diagram).
+    ///
+    /// VLM prompt: extract all text and structure as markdown, preserving
+    /// reading order.
+    complex_layout,
+    /// A standalone image to be captioned (not extracted as figure markdown).
+    ///
+    /// VLM prompt: produce a single-sentence alt-text-style caption suitable
+    /// for accessibility tooling and downstream indexing. Used by the
+    /// captioning post-processor to populate
+    /// `ExtractedImage.caption`.
+    caption,
 };
 
 /// Keyword algorithm selection.
@@ -4474,6 +4945,38 @@ pub fn get_extensions_for_mime(mime_type: []const u8) KreuzbergError![]u8 {
     };
 }
 
+/// Detect QR codes in the bytes of an `ExtractedImage`.
+///
+/// `format_hint` is currently unused — the `image` crate auto-detects the
+/// container format from magic bytes — but the parameter is retained so future
+/// backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+/// break.
+///
+/// Returns an empty vector on any of:
+///
+/// - Empty input.
+/// - Image-decode failure.
+/// - No QR grids detected.
+/// - All detected grids fail to decode.
+///
+/// Successfully decoded QR codes carry their payload, a confidence of `1.0`
+/// (rqrr does not expose per-grid confidence; a successful decode is treated
+/// as high-confidence by convention), and the pixel-space bounding box derived
+/// from the four corner points of the grid.
+pub fn detect_qr_codes(image_bytes: []const u8, _format_hint: ?[]const u8) error{OutOfMemory}![]u8 {
+    const _format_hint_z: ?[:0]u8 = if (_format_hint) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (_format_hint_z) |z| std.heap.c_allocator.free(z);
+    const _result = c.kreuzberg_detect_qr_codes(image_bytes.ptr, image_bytes.len, if (_format_hint_z) |z| z.ptr else null);
+    const _result_len = c.kreuzberg_detect_qr_codes_len(image_bytes.ptr, image_bytes.len, if (_format_hint_z) |z| z.ptr else null);
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
 /// List the names of all registered embedding backends.
 ///
 /// Used by `kreuzberg-cli`, the api/mcp endpoints, and generated language
@@ -4529,6 +5032,21 @@ pub fn list_ocr_backends() KreuzbergError![]u8 {
         _free_string(_result);
         break :blk owned;
     };
+}
+
+/// Register every built-in post-processor enabled by the active feature set.
+///
+/// This is the single entry point that callers (including
+/// `register_default_post_processors`) use to populate the global
+/// post-processor registry with the in-tree built-ins. Each submodule's own
+/// `register` function is gated by its feature flag so this aggregate stays
+/// safe to call on any target.
+pub fn register_builtin() KreuzbergError!void {
+    _ = c.kreuzberg_register_builtin();
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    return;
 }
 
 /// List all registered post-processor names.
@@ -4591,6 +5109,259 @@ pub fn list_validators() KreuzbergError![]u8 {
     };
 }
 
+/// Run page classification against an extraction result.
+///
+/// Mutates `result.page_classifications` with one entry per non-empty page and
+/// appends every LLM call's usage to `result.llm_usage`.
+///
+/// **Errors:**
+///
+/// Returns the first error encountered when rendering the prompt or calling the
+/// LLM. Partially produced classifications are discarded so callers do not see
+/// a half-populated vector.
+pub fn classify_pages(result: []const u8, config: []const u8) KreuzbergError!void {
+    const result_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{result}, 0);
+    defer std.heap.c_allocator.free(result_z);
+    const result_handle = c.kreuzberg_extraction_result_from_json(result_z);
+    if (result_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_extraction_result_free(result_handle);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
+    const config_handle = c.kreuzberg_page_classification_config_from_json(config_z);
+    if (config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_page_classification_config_free(config_handle);
+    _ = c.kreuzberg_classify_pages(result_handle, config_handle);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    return;
+}
+
+/// Eagerly download a NER model into the kreuzberg cache.
+///
+/// `name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
+/// CLI flag `kreuzberg warm --ner` delegates here.
+pub fn download_model(name: []const u8, cache_dir: ?[]const u8) KreuzbergError![]u8 {
+    const name_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{name}, 0);
+    defer std.heap.c_allocator.free(name_z);
+    const cache_dir_z: ?[:0]u8 = if (cache_dir) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (cache_dir_z) |z| std.heap.c_allocator.free(z);
+    const _result = c.kreuzberg_download_model(name_z, if (cache_dir_z) |z| z.ptr else null);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_download_model_len(name_z, if (cache_dir_z) |z| z.ptr else null);
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Pinned default NER model identifier.
+pub fn default_model_name() error{OutOfMemory}![]u8 {
+    const _result = c.kreuzberg_default_model_name();
+    const _result_len = c.kreuzberg_default_model_name_len();
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// All NER models kreuzberg knows about (used by `--all-ner-models`).
+pub fn known_models() error{OutOfMemory}![]u8 {
+    const _result = c.kreuzberg_known_models();
+    const _result_len = c.kreuzberg_known_models_len();
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Run pattern redaction (and optional NER-driven redaction) over `result` and
+/// rewrite every textual field. Populates `result.redaction_report`.
+pub fn redact(result: []const u8, config: []const u8) KreuzbergError!void {
+    const result_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{result}, 0);
+    defer std.heap.c_allocator.free(result_z);
+    const result_handle = c.kreuzberg_extraction_result_from_json(result_z);
+    if (result_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_extraction_result_free(result_handle);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
+    const config_handle = c.kreuzberg_redaction_config_from_json(config_z);
+    if (config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_redaction_config_free(config_handle);
+    _ = c.kreuzberg_redact(result_handle, config_handle);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    return;
+}
+
+pub fn find_all(text: []const u8) error{OutOfMemory}![]u8 {
+    const text_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{text}, 0);
+    defer std.heap.c_allocator.free(text_z);
+    const _result = c.kreuzberg_find_all(text_z);
+    const _result_len = c.kreuzberg_find_all_len(text_z);
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Scan `text` for every PII category in `categories` and return all matches
+/// in source-byte order.
+///
+/// When `categories` is empty every supported regex-detectable category fires.
+/// Person / Organization / Location are *not* covered by the pattern engine —
+/// they must be supplied by a NER backend through the redaction engine.
+pub fn scan_text(text: []const u8, categories: []const u8) error{OutOfMemory}![]u8 {
+    const text_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{text}, 0);
+    defer std.heap.c_allocator.free(text_z);
+    // Vec/Map parameters are passed as JSON strings across the FFI boundary.
+    const categories_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{categories}, 0);
+    defer std.heap.c_allocator.free(categories_z);
+    const _result = c.kreuzberg_scan_text(text_z, categories_z);
+    const _result_len = c.kreuzberg_scan_text_len(text_z, categories_z);
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Apply `strategy` to `original` for `category` and return the replacement token.
+///
+/// The optional `counter` is required for `RedactionStrategy.TokenReplace`;
+/// other strategies ignore it.
+pub fn apply_strategy(strategy: RedactionStrategy, original: []const u8, category: PiiCategory, counter: TokenCounter) error{OutOfMemory}![]u8 {
+    const original_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{original}, 0);
+    defer std.heap.c_allocator.free(original_z);
+    const _result = c.kreuzberg_apply_strategy(strategy, original_z, category, counter);
+    const _result_len = c.kreuzberg_apply_strategy_len(strategy, original_z, category, counter);
+    return blk: {
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Score and return the top-N sentences from `text`, joined in original order.
+///
+/// `language` is an ISO 639 (or locale) code used to pick a stopword list;
+/// pass `null` (or an unknown code) to fall back to English.
+/// `max_tokens` bounds the summary length by whitespace-separated tokens;
+/// `null` falls back to `DEFAULT_MAX_TOKENS`.
+pub fn summarize(text: []const u8, language: ?[]const u8, max_tokens: ?u32) error{OutOfMemory}!?[]u8 {
+    const text_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{text}, 0);
+    defer std.heap.c_allocator.free(text_z);
+    const language_z: ?[:0]u8 = if (language) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (language_z) |z| std.heap.c_allocator.free(z);
+    const _result = c.kreuzberg_summarize(text_z, if (language_z) |z| z.ptr else null, if (max_tokens) |v| v else std.math.maxInt(u32));
+    const _result_len = c.kreuzberg_summarize_len(text_z, if (language_z) |z| z.ptr else null, if (max_tokens) |v| v else std.math.maxInt(u32));
+    return blk: {
+        if (_result == null) break :blk null;
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Count whitespace-separated tokens (used for token-budget bookkeeping by
+/// callers).
+pub fn token_count(text: []const u8) error{OutOfMemory}!u32 {
+    const text_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{text}, 0);
+    defer std.heap.c_allocator.free(text_z);
+    const _result = c.kreuzberg_token_count(text_z);
+    return _result;
+}
+
+/// Run abstractive summarisation against the configured LLM.
+///
+/// `text` is the document content to summarise (already extracted by the
+/// pipeline). `max_tokens` softly bounds the requested summary length in
+/// natural-language tokens; `null` uses `DEFAULT_MAX_TOKENS`.
+///
+/// Returns the summary string and the (optional) usage record.
+///
+/// **Errors:**
+///
+/// Propagates any LLM client / request error returned by
+/// `complete_text`.
+pub fn summarize_with_llm(text: []const u8, llm_config: []const u8, max_tokens: ?u32) KreuzbergError![]u8 {
+    const text_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{text}, 0);
+    defer std.heap.c_allocator.free(text_z);
+    const llm_config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{llm_config}, 0);
+    defer std.heap.c_allocator.free(llm_config_z);
+    const llm_config_handle = c.kreuzberg_llm_config_from_json(llm_config_z);
+    if (llm_config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_llm_config_free(llm_config_handle);
+    const _result = c.kreuzberg_summarize_with_llm(text_z, llm_config_handle, if (max_tokens) |v| v else std.math.maxInt(u32));
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_summarize_with_llm_len(text_z, llm_config_handle, if (max_tokens) |v| v else std.math.maxInt(u32));
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Translate the extraction result in place.
+///
+/// Populates `result.translation` with the translated `content`, optionally the
+/// translated `formatted_content` (when `preserve_markup = true`), and rewrites
+/// every chunk's `content` field. Every LLM call's usage is appended to
+/// `result.llm_usage`.
+pub fn translate_result(result: []const u8, config: []const u8) KreuzbergError!void {
+    const result_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{result}, 0);
+    defer std.heap.c_allocator.free(result_z);
+    const result_handle = c.kreuzberg_extraction_result_from_json(result_z);
+    if (result_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_extraction_result_free(result_handle);
+    const config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{config}, 0);
+    defer std.heap.c_allocator.free(config_z);
+    const config_handle = c.kreuzberg_translation_config_from_json(config_z);
+    if (config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_translation_config_free(config_handle);
+    _ = c.kreuzberg_translate_result(result_handle, config_handle);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    return;
+}
+
 /// Compare two extraction results and return a structured diff.
 ///
 /// The comparison is purely structural — no I/O, no side effects. All fields
@@ -4624,6 +5395,171 @@ pub fn compare(a: []const u8, b: []const u8, opts: []const u8) error{OutOfMemory
         break :blk owned;
     }
 ;
+}
+
+/// Extract content from a pre-cropped image region using a VLM.
+///
+/// The caller is responsible for cropping the page image to the region's bounding
+/// box before calling this function. The `image_bytes` parameter must contain the
+/// raw bytes of the **cropped** region image (JPEG, PNG, WebP, etc.).
+///
+/// **Returns:**
+///
+/// Extracted Markdown text from the VLM, or an error if the VLM call fails.
+///
+/// **Errors:**
+///
+/// - `Ocr` if the VLM call fails or returns no content.
+/// - `MissingDependency` if the liter-llm client cannot
+///   be initialised.
+pub fn extract_region_with_vlm(image_bytes: []const u8, image_mime: []const u8, region_kind: RegionKind, llm_config: []const u8, custom_prompt: ?[]const u8) KreuzbergError![]u8 {
+    const image_mime_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{image_mime}, 0);
+    defer std.heap.c_allocator.free(image_mime_z);
+    const llm_config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{llm_config}, 0);
+    defer std.heap.c_allocator.free(llm_config_z);
+    const llm_config_handle = c.kreuzberg_llm_config_from_json(llm_config_z);
+    if (llm_config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_llm_config_free(llm_config_handle);
+    const custom_prompt_z: ?[:0]u8 = if (custom_prompt) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (custom_prompt_z) |z| std.heap.c_allocator.free(z);
+    const _result = c.kreuzberg_extract_region_with_vlm(image_bytes.ptr, image_bytes.len, image_mime_z, region_kind, llm_config_handle, if (custom_prompt_z) |z| z.ptr else null);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_extract_region_with_vlm_len(image_bytes.ptr, image_bytes.len, image_mime_z, region_kind, llm_config_handle, if (custom_prompt_z) |z| z.ptr else null);
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Same as `extract_region_with_vlm`, but also returns the `LlmUsage` data captured
+/// from the underlying VLM call.
+///
+/// Callers that need to track token / cost data per call (for example the captioning
+/// post-processor, which appends every call's usage to
+/// `ExtractionResult.llm_usage`) should
+/// prefer this variant. The plain `extract_region_with_vlm` is kept for callers that
+/// only care about the markdown output (PDF region splicing).
+///
+/// **Errors:**
+///
+/// Same as `extract_region_with_vlm`.
+pub fn extract_region_with_vlm_usage(image_bytes: []const u8, image_mime: []const u8, region_kind: RegionKind, llm_config: []const u8, custom_prompt: ?[]const u8) KreuzbergError![]u8 {
+    const image_mime_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{image_mime}, 0);
+    defer std.heap.c_allocator.free(image_mime_z);
+    const llm_config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{llm_config}, 0);
+    defer std.heap.c_allocator.free(llm_config_z);
+    const llm_config_handle = c.kreuzberg_llm_config_from_json(llm_config_z);
+    if (llm_config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_llm_config_free(llm_config_handle);
+    const custom_prompt_z: ?[:0]u8 = if (custom_prompt) |v| try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{v}, 0) else null;
+    defer if (custom_prompt_z) |z| std.heap.c_allocator.free(z);
+    const _result = c.kreuzberg_extract_region_with_vlm_usage(image_bytes.ptr, image_bytes.len, image_mime_z, region_kind, llm_config_handle, if (custom_prompt_z) |z| z.ptr else null);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_extract_region_with_vlm_usage_len(image_bytes.ptr, image_bytes.len, image_mime_z, region_kind, llm_config_handle, if (custom_prompt_z) |z| z.ptr else null);
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Send a free-form prompt to the configured LLM with a JSON-schema response
+/// constraint and return the parsed JSON value plus captured usage.
+///
+/// This is the shared helper used by LLM-backed post-processors (page
+/// classification, LLM-driven NER, etc.) that need structured output but do not
+/// want to depend on `StructuredExtractionConfig`'s schema/prompt machinery.
+///
+///   distinguish multiple structured outputs).
+///
+/// - `schema` — the JSON schema the LLM is required to obey.
+/// - `source` — label used for the returned `LlmUsage` entry.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// the response contains no content, or the response is not parseable JSON.
+pub fn complete_with_json_schema(llm_config: []const u8, prompt: []const u8, schema_name: []const u8, schema: []const u8, source: []const u8) KreuzbergError![]u8 {
+    const llm_config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{llm_config}, 0);
+    defer std.heap.c_allocator.free(llm_config_z);
+    const llm_config_handle = c.kreuzberg_llm_config_from_json(llm_config_z);
+    if (llm_config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_llm_config_free(llm_config_handle);
+    const prompt_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{prompt}, 0);
+    defer std.heap.c_allocator.free(prompt_z);
+    const schema_name_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{schema_name}, 0);
+    defer std.heap.c_allocator.free(schema_name_z);
+    const source_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{source}, 0);
+    defer std.heap.c_allocator.free(source_z);
+    const _result = c.kreuzberg_complete_with_json_schema(llm_config_handle, prompt_z, schema_name_z, schema, source_z);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_complete_with_json_schema_len(llm_config_handle, prompt_z, schema_name_z, schema, source_z);
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
+}
+
+/// Send a single user prompt to the configured LLM and return the response text
+/// along with the captured usage metadata.
+///
+/// The `source` argument labels the `LlmUsage` entry that is returned so
+/// callers can aggregate per-feature spend (`"translation"`, `"summarisation"`,
+/// etc.). The helper performs a single non-streaming chat completion request.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// or the response does not contain assistant content.
+pub fn complete_text(llm_config: []const u8, prompt: []const u8, source: []const u8) KreuzbergError![]u8 {
+    const llm_config_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{llm_config}, 0);
+    defer std.heap.c_allocator.free(llm_config_z);
+    const llm_config_handle = c.kreuzberg_llm_config_from_json(llm_config_z);
+    if (llm_config_handle == null) return _first_error(KreuzbergError);
+    defer c.kreuzberg_llm_config_free(llm_config_handle);
+    const prompt_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{prompt}, 0);
+    defer std.heap.c_allocator.free(prompt_z);
+    const source_z = try std.fmt.allocPrintSentinel(
+        std.heap.c_allocator, "{s}", .{source}, 0);
+    defer std.heap.c_allocator.free(source_z);
+    const _result = c.kreuzberg_complete_text(llm_config_handle, prompt_z, source_z);
+    if (c.kreuzberg_last_error_code() != 0) {
+        return _first_error(KreuzbergError);
+    }
+    const _result_len = c.kreuzberg_complete_text_len(llm_config_handle, prompt_z, source_z);
+    return blk: {
+        if (_result == null) return _first_error(KreuzbergError);
+        const slice = _result[0.._result_len];
+        const owned = try std.heap.c_allocator.dupe(u8, slice);
+        _free_string(_result);
+        break :blk owned;
+    };
 }
 
 /// Generate embeddings asynchronously for a list of text strings.
@@ -6255,3 +7191,175 @@ pub fn make_renderer_vtable(comptime T: type, instance: *T) IRenderer {
         }.thunk,
     };
 }
+
+/// Build a backend for `repo_id` (or the default model if `null`).
+///
+/// Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
+/// After this returns, inference is available without further I/O.
+pub fn new_gline_backend(repo_id: ?[]const u8) error{OutOfMemory}!GlineBackend {
+    const repo_id_z = try std.heap.c_allocator.dupeZ(u8, repo_id);
+    defer std.heap.c_allocator.free(repo_id_z);
+    const _handle = c.kreuzberg_gline_backend_new(repo_id_z.ptr);
+    if (_handle == null) return _first_error(anyerror);
+    return .{ ._handle = @as(*c.KREUZBERGGlineBackend, @ptrCast(_handle.?)) };
+}
+
+/// kreuzberg-gliner-rs ONNX backend wrapper.
+///
+/// Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
+/// model can be safely shared across async tasks (inference is synchronous and
+/// serialised internally by the mutex).
+pub const GlineBackend = struct {
+    _handle: *anyopaque,
+
+    pub fn detect(self: *GlineBackend, text: []const u8, categories: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
+        defer std.heap.c_allocator.free(text_z);
+        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
+        defer std.heap.c_allocator.free(categories_z);
+        const _result = c.kreuzberg_gline_backend_detect(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)), text_z, categories_z);
+        if (c.kreuzberg_last_error_code() != 0) {
+            return _first_error(KreuzbergError);
+        }
+        return blk: {
+            const slice = std.mem.span(_result);
+            const owned = try std.heap.c_allocator.dupe(u8, slice);
+            c.kreuzberg_free_string(_result);
+            break :blk owned;
+        };
+    }
+
+    /// Native zero-shot multi-label inference: passes the union of `categories`
+    /// (as label strings) and `custom_labels` to a single GLiNER inference call.
+    pub fn detect_with_custom(self: *GlineBackend, text: []const u8, categories: []const u8, custom_labels: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
+        defer std.heap.c_allocator.free(text_z);
+        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
+        defer std.heap.c_allocator.free(categories_z);
+        const custom_labels_z = try std.heap.c_allocator.dupeZ(u8, custom_labels);
+        defer std.heap.c_allocator.free(custom_labels_z);
+        const _result = c.kreuzberg_gline_backend_detect_with_custom(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)), text_z, categories_z, custom_labels_z);
+        if (c.kreuzberg_last_error_code() != 0) {
+            return _first_error(KreuzbergError);
+        }
+        return blk: {
+            const slice = std.mem.span(_result);
+            const owned = try std.heap.c_allocator.dupe(u8, slice);
+            c.kreuzberg_free_string(_result);
+            break :blk owned;
+        };
+    }
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *GlineBackend) void {
+        c.kreuzberg_gline_backend_free(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)));
+    }
+};
+
+pub fn new_llm_backend(config: []const u8) error{OutOfMemory,InvalidJson}!LlmBackend {
+    const config_z = try std.heap.c_allocator.dupeZ(u8, config);
+    defer std.heap.c_allocator.free(config_z);
+    const config_handle = c.kreuzberg_llm_config_from_json(config_z.ptr);
+    if (config_handle == null) return error.InvalidJson;
+    defer c.kreuzberg_llm_config_free(config_handle);
+    const _handle = c.kreuzberg_llm_backend_new(config_handle);
+    if (_handle == null) return _first_error(anyerror);
+    return .{ ._handle = @as(*c.KREUZBERGLlmBackend, @ptrCast(_handle.?)) };
+}
+
+/// liter-llm-backed NER backend.
+pub const LlmBackend = struct {
+    _handle: *anyopaque,
+
+    pub fn detect(self: *LlmBackend, text: []const u8, categories: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
+        defer std.heap.c_allocator.free(text_z);
+        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
+        defer std.heap.c_allocator.free(categories_z);
+        const _result = c.kreuzberg_llm_backend_detect(@as(*c.KREUZBERGLlmBackend, @ptrCast(self._handle)), text_z, categories_z);
+        if (c.kreuzberg_last_error_code() != 0) {
+            return _first_error(KreuzbergError);
+        }
+        return blk: {
+            const slice = std.mem.span(_result);
+            const owned = try std.heap.c_allocator.dupe(u8, slice);
+            c.kreuzberg_free_string(_result);
+            break :blk owned;
+        };
+    }
+
+    pub fn detect_with_custom(self: *LlmBackend, text: []const u8, categories: []const u8, custom_labels: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
+        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
+        defer std.heap.c_allocator.free(text_z);
+        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
+        defer std.heap.c_allocator.free(categories_z);
+        const custom_labels_z = try std.heap.c_allocator.dupeZ(u8, custom_labels);
+        defer std.heap.c_allocator.free(custom_labels_z);
+        const _result = c.kreuzberg_llm_backend_detect_with_custom(@as(*c.KREUZBERGLlmBackend, @ptrCast(self._handle)), text_z, categories_z, custom_labels_z);
+        if (c.kreuzberg_last_error_code() != 0) {
+            return _first_error(KreuzbergError);
+        }
+        return blk: {
+            const slice = std.mem.span(_result);
+            const owned = try std.heap.c_allocator.dupe(u8, slice);
+            c.kreuzberg_free_string(_result);
+            break :blk owned;
+        };
+    }
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *LlmBackend) void {
+        c.kreuzberg_llm_backend_free(@as(*c.KREUZBERGLlmBackend, @ptrCast(self._handle)));
+    }
+};
+
+/// One detected PII span in the input text.
+pub const PatternMatch = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *PatternMatch) void {
+        c.kreuzberg_pattern_match_free(@as(*c.KREUZBERGPatternMatch, @ptrCast(self._handle)));
+    }
+};
+
+pub fn new_token_counter() TokenCounter {
+    const _handle = c.kreuzberg_token_counter_new();
+    if (_handle == null) return _first_error(anyerror);
+    return .{ ._handle = @as(*c.KREUZBERGTokenCounter, @ptrCast(_handle.?)) };
+}
+
+/// Per-category running counter for `RedactionStrategy.TokenReplace`.
+pub const TokenCounter = struct {
+    _handle: *anyopaque,
+
+    /// Allocate the next token for `category` and `original`. If the original
+    /// has been seen before in this category, the same token is reused.
+    pub fn next_token(self: *TokenCounter, category: PiiCategory, original: []const u8) error{OutOfMemory}![]u8 {
+        const category_i32: i32 = @intFromEnum(category);
+        const original_z = try std.heap.c_allocator.dupeZ(u8, original);
+        defer std.heap.c_allocator.free(original_z);
+        const _result = c.kreuzberg_token_counter_next_token(@as(*c.KREUZBERGTokenCounter, @ptrCast(self._handle)), category_i32, original_z);
+        return blk: {
+            const slice = std.mem.span(_result);
+            const owned = try std.heap.c_allocator.dupe(u8, slice);
+            c.kreuzberg_free_string(_result);
+            break :blk owned;
+        };
+    }
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *TokenCounter) void {
+        c.kreuzberg_token_counter_free(@as(*c.KREUZBERGTokenCounter, @ptrCast(self._handle)));
+    }
+};
+
+/// A text segment with its byte offset in the original document.
+pub const Segment = struct {
+    _handle: *anyopaque,
+
+    /// Release the underlying FFI handle. Safe to call once per instance.
+    pub fn free(self: *Segment) void {
+        c.kreuzberg_segment_free(@as(*c.KREUZBERGSegment, @ptrCast(self._handle)));
+    }
+};

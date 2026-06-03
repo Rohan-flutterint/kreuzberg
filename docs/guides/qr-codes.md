@@ -9,7 +9,7 @@ Decode QR codes embedded in extracted images. Detection runs over every `Extract
 
 - You need to extract URLs, vCards, or payment data embedded as QR codes in scanned documents.
 - You ingest forms, tickets, or invoices that embed QR codes for routing or audit.
-- You need a network-free decoder that ships in every kreuzberg build (including WASM and Android).
+- You need a network-free decoder that ships in every Kreuzberg build (including WASM and Android).
 
 ## When Not to Use
 
@@ -23,7 +23,7 @@ Decode QR codes embedded in extracted images. Detection runs over every `Extract
 
     ```python title="Python"
     from kreuzberg import extract_file, ExtractionConfig
-    
+
     config = ExtractionConfig(qr_codes=True)
     result = await extract_file("ticket.pdf", config=config)
     for image in result.images or []:
@@ -35,7 +35,7 @@ Decode QR codes embedded in extracted images. Detection runs over every `Extract
 
     ```typescript title="TypeScript"
     import { extractFile } from '@kreuzberg/node';
-    
+
     const result = await extractFile("ticket.pdf", { qrCodes: true });
     for (const image of result.images ?? []) {
         for (const qr of image.qrCodes ?? []) {
@@ -48,7 +48,7 @@ Decode QR codes embedded in extracted images. Detection runs over every `Extract
 
     ```rust title="Rust"
     use kreuzberg::{extract_file, ExtractionConfig};
-    
+
     let config = ExtractionConfig {
         qr_codes: Some(true),
         ..Default::default()

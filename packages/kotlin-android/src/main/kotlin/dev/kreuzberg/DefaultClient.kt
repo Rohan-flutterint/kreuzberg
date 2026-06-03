@@ -13,9 +13,11 @@
 package dev.kreuzberg
 
 import com.fasterxml.jackson.core.type.TypeReference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Suppress("TooManyFunctions")
-class Document internal constructor(internal val handle: Long) : AutoCloseable {
+class LlmBackend internal constructor(internal val handle: Long) : AutoCloseable {
     companion object {
         private val MAPPER = com.fasterxml.jackson.databind.ObjectMapper()
             .registerModule(com.fasterxml.jackson.datatype.jdk8.Jdk8Module())
@@ -23,11 +25,36 @@ class Document internal constructor(internal val handle: Long) : AutoCloseable {
             .setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE)
     }
 
-    // Return the 1-based page number for each top-level table in the document.
-    fun tablePageNumbers(): List<Long> {
-        val responseJson = KreuzbergBridge.nativeDocumentTablePageNumbers(handle)
-        return MAPPER.readValue(responseJson, object : TypeReference<List<Long>>() {})
+    suspend fun detect(text: String, categories: List<EntityCategory>): List<Entity> {
+        return withContext(Dispatchers.IO) {
+            val responseJson = KreuzbergBridge.nativeLlmBackendDetect(handle, MAPPER.writeValueAsString(mapOf("text" to text, "categories" to categories)))
+            MAPPER.readValue(responseJson, object : TypeReference<List<Entity>>() {})
+        }
     }
 
-    override fun close() { KreuzbergBridge.nativeFreeDocument(handle) }
+    suspend fun detectWithCustom(text: String, categories: List<EntityCategory>, customLabels: List<String>): List<Entity> {
+        return withContext(Dispatchers.IO) {
+            val responseJson = KreuzbergBridge.nativeLlmBackendDetectWithCustom(handle, MAPPER.writeValueAsString(mapOf("text" to text, "categories" to categories, "customLabels" to customLabels)))
+            MAPPER.readValue(responseJson, object : TypeReference<List<Entity>>() {})
+        }
+    }
+
+    override fun close() { KreuzbergBridge.nativeFreeLlmBackend(handle) }
+}
+@Suppress("TooManyFunctions")
+class TokenCounter internal constructor(internal val handle: Long) : AutoCloseable {
+    companion object {
+        private val MAPPER = com.fasterxml.jackson.databind.ObjectMapper()
+            .registerModule(com.fasterxml.jackson.datatype.jdk8.Jdk8Module())
+            .findAndRegisterModules()
+            .setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE)
+    }
+
+    // Allocate the next token for `category` and `original`. If the original
+    // has been seen before in this category, the same token is reused.
+    fun nextToken(category: PiiCategory, original: String): String {
+        return KreuzbergBridge.nativeTokenCounterNextToken(handle, MAPPER.writeValueAsString(mapOf("category" to category, "original" to original)))
+    }
+
+    override fun close() { KreuzbergBridge.nativeFreeTokenCounter(handle) }
 }

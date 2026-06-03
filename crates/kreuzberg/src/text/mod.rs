@@ -20,6 +20,8 @@ pub use token_reduction::{ReductionLevel, TokenReductionConfig};
 
 // OSS v5 follow-up text-analysis modules. Each subsystem is feature-gated so the
 // non-OSS targets (no-ort-target, wasm-target, android-target) compile out cleanly.
+#[cfg(all(feature = "classification", not(target_os = "windows")))]
+pub mod classification;
 #[cfg(feature = "ner")]
 pub mod ner;
 #[cfg(feature = "redaction")]
@@ -28,5 +30,3 @@ pub mod redaction;
 pub mod summarization;
 #[cfg(all(feature = "translation", not(target_os = "windows")))]
 pub mod translation;
-#[cfg(all(feature = "classification", not(target_os = "windows")))]
-pub mod classification;

@@ -7,11 +7,7 @@
 //! cargo test -p kreuzberg --features full --test llm_translation_smoke -- --nocapture
 //! ```
 
-#![cfg(all(
-    feature = "translation",
-    feature = "liter-llm",
-    not(target_os = "windows")
-))]
+#![cfg(all(feature = "translation", feature = "liter-llm", not(target_os = "windows")))]
 
 use kreuzberg::core::config::{LlmConfig, TranslationConfig};
 use kreuzberg::types::ExtractionResult;

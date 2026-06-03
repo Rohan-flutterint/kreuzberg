@@ -7,11 +7,7 @@
 //! cargo test -p kreuzberg --features full --test llm_classification_smoke -- --nocapture
 //! ```
 
-#![cfg(all(
-    feature = "classification",
-    feature = "liter-llm",
-    not(target_os = "windows")
-))]
+#![cfg(all(feature = "classification", feature = "liter-llm", not(target_os = "windows")))]
 
 use kreuzberg::core::config::{LlmConfig, PageClassificationConfig};
 use kreuzberg::types::ExtractionResult;
@@ -42,11 +38,7 @@ async fn classification_single_label_yields_an_allowed_label() {
 
     let config = PageClassificationConfig {
         prompt_template: None,
-        labels: vec![
-            "invoice".to_string(),
-            "memo".to_string(),
-            "purchase_order".to_string(),
-        ],
+        labels: vec!["invoice".to_string(), "memo".to_string(), "purchase_order".to_string()],
         multi_label: false,
         llm: LlmConfig {
             model: "openai/gpt-4o-mini".to_string(),
@@ -57,9 +49,7 @@ async fn classification_single_label_yields_an_allowed_label() {
         },
     };
 
-    let mut result = build_result(
-        "INVOICE #12345\nBill To: Acme Corp\nItems: Widget x 10\nTotal: $1,250.00",
-    );
+    let mut result = build_result("INVOICE #12345\nBill To: Acme Corp\nItems: Widget x 10\nTotal: $1,250.00");
 
     kreuzberg::text::classification::classify_pages(&mut result, &config)
         .await

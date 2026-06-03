@@ -154,9 +154,9 @@ impl OcrUtils {
         let mut part_img = image::RgbImage::new(img_crop_width, img_crop_height);
         imageproc::geometric_transformations::warp_into(
             &img_crop,
-            &projection,
+            projection,
             Interpolation::Nearest,
-            image::Rgb([255, 255, 255]),
+            imageproc::geometric_transformations::Border::Constant(image::Rgb([255, 255, 255])),
             &mut part_img,
         );
 

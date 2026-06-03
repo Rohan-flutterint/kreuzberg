@@ -53,6 +53,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEmbeddingBackendDartImpl;
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_LlmBackendPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_OcrBackendDartImplPtr => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl;
 
@@ -63,6 +67,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_RendererDartImplPtr => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_TokenCounterPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter;
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_ValidatorDartImplPtr => wire
@@ -120,6 +128,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  LlmBackend
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    dynamic raw,
+  );
+
+  @protected
   OcrBackendDartImpl
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     dynamic raw,
@@ -134,6 +148,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   RendererDartImpl
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+    dynamic raw,
+  );
+
+  @protected
+  TokenCounter
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
     dynamic raw,
   );
 
@@ -174,6 +194,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  TokenCounter
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    dynamic raw,
+  );
+
+  @protected
   ValidatorDartImpl
   dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerValidatorDartImpl(
     dynamic raw,
@@ -188,6 +214,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   EmbeddingBackendDartImpl
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEmbeddingBackendDartImpl(
+    dynamic raw,
+  );
+
+  @protected
+  LlmBackend
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
     dynamic raw,
   );
 
@@ -369,6 +401,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  LlmBackend
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    dynamic raw,
+  );
+
+  @protected
   OcrBackendDartImpl
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     dynamic raw,
@@ -383,6 +421,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   RendererDartImpl
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+    dynamic raw,
+  );
+
+  @protected
+  TokenCounter
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
     dynamic raw,
   );
 
@@ -444,6 +488,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BoundingBox dco_decode_box_autoadd_bounding_box(dynamic raw);
 
   @protected
+  CaptioningConfig dco_decode_box_autoadd_captioning_config(dynamic raw);
+
+  @protected
   ChunkingConfig dco_decode_box_autoadd_chunking_config(dynamic raw);
 
   @protected
@@ -469,6 +516,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DocumentStructure dco_decode_box_autoadd_document_structure(dynamic raw);
+
+  @protected
+  DocumentSummary dco_decode_box_autoadd_document_summary(dynamic raw);
 
   @protected
   DocxAppProperties dco_decode_box_autoadd_docx_app_properties(dynamic raw);
@@ -575,6 +625,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LlmConfig dco_decode_box_autoadd_llm_config(dynamic raw);
 
   @protected
+  NerConfig dco_decode_box_autoadd_ner_config(dynamic raw);
+
+  @protected
   OcrConfig dco_decode_box_autoadd_ocr_config(dynamic raw);
 
   @protected
@@ -603,6 +656,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   OutputFormat dco_decode_box_autoadd_output_format(dynamic raw);
 
   @protected
+  PageClassificationConfig dco_decode_box_autoadd_page_classification_config(
+    dynamic raw,
+  );
+
+  @protected
   PageConfig dco_decode_box_autoadd_page_config(dynamic raw);
 
   @protected
@@ -618,6 +676,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PdfMetadata dco_decode_box_autoadd_pdf_metadata(dynamic raw);
 
   @protected
+  PiiCategory dco_decode_box_autoadd_pii_category(dynamic raw);
+
+  @protected
   PostProcessorConfig dco_decode_box_autoadd_post_processor_config(dynamic raw);
 
   @protected
@@ -627,7 +688,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PstMetadata dco_decode_box_autoadd_pst_metadata(dynamic raw);
 
   @protected
+  QrBoundingBox dco_decode_box_autoadd_qr_bounding_box(dynamic raw);
+
+  @protected
   RakeParams dco_decode_box_autoadd_rake_params(dynamic raw);
+
+  @protected
+  RedactionConfig dco_decode_box_autoadd_redaction_config(dynamic raw);
+
+  @protected
+  RedactionReport dco_decode_box_autoadd_redaction_report(dynamic raw);
 
   @protected
   ResultFormat dco_decode_box_autoadd_result_format(dynamic raw);
@@ -641,6 +711,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   StructuredExtractionConfig
   dco_decode_box_autoadd_structured_extraction_config(dynamic raw);
+
+  @protected
+  SummarizationConfig dco_decode_box_autoadd_summarization_config(dynamic raw);
 
   @protected
   TableGrid dco_decode_box_autoadd_table_grid(dynamic raw);
@@ -660,6 +733,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Translation dco_decode_box_autoadd_translation(dynamic raw);
+
+  @protected
+  TranslationConfig dco_decode_box_autoadd_translation_config(dynamic raw);
+
+  @protected
   TreeSitterConfig dco_decode_box_autoadd_tree_sitter_config(dynamic raw);
 
   @protected
@@ -673,6 +752,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CacheStats dco_decode_cache_stats(dynamic raw);
+
+  @protected
+  CaptioningConfig dco_decode_captioning_config(dynamic raw);
 
   @protected
   CellChange dco_decode_cell_change(dynamic raw);
@@ -697,6 +779,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CitationMetadata dco_decode_citation_metadata(dynamic raw);
+
+  @protected
+  ClassificationLabel dco_decode_classification_label(dynamic raw);
 
   @protected
   CodeContentMode dco_decode_code_content_mode(dynamic raw);
@@ -759,6 +844,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DocumentStructure dco_decode_document_structure(dynamic raw);
 
   @protected
+  DocumentSummary dco_decode_document_summary(dynamic raw);
+
+  @protected
   DocxAppProperties dco_decode_docx_app_properties(dynamic raw);
 
   @protected
@@ -802,6 +890,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   EmbeddingPreset dco_decode_embedding_preset(dynamic raw);
+
+  @protected
+  Entity dco_decode_entity(dynamic raw);
+
+  @protected
+  EntityCategory dco_decode_entity_category(dynamic raw);
 
   @protected
   EpubMetadata dco_decode_epub_metadata(dynamic raw);
@@ -980,6 +1074,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Chunk> dco_decode_list_chunk(dynamic raw);
 
   @protected
+  List<ClassificationLabel> dco_decode_list_classification_label(dynamic raw);
+
+  @protected
   List<ContributorRole> dco_decode_list_contributor_role(dynamic raw);
 
   @protected
@@ -1014,6 +1111,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EmbeddedDiff> dco_decode_list_embedded_diff(dynamic raw);
+
+  @protected
+  List<Entity> dco_decode_list_entity(dynamic raw);
+
+  @protected
+  List<EntityCategory> dco_decode_list_entity_category(dynamic raw);
 
   @protected
   List<ExcelSheet> dco_decode_list_excel_sheet(dynamic raw);
@@ -1085,13 +1188,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<PageBoundary> dco_decode_list_page_boundary(dynamic raw);
 
   @protected
+  List<PageClassification> dco_decode_list_page_classification(dynamic raw);
+
+  @protected
   List<PageContent> dco_decode_list_page_content(dynamic raw);
 
   @protected
   List<PageInfo> dco_decode_list_page_info(dynamic raw);
 
   @protected
+  List<PatternMatch> dco_decode_list_pattern_match(dynamic raw);
+
+  @protected
   List<PdfAnnotation> dco_decode_list_pdf_annotation(dynamic raw);
+
+  @protected
+  List<PiiCategory> dco_decode_list_pii_category(dynamic raw);
 
   @protected
   Float64List dco_decode_list_prim_f_64_strict(dynamic raw);
@@ -1109,6 +1221,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ProcessingWarning> dco_decode_list_processing_warning(dynamic raw);
 
   @protected
+  List<QrCode> dco_decode_list_qr_code(dynamic raw);
+
+  @protected
   List<(String, PlatformInt64)> dco_decode_list_record_string_i_64(dynamic raw);
 
   @protected
@@ -1123,6 +1238,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<(String, String)> dco_decode_list_record_string_string(dynamic raw);
+
+  @protected
+  List<RedactionFinding> dco_decode_list_redaction_finding(dynamic raw);
+
+  @protected
+  List<RedactionPattern> dco_decode_list_redaction_pattern(dynamic raw);
+
+  @protected
+  List<RedactionTerm> dco_decode_list_redaction_term(dynamic raw);
 
   @protected
   List<StructuredData> dco_decode_list_structured_data(dynamic raw);
@@ -1150,6 +1274,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ModelPaths dco_decode_model_paths(dynamic raw);
+
+  @protected
+  NerBackendKind dco_decode_ner_backend_kind(dynamic raw);
+
+  @protected
+  NerConfig dco_decode_ner_config(dynamic raw);
 
   @protected
   NodeContent dco_decode_node_content(dynamic raw);
@@ -1230,6 +1360,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BoundingBox? dco_decode_opt_box_autoadd_bounding_box(dynamic raw);
 
   @protected
+  CaptioningConfig? dco_decode_opt_box_autoadd_captioning_config(dynamic raw);
+
+  @protected
   ChunkingConfig? dco_decode_opt_box_autoadd_chunking_config(dynamic raw);
 
   @protected
@@ -1245,6 +1378,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DocumentStructure? dco_decode_opt_box_autoadd_document_structure(dynamic raw);
+
+  @protected
+  DocumentSummary? dco_decode_opt_box_autoadd_document_summary(dynamic raw);
 
   @protected
   DocxAppProperties? dco_decode_opt_box_autoadd_docx_app_properties(
@@ -1325,6 +1461,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LlmConfig? dco_decode_opt_box_autoadd_llm_config(dynamic raw);
 
   @protected
+  NerConfig? dco_decode_opt_box_autoadd_ner_config(dynamic raw);
+
+  @protected
   OcrConfig? dco_decode_opt_box_autoadd_ocr_config(dynamic raw);
 
   @protected
@@ -1352,6 +1491,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   OutputFormat? dco_decode_opt_box_autoadd_output_format(dynamic raw);
 
   @protected
+  PageClassificationConfig?
+  dco_decode_opt_box_autoadd_page_classification_config(dynamic raw);
+
+  @protected
   PageConfig? dco_decode_opt_box_autoadd_page_config(dynamic raw);
 
   @protected
@@ -1369,7 +1512,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  QrBoundingBox? dco_decode_opt_box_autoadd_qr_bounding_box(dynamic raw);
+
+  @protected
   RakeParams? dco_decode_opt_box_autoadd_rake_params(dynamic raw);
+
+  @protected
+  RedactionConfig? dco_decode_opt_box_autoadd_redaction_config(dynamic raw);
+
+  @protected
+  RedactionReport? dco_decode_opt_box_autoadd_redaction_report(dynamic raw);
 
   @protected
   ResultFormat? dco_decode_opt_box_autoadd_result_format(dynamic raw);
@@ -1385,6 +1537,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_opt_box_autoadd_structured_extraction_config(dynamic raw);
 
   @protected
+  SummarizationConfig? dco_decode_opt_box_autoadd_summarization_config(
+    dynamic raw,
+  );
+
+  @protected
   TesseractConfig? dco_decode_opt_box_autoadd_tesseract_config(dynamic raw);
 
   @protected
@@ -1394,6 +1551,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TokenReductionOptions? dco_decode_opt_box_autoadd_token_reduction_options(
     dynamic raw,
   );
+
+  @protected
+  Translation? dco_decode_opt_box_autoadd_translation(dynamic raw);
+
+  @protected
+  TranslationConfig? dco_decode_opt_box_autoadd_translation_config(dynamic raw);
 
   @protected
   TreeSitterConfig? dco_decode_opt_box_autoadd_tree_sitter_config(dynamic raw);
@@ -1420,6 +1583,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Element>? dco_decode_opt_list_element(dynamic raw);
 
   @protected
+  List<Entity>? dco_decode_opt_list_entity(dynamic raw);
+
+  @protected
   List<ExtractedImage>? dco_decode_opt_list_extracted_image(dynamic raw);
 
   @protected
@@ -1444,6 +1610,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<PageBoundary>? dco_decode_opt_list_page_boundary(dynamic raw);
 
   @protected
+  List<PageClassification>? dco_decode_opt_list_page_classification(
+    dynamic raw,
+  );
+
+  @protected
   List<PageContent>? dco_decode_opt_list_page_content(dynamic raw);
 
   @protected
@@ -1462,6 +1633,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<QrCode>? dco_decode_opt_list_qr_code(dynamic raw);
+
+  @protected
   OrientationResult dco_decode_orientation_result(dynamic raw);
 
   @protected
@@ -1475,6 +1649,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PageBoundary dco_decode_page_boundary(dynamic raw);
+
+  @protected
+  PageClassification dco_decode_page_classification(dynamic raw);
+
+  @protected
+  PageClassificationConfig dco_decode_page_classification_config(dynamic raw);
 
   @protected
   PageConfig dco_decode_page_config(dynamic raw);
@@ -1495,6 +1675,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PageUnitType dco_decode_page_unit_type(dynamic raw);
 
   @protected
+  PatternMatch dco_decode_pattern_match(dynamic raw);
+
+  @protected
   PdfAnnotation dco_decode_pdf_annotation(dynamic raw);
 
   @protected
@@ -1505,6 +1688,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PdfMetadata dco_decode_pdf_metadata(dynamic raw);
+
+  @protected
+  PiiCategory dco_decode_pii_category(dynamic raw);
 
   @protected
   PostProcessorConfig dco_decode_post_processor_config(dynamic raw);
@@ -1531,6 +1717,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PstMetadata dco_decode_pst_metadata(dynamic raw);
 
   @protected
+  QrBoundingBox dco_decode_qr_bounding_box(dynamic raw);
+
+  @protected
+  QrCode dco_decode_qr_code(dynamic raw);
+
+  @protected
   RakeParams dco_decode_rake_params(dynamic raw);
 
   @protected
@@ -1551,7 +1743,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (String, String) dco_decode_record_string_string(dynamic raw);
 
   @protected
+  RedactionConfig dco_decode_redaction_config(dynamic raw);
+
+  @protected
+  RedactionFinding dco_decode_redaction_finding(dynamic raw);
+
+  @protected
+  RedactionPattern dco_decode_redaction_pattern(dynamic raw);
+
+  @protected
+  RedactionReport dco_decode_redaction_report(dynamic raw);
+
+  @protected
+  RedactionStrategy dco_decode_redaction_strategy(dynamic raw);
+
+  @protected
+  RedactionTerm dco_decode_redaction_term(dynamic raw);
+
+  @protected
   ReductionLevel dco_decode_reduction_level(dynamic raw);
+
+  @protected
+  RegionKind dco_decode_region_kind(dynamic raw);
 
   @protected
   RelationshipKind dco_decode_relationship_kind(dynamic raw);
@@ -1587,6 +1800,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructuredExtractionConfig dco_decode_structured_extraction_config(
     dynamic raw,
   );
+
+  @protected
+  SummarizationConfig dco_decode_summarization_config(dynamic raw);
+
+  @protected
+  SummaryStrategy dco_decode_summary_strategy(dynamic raw);
 
   @protected
   SupportedFormat dco_decode_supported_format(dynamic raw);
@@ -1628,6 +1847,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TokenReductionOptions dco_decode_token_reduction_options(dynamic raw);
 
   @protected
+  Translation dco_decode_translation(dynamic raw);
+
+  @protected
+  TranslationConfig dco_decode_translation_config(dynamic raw);
+
+  @protected
   TreeSitterConfig dco_decode_tree_sitter_config(dynamic raw);
 
   @protected
@@ -1644,6 +1869,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  VlmFallbackPolicy dco_decode_vlm_fallback_policy(dynamic raw);
 
   @protected
   XlsxAppProperties dco_decode_xlsx_app_properties(dynamic raw);
@@ -1712,6 +1940,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  LlmBackend
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   OcrBackendDartImpl
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     SseDeserializer deserializer,
@@ -1726,6 +1960,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   RendererDartImpl
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  TokenCounter
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
     SseDeserializer deserializer,
   );
 
@@ -1766,6 +2006,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  TokenCounter
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ValidatorDartImpl
   sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerValidatorDartImpl(
     SseDeserializer deserializer,
@@ -1780,6 +2026,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   EmbeddingBackendDartImpl
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEmbeddingBackendDartImpl(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  LlmBackend
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
     SseDeserializer deserializer,
   );
 
@@ -1879,6 +2131,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  LlmBackend
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   OcrBackendDartImpl
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     SseDeserializer deserializer,
@@ -1893,6 +2151,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   RendererDartImpl
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  TokenCounter
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
     SseDeserializer deserializer,
   );
 
@@ -1962,6 +2226,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BoundingBox sse_decode_box_autoadd_bounding_box(SseDeserializer deserializer);
 
   @protected
+  CaptioningConfig sse_decode_box_autoadd_captioning_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ChunkingConfig sse_decode_box_autoadd_chunking_config(
     SseDeserializer deserializer,
   );
@@ -1995,6 +2264,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DocumentStructure sse_decode_box_autoadd_document_structure(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  DocumentSummary sse_decode_box_autoadd_document_summary(
     SseDeserializer deserializer,
   );
 
@@ -2145,6 +2419,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LlmConfig sse_decode_box_autoadd_llm_config(SseDeserializer deserializer);
 
   @protected
+  NerConfig sse_decode_box_autoadd_ner_config(SseDeserializer deserializer);
+
+  @protected
   OcrConfig sse_decode_box_autoadd_ocr_config(SseDeserializer deserializer);
 
   @protected
@@ -2179,6 +2456,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  PageClassificationConfig sse_decode_box_autoadd_page_classification_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   PageConfig sse_decode_box_autoadd_page_config(SseDeserializer deserializer);
 
   @protected
@@ -2198,6 +2480,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PdfMetadata sse_decode_box_autoadd_pdf_metadata(SseDeserializer deserializer);
 
   @protected
+  PiiCategory sse_decode_box_autoadd_pii_category(SseDeserializer deserializer);
+
+  @protected
   PostProcessorConfig sse_decode_box_autoadd_post_processor_config(
     SseDeserializer deserializer,
   );
@@ -2211,7 +2496,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PstMetadata sse_decode_box_autoadd_pst_metadata(SseDeserializer deserializer);
 
   @protected
+  QrBoundingBox sse_decode_box_autoadd_qr_bounding_box(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RakeParams sse_decode_box_autoadd_rake_params(SseDeserializer deserializer);
+
+  @protected
+  RedactionConfig sse_decode_box_autoadd_redaction_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RedactionReport sse_decode_box_autoadd_redaction_report(
+    SseDeserializer deserializer,
+  );
 
   @protected
   ResultFormat sse_decode_box_autoadd_result_format(
@@ -2231,6 +2531,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   StructuredExtractionConfig
   sse_decode_box_autoadd_structured_extraction_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SummarizationConfig sse_decode_box_autoadd_summarization_config(
     SseDeserializer deserializer,
   );
 
@@ -2258,6 +2563,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Translation sse_decode_box_autoadd_translation(SseDeserializer deserializer);
+
+  @protected
+  TranslationConfig sse_decode_box_autoadd_translation_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   TreeSitterConfig sse_decode_box_autoadd_tree_sitter_config(
     SseDeserializer deserializer,
   );
@@ -2273,6 +2586,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CacheStats sse_decode_cache_stats(SseDeserializer deserializer);
+
+  @protected
+  CaptioningConfig sse_decode_captioning_config(SseDeserializer deserializer);
 
   @protected
   CellChange sse_decode_cell_change(SseDeserializer deserializer);
@@ -2297,6 +2613,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CitationMetadata sse_decode_citation_metadata(SseDeserializer deserializer);
+
+  @protected
+  ClassificationLabel sse_decode_classification_label(
+    SseDeserializer deserializer,
+  );
 
   @protected
   CodeContentMode sse_decode_code_content_mode(SseDeserializer deserializer);
@@ -2363,6 +2684,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DocumentStructure sse_decode_document_structure(SseDeserializer deserializer);
 
   @protected
+  DocumentSummary sse_decode_document_summary(SseDeserializer deserializer);
+
+  @protected
   DocxAppProperties sse_decode_docx_app_properties(
     SseDeserializer deserializer,
   );
@@ -2412,6 +2736,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   EmbeddingPreset sse_decode_embedding_preset(SseDeserializer deserializer);
+
+  @protected
+  Entity sse_decode_entity(SseDeserializer deserializer);
+
+  @protected
+  EntityCategory sse_decode_entity_category(SseDeserializer deserializer);
 
   @protected
   EpubMetadata sse_decode_epub_metadata(SseDeserializer deserializer);
@@ -2614,6 +2944,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Chunk> sse_decode_list_chunk(SseDeserializer deserializer);
 
   @protected
+  List<ClassificationLabel> sse_decode_list_classification_label(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<ContributorRole> sse_decode_list_contributor_role(
     SseDeserializer deserializer,
   );
@@ -2660,6 +2995,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EmbeddedDiff> sse_decode_list_embedded_diff(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<Entity> sse_decode_list_entity(SseDeserializer deserializer);
+
+  @protected
+  List<EntityCategory> sse_decode_list_entity_category(
     SseDeserializer deserializer,
   );
 
@@ -2763,15 +3106,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<PageClassification> sse_decode_list_page_classification(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<PageContent> sse_decode_list_page_content(SseDeserializer deserializer);
 
   @protected
   List<PageInfo> sse_decode_list_page_info(SseDeserializer deserializer);
 
   @protected
+  List<PatternMatch> sse_decode_list_pattern_match(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<PdfAnnotation> sse_decode_list_pdf_annotation(
     SseDeserializer deserializer,
   );
+
+  @protected
+  List<PiiCategory> sse_decode_list_pii_category(SseDeserializer deserializer);
 
   @protected
   Float64List sse_decode_list_prim_f_64_strict(SseDeserializer deserializer);
@@ -2791,6 +3147,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<QrCode> sse_decode_list_qr_code(SseDeserializer deserializer);
+
+  @protected
   List<(String, PlatformInt64)> sse_decode_list_record_string_i_64(
     SseDeserializer deserializer,
   );
@@ -2807,6 +3166,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<(String, String)> sse_decode_list_record_string_string(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<RedactionFinding> sse_decode_list_redaction_finding(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<RedactionPattern> sse_decode_list_redaction_pattern(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<RedactionTerm> sse_decode_list_redaction_term(
     SseDeserializer deserializer,
   );
 
@@ -2840,6 +3214,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ModelPaths sse_decode_model_paths(SseDeserializer deserializer);
+
+  @protected
+  NerBackendKind sse_decode_ner_backend_kind(SseDeserializer deserializer);
+
+  @protected
+  NerConfig sse_decode_ner_config(SseDeserializer deserializer);
 
   @protected
   NodeContent sse_decode_node_content(SseDeserializer deserializer);
@@ -2936,6 +3316,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  CaptioningConfig? sse_decode_opt_box_autoadd_captioning_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ChunkingConfig? sse_decode_opt_box_autoadd_chunking_config(
     SseDeserializer deserializer,
   );
@@ -2957,6 +3342,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   DocumentStructure? sse_decode_opt_box_autoadd_document_structure(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  DocumentSummary? sse_decode_opt_box_autoadd_document_summary(
     SseDeserializer deserializer,
   );
 
@@ -3069,6 +3459,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  NerConfig? sse_decode_opt_box_autoadd_ner_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   OcrConfig? sse_decode_opt_box_autoadd_ocr_config(
     SseDeserializer deserializer,
   );
@@ -3104,6 +3499,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  PageClassificationConfig?
+  sse_decode_opt_box_autoadd_page_classification_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   PageConfig? sse_decode_opt_box_autoadd_page_config(
     SseDeserializer deserializer,
   );
@@ -3129,7 +3530,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  QrBoundingBox? sse_decode_opt_box_autoadd_qr_bounding_box(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RakeParams? sse_decode_opt_box_autoadd_rake_params(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RedactionConfig? sse_decode_opt_box_autoadd_redaction_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RedactionReport? sse_decode_opt_box_autoadd_redaction_report(
     SseDeserializer deserializer,
   );
 
@@ -3155,6 +3571,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SummarizationConfig? sse_decode_opt_box_autoadd_summarization_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   TesseractConfig? sse_decode_opt_box_autoadd_tesseract_config(
     SseDeserializer deserializer,
   );
@@ -3166,6 +3587,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TokenReductionOptions? sse_decode_opt_box_autoadd_token_reduction_options(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Translation? sse_decode_opt_box_autoadd_translation(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  TranslationConfig? sse_decode_opt_box_autoadd_translation_config(
     SseDeserializer deserializer,
   );
 
@@ -3204,6 +3635,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Element>? sse_decode_opt_list_element(SseDeserializer deserializer);
 
   @protected
+  List<Entity>? sse_decode_opt_list_entity(SseDeserializer deserializer);
+
+  @protected
   List<ExtractedImage>? sse_decode_opt_list_extracted_image(
     SseDeserializer deserializer,
   );
@@ -3240,6 +3674,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<PageClassification>? sse_decode_opt_list_page_classification(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<PageContent>? sse_decode_opt_list_page_content(
     SseDeserializer deserializer,
   );
@@ -3264,6 +3703,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<QrCode>? sse_decode_opt_list_qr_code(SseDeserializer deserializer);
+
+  @protected
   OrientationResult sse_decode_orientation_result(SseDeserializer deserializer);
 
   @protected
@@ -3277,6 +3719,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PageBoundary sse_decode_page_boundary(SseDeserializer deserializer);
+
+  @protected
+  PageClassification sse_decode_page_classification(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PageClassificationConfig sse_decode_page_classification_config(
+    SseDeserializer deserializer,
+  );
 
   @protected
   PageConfig sse_decode_page_config(SseDeserializer deserializer);
@@ -3297,6 +3749,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PageUnitType sse_decode_page_unit_type(SseDeserializer deserializer);
 
   @protected
+  PatternMatch sse_decode_pattern_match(SseDeserializer deserializer);
+
+  @protected
   PdfAnnotation sse_decode_pdf_annotation(SseDeserializer deserializer);
 
   @protected
@@ -3309,6 +3764,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PdfMetadata sse_decode_pdf_metadata(SseDeserializer deserializer);
+
+  @protected
+  PiiCategory sse_decode_pii_category(SseDeserializer deserializer);
 
   @protected
   PostProcessorConfig sse_decode_post_processor_config(
@@ -3341,6 +3799,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PstMetadata sse_decode_pst_metadata(SseDeserializer deserializer);
 
   @protected
+  QrBoundingBox sse_decode_qr_bounding_box(SseDeserializer deserializer);
+
+  @protected
+  QrCode sse_decode_qr_code(SseDeserializer deserializer);
+
+  @protected
   RakeParams sse_decode_rake_params(SseDeserializer deserializer);
 
   @protected
@@ -3367,7 +3831,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RedactionConfig sse_decode_redaction_config(SseDeserializer deserializer);
+
+  @protected
+  RedactionFinding sse_decode_redaction_finding(SseDeserializer deserializer);
+
+  @protected
+  RedactionPattern sse_decode_redaction_pattern(SseDeserializer deserializer);
+
+  @protected
+  RedactionReport sse_decode_redaction_report(SseDeserializer deserializer);
+
+  @protected
+  RedactionStrategy sse_decode_redaction_strategy(SseDeserializer deserializer);
+
+  @protected
+  RedactionTerm sse_decode_redaction_term(SseDeserializer deserializer);
+
+  @protected
   ReductionLevel sse_decode_reduction_level(SseDeserializer deserializer);
+
+  @protected
+  RegionKind sse_decode_region_kind(SseDeserializer deserializer);
 
   @protected
   RelationshipKind sse_decode_relationship_kind(SseDeserializer deserializer);
@@ -3407,6 +3892,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructuredExtractionConfig sse_decode_structured_extraction_config(
     SseDeserializer deserializer,
   );
+
+  @protected
+  SummarizationConfig sse_decode_summarization_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SummaryStrategy sse_decode_summary_strategy(SseDeserializer deserializer);
 
   @protected
   SupportedFormat sse_decode_supported_format(SseDeserializer deserializer);
@@ -3454,6 +3947,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Translation sse_decode_translation(SseDeserializer deserializer);
+
+  @protected
+  TranslationConfig sse_decode_translation_config(SseDeserializer deserializer);
+
+  @protected
   TreeSitterConfig sse_decode_tree_sitter_config(SseDeserializer deserializer);
 
   @protected
@@ -3472,6 +3971,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  VlmFallbackPolicy sse_decode_vlm_fallback_policy(
+    SseDeserializer deserializer,
+  );
 
   @protected
   XlsxAppProperties sse_decode_xlsx_app_properties(
@@ -3556,6 +4060,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    LlmBackend self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     OcrBackendDartImpl self,
     SseSerializer serializer,
@@ -3572,6 +4083,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
     RendererDartImpl self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    TokenCounter self,
     SseSerializer serializer,
   );
 
@@ -3619,6 +4137,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    TokenCounter self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerValidatorDartImpl(
     ValidatorDartImpl self,
     SseSerializer serializer,
@@ -3635,6 +4160,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEmbeddingBackendDartImpl(
     EmbeddingBackendDartImpl self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    LlmBackend self,
     SseSerializer serializer,
   );
 
@@ -3861,6 +4393,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    LlmBackend self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     OcrBackendDartImpl self,
     SseSerializer serializer,
@@ -3877,6 +4416,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
     RendererDartImpl self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    TokenCounter self,
     SseSerializer serializer,
   );
 
@@ -3966,6 +4512,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_captioning_config(
+    CaptioningConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_chunking_config(
     ChunkingConfig self,
     SseSerializer serializer,
@@ -4016,6 +4568,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_document_structure(
     DocumentStructure self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_document_summary(
+    DocumentSummary self,
     SseSerializer serializer,
   );
 
@@ -4203,6 +4761,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_ner_config(
+    NerConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_ocr_config(
     OcrConfig self,
     SseSerializer serializer,
@@ -4251,6 +4815,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_page_classification_config(
+    PageClassificationConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_page_config(
     PageConfig self,
     SseSerializer serializer,
@@ -4281,6 +4851,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_pii_category(
+    PiiCategory self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_post_processor_config(
     PostProcessorConfig self,
     SseSerializer serializer,
@@ -4299,8 +4875,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_qr_bounding_box(
+    QrBoundingBox self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_rake_params(
     RakeParams self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_redaction_config(
+    RedactionConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_redaction_report(
+    RedactionReport self,
     SseSerializer serializer,
   );
 
@@ -4325,6 +4919,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_structured_extraction_config(
     StructuredExtractionConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_summarization_config(
+    SummarizationConfig self,
     SseSerializer serializer,
   );
 
@@ -4359,6 +4959,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_translation(
+    Translation self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_translation_config(
+    TranslationConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_tree_sitter_config(
     TreeSitterConfig self,
     SseSerializer serializer,
@@ -4384,6 +4996,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_cache_stats(CacheStats self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_captioning_config(
+    CaptioningConfig self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_cell_change(CellChange self, SseSerializer serializer);
@@ -4412,6 +5030,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_citation_metadata(
     CitationMetadata self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_classification_label(
+    ClassificationLabel self,
     SseSerializer serializer,
   );
 
@@ -4503,6 +5127,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_document_summary(
+    DocumentSummary self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_docx_app_properties(
     DocxAppProperties self,
     SseSerializer serializer,
@@ -4568,6 +5198,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_embedding_preset(
     EmbeddingPreset self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_entity(Entity self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_entity_category(
+    EntityCategory self,
     SseSerializer serializer,
   );
 
@@ -4833,6 +5472,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_chunk(List<Chunk> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_classification_label(
+    List<ClassificationLabel> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_contributor_role(
     List<ContributorRole> self,
     SseSerializer serializer,
@@ -4889,6 +5534,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_embedded_diff(
     List<EmbeddedDiff> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_entity(List<Entity> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_entity_category(
+    List<EntityCategory> self,
     SseSerializer serializer,
   );
 
@@ -5016,6 +5670,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_page_classification(
+    List<PageClassification> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_page_content(
     List<PageContent> self,
     SseSerializer serializer,
@@ -5025,8 +5685,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_page_info(List<PageInfo> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_pattern_match(
+    List<PatternMatch> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_pdf_annotation(
     List<PdfAnnotation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_pii_category(
+    List<PiiCategory> self,
     SseSerializer serializer,
   );
 
@@ -5058,6 +5730,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_qr_code(List<QrCode> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_record_string_i_64(
     List<(String, PlatformInt64)> self,
     SseSerializer serializer,
@@ -5078,6 +5753,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_record_string_string(
     List<(String, String)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_redaction_finding(
+    List<RedactionFinding> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_redaction_pattern(
+    List<RedactionPattern> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_redaction_term(
+    List<RedactionTerm> self,
     SseSerializer serializer,
   );
 
@@ -5116,6 +5809,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_model_paths(ModelPaths self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_ner_backend_kind(
+    NerBackendKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_ner_config(NerConfig self, SseSerializer serializer);
 
   @protected
   void sse_encode_node_content(NodeContent self, SseSerializer serializer);
@@ -5235,6 +5937,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_captioning_config(
+    CaptioningConfig? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_chunking_config(
     ChunkingConfig? self,
     SseSerializer serializer,
@@ -5261,6 +5969,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_document_structure(
     DocumentStructure? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_document_summary(
+    DocumentSummary? self,
     SseSerializer serializer,
   );
 
@@ -5394,6 +6108,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_ner_config(
+    NerConfig? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_ocr_config(
     OcrConfig? self,
     SseSerializer serializer,
@@ -5436,6 +6156,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_page_classification_config(
+    PageClassificationConfig? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_page_config(
     PageConfig? self,
     SseSerializer serializer,
@@ -5466,8 +6192,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_qr_bounding_box(
+    QrBoundingBox? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_rake_params(
     RakeParams? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_redaction_config(
+    RedactionConfig? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_redaction_report(
+    RedactionReport? self,
     SseSerializer serializer,
   );
 
@@ -5496,6 +6240,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_summarization_config(
+    SummarizationConfig? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_tesseract_config(
     TesseractConfig? self,
     SseSerializer serializer,
@@ -5510,6 +6260,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_token_reduction_options(
     TokenReductionOptions? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_translation(
+    Translation? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_translation_config(
+    TranslationConfig? self,
     SseSerializer serializer,
   );
 
@@ -5554,6 +6316,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     List<Element>? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_list_entity(List<Entity>? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_list_extracted_image(
@@ -5604,6 +6369,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_list_page_classification(
+    List<PageClassification>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_list_page_content(
     List<PageContent>? self,
     SseSerializer serializer,
@@ -5640,6 +6411,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_list_qr_code(
+    List<QrCode>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_orientation_result(
     OrientationResult self,
     SseSerializer serializer,
@@ -5664,6 +6441,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_page_boundary(PageBoundary self, SseSerializer serializer);
 
   @protected
+  void sse_encode_page_classification(
+    PageClassification self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_page_classification_config(
+    PageClassificationConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_page_config(PageConfig self, SseSerializer serializer);
 
   @protected
@@ -5682,6 +6471,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_page_unit_type(PageUnitType self, SseSerializer serializer);
 
   @protected
+  void sse_encode_pattern_match(PatternMatch self, SseSerializer serializer);
+
+  @protected
   void sse_encode_pdf_annotation(PdfAnnotation self, SseSerializer serializer);
 
   @protected
@@ -5695,6 +6487,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_pdf_metadata(PdfMetadata self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_pii_category(PiiCategory self, SseSerializer serializer);
 
   @protected
   void sse_encode_post_processor_config(
@@ -5736,6 +6531,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_pst_metadata(PstMetadata self, SseSerializer serializer);
 
   @protected
+  void sse_encode_qr_bounding_box(QrBoundingBox self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_qr_code(QrCode self, SseSerializer serializer);
+
+  @protected
   void sse_encode_rake_params(RakeParams self, SseSerializer serializer);
 
   @protected
@@ -5769,10 +6570,46 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_redaction_config(
+    RedactionConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_redaction_finding(
+    RedactionFinding self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_redaction_pattern(
+    RedactionPattern self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_redaction_report(
+    RedactionReport self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_redaction_strategy(
+    RedactionStrategy self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_redaction_term(RedactionTerm self, SseSerializer serializer);
+
+  @protected
   void sse_encode_reduction_level(
     ReductionLevel self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_region_kind(RegionKind self, SseSerializer serializer);
 
   @protected
   void sse_encode_relationship_kind(
@@ -5825,6 +6662,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_structured_extraction_config(
     StructuredExtractionConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_summarization_config(
+    SummarizationConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_summary_strategy(
+    SummaryStrategy self,
     SseSerializer serializer,
   );
 
@@ -5886,6 +6735,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_translation(Translation self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_translation_config(
+    TranslationConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_tree_sitter_config(
     TreeSitterConfig self,
     SseSerializer serializer,
@@ -5908,6 +6766,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_vlm_fallback_policy(
+    VlmFallbackPolicy self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_xlsx_app_properties(
@@ -6065,6 +6929,22 @@ class RustLibWire implements BaseWire {
       );
 
   void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+        ptr,
+      );
+
+  void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     int ptr,
   ) => wasmModule
@@ -6109,6 +6989,22 @@ class RustLibWire implements BaseWire {
     int ptr,
   ) => wasmModule
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+        ptr,
+      );
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
         ptr,
       );
 
@@ -6216,6 +7112,16 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
   );
 
   external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLlmBackend(
+    int ptr,
+  );
+
+  external void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOcrBackendDartImpl(
     int ptr,
   );
@@ -6242,6 +7148,16 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
 
   external void
   rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRendererDartImpl(
+    int ptr,
+  );
+
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTokenCounter(
     int ptr,
   );
 

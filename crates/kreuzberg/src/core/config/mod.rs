@@ -23,9 +23,9 @@ pub mod pdf;
 pub mod processing;
 pub mod redaction;
 pub mod summarization;
+pub mod translation;
 #[cfg(feature = "tree-sitter")]
 pub mod tree_sitter;
-pub mod translation;
 
 // Re-export main types for backward compatibility
 pub use acceleration::{AccelerationConfig, ExecutionProviderType};

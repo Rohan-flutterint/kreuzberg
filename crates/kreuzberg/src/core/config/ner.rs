@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 /// Configuration for the NER post-processor.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
+#[derive(Default)]
 pub struct NerConfig {
     /// Backend that runs the entity detection.
     #[serde(default)]
@@ -37,18 +38,6 @@ pub struct NerConfig {
     /// `"Product"`, `"Vessel"`) without forking GLiNER's taxonomy.
     #[serde(default)]
     pub custom_labels: Vec<String>,
-}
-
-impl Default for NerConfig {
-    fn default() -> Self {
-        Self {
-            backend: NerBackendKind::default(),
-            categories: Vec::new(),
-            model: None,
-            llm: None,
-            custom_labels: Vec::new(),
-        }
-    }
 }
 
 /// NER backend selector.

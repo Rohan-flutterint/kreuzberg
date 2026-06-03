@@ -22,14 +22,14 @@ public enum RegionKind
     /// VLM prompt: describe the diagram / chart, including axis labels,
     /// legend entries, and any embedded text.
     /// </summary>
-    [JsonPropertyName("figure")]
+    [JsonPropertyName("Figure")]
     Figure,
     /// <summary>
     /// A densely formatted or complex table that classical extraction garbles.
     ///
     /// VLM prompt: extract the table as GitHub-Flavoured Markdown.
     /// </summary>
-    [JsonPropertyName("densetable")]
+    [JsonPropertyName("DenseTable")]
     DenseTable,
     /// <summary>
     /// A region whose layout the classical pipeline cannot handle (multi-column
@@ -38,8 +38,18 @@ public enum RegionKind
     /// VLM prompt: extract all text and structure as markdown, preserving
     /// reading order.
     /// </summary>
-    [JsonPropertyName("complexlayout")]
+    [JsonPropertyName("ComplexLayout")]
     ComplexLayout,
+    /// <summary>
+    /// A standalone image to be captioned (not extracted as figure markdown).
+    ///
+    /// VLM prompt: produce a single-sentence alt-text-style caption suitable
+    /// for accessibility tooling and downstream indexing. Used by the
+    /// captioning post-processor to populate
+    /// `ExtractedImage.caption`(crate.types.ExtractedImage.caption).
+    /// </summary>
+    [JsonPropertyName("Caption")]
+    Caption,
 }
 
 
@@ -53,9 +63,10 @@ internal sealed class RegionKindJsonConverter : JsonConverter<RegionKind>
         var value = reader.GetString();
         return value switch
         {
-            "figure" => RegionKind.Figure,
-            "densetable" => RegionKind.DenseTable,
-            "complexlayout" => RegionKind.ComplexLayout,
+            "Figure" => RegionKind.Figure,
+            "DenseTable" => RegionKind.DenseTable,
+            "ComplexLayout" => RegionKind.ComplexLayout,
+            "Caption" => RegionKind.Caption,
             _ => throw new JsonException($"Unknown RegionKind value: {value}")
         };
     }
@@ -64,9 +75,10 @@ internal sealed class RegionKindJsonConverter : JsonConverter<RegionKind>
     {
         var str = value switch
         {
-            RegionKind.Figure => "figure",
-            RegionKind.DenseTable => "densetable",
-            RegionKind.ComplexLayout => "complexlayout",
+            RegionKind.Figure => "Figure",
+            RegionKind.DenseTable => "DenseTable",
+            RegionKind.ComplexLayout => "ComplexLayout",
+            RegionKind.Caption => "Caption",
             _ => throw new JsonException($"Unknown RegionKind value: {value}")
         };
         writer.WriteStringValue(str);

@@ -51,7 +51,16 @@ enum class RegionKind {
      * VLM prompt: extract all text and structure as markdown, preserving
      * reading order.
      */
-    @com.fasterxml.jackson.annotation.JsonProperty("ComplexLayout") COMPLEX_LAYOUT;
+    @com.fasterxml.jackson.annotation.JsonProperty("ComplexLayout") COMPLEX_LAYOUT,
+    /**
+     * A standalone image to be captioned (not extracted as figure markdown).
+     *
+     * VLM prompt: produce a single-sentence alt-text-style caption suitable
+     * for accessibility tooling and downstream indexing. Used by the
+     * captioning post-processor to populate
+     * `ExtractedImage.caption`.
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty("Caption") CAPTION;
 
     @com.fasterxml.jackson.annotation.JsonValue
     fun toWire(): String =
@@ -59,6 +68,7 @@ enum class RegionKind {
             FIGURE -> "Figure"
             DENSE_TABLE -> "DenseTable"
             COMPLEX_LAYOUT -> "ComplexLayout"
+            CAPTION -> "Caption"
         }
 
     companion object {
@@ -72,6 +82,8 @@ enum class RegionKind {
                 "densetable" -> DENSE_TABLE
                 "ComplexLayout",
                 "complexlayout" -> COMPLEX_LAYOUT
+                "Caption",
+                "caption" -> CAPTION
                 else -> throw IllegalArgumentException("Unknown RegionKind value: $value")
             }
     }

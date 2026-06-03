@@ -37,14 +37,25 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public sealed interface VlmFallbackPolicy {
 
-    /** No VLM fallback (default). Behaves identically to the pre-policy single-backend mode. */
+    /**
+     * No VLM fallback (default). Behaves identically to the pre-policy single-backend mode.
+     */
     record Disabled() implements VlmFallbackPolicy {
     }
 
-    /** Try the classical OCR backend first. If the quality score is below */
+    /**
+     * Try the classical OCR backend first. If the quality score is below
+     * {@code quality_threshold}, send the page to the VLM.
+     *
+     * {@code quality_threshold} is in the {@code [0.0, 1.0]} range produced by
+     * {@code calculate_quality_score}. A value of {@code 0.5} is a
+     * reasonable starting point; calibrate with the Stage 0 benchmark harness.
+     */
     record OnLowQuality(@JsonProperty("quality_threshold") double qualityThreshold) implements VlmFallbackPolicy { }
 
-    /** Skip the classical OCR backend entirely. Every page is sent to the VLM. */
+    /**
+     * Skip the classical OCR backend entirely. Every page is sent to the VLM.
+     */
     record Always() implements VlmFallbackPolicy {
     }
 }

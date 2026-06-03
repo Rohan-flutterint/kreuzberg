@@ -262,6 +262,43 @@ data class ExtractionConfig(
      */
     val structuredExtraction: StructuredExtractionConfig? = null,
     /**
+     * Named-entity recognition configuration. When set, the NER post-processor runs at
+     * the Middle stage and populates `ExtractionResult.entities`.
+     */
+    val ner: NerConfig? = null,
+    /**
+     * Redaction / anonymisation configuration. When set, the redaction post-processor
+     * runs at the Late stage and rewrites every textual field in `ExtractionResult`,
+     * emitting an audit trail in `ExtractionResult.redaction_report`.
+     */
+    val redaction: RedactionConfig? = null,
+    /**
+     * Summarisation configuration. When set, the summarisation post-processor runs at
+     * the Middle stage and populates `ExtractionResult.summary`.
+     */
+    val summarization: SummarizationConfig? = null,
+    /**
+     * Translation configuration. When set, the translation post-processor runs at the
+     * Middle stage and populates `ExtractionResult.translation`.
+     */
+    val translation: TranslationConfig? = null,
+    /**
+     * Per-page classification configuration. When set, the classification post-processor
+     * runs at the Middle stage and populates `ExtractionResult.page_classifications`.
+     */
+    val pageClassification: PageClassificationConfig? = null,
+    /**
+     * VLM captioning configuration for extracted images. When set, the captioning
+     * post-processor runs at the Middle stage and writes a caption into each
+     * `ExtractedImage.caption`.
+     */
+    val captioning: CaptioningConfig? = null,
+    /**
+     * Enable QR-code detection in extracted images. When `true`, the QR post-processor
+     * runs at the Middle stage and populates `ExtractedImage.qr_codes`.
+     */
+    val qrCodes: Boolean? = null,
+    /**
      * Cancellation token for this extraction (None = no external cancellation).
      *
      * Pass a `CancellationToken` clone here and call `CancellationToken.cancel`

@@ -15,16 +15,36 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * extraction provides a clear quality benefit over classical suppression.
  */
 public enum RegionKind {
-    /** A figure, diagram, chart, or image region. */
+    /**
+     * A figure, diagram, chart, or image region.
+     *
+     * VLM prompt: describe the diagram / chart, including axis labels,
+     * legend entries, and any embedded text.
+     */
     Figure("figure"),
     /**
      * A densely formatted or complex table that classical extraction garbles.
+     *
+     * VLM prompt: extract the table as GitHub-Flavoured Markdown.
      */
     DenseTable("densetable"),
     /**
      * A region whose layout the classical pipeline cannot handle (multi-column
+     * insets, heavily annotated forms, mixed text+diagram).
+     *
+     * VLM prompt: extract all text and structure as markdown, preserving
+     * reading order.
      */
-    ComplexLayout("complexlayout");
+    ComplexLayout("complexlayout"),
+    /**
+     * A standalone image to be captioned (not extracted as figure markdown).
+     *
+     * VLM prompt: produce a single-sentence alt-text-style caption suitable
+     * for accessibility tooling and downstream indexing. Used by the
+     * captioning post-processor to populate
+     * ExtractedImage.caption(crate.types.ExtractedImage.caption).
+     */
+    Caption("caption");
 
     /** The string value. */
     private final String value;

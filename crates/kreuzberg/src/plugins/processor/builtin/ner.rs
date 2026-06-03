@@ -98,9 +98,7 @@ fn make_backend(config: &NerConfig) -> Result<Arc<dyn NerBackend>> {
             #[cfg(all(feature = "ner-llm", not(target_os = "windows")))]
             {
                 let llm = config.llm.clone().ok_or_else(|| {
-                    crate::KreuzbergError::validation(
-                        "Llm NER backend selected but NerConfig.llm is None".to_string(),
-                    )
+                    crate::KreuzbergError::validation("Llm NER backend selected but NerConfig.llm is None".to_string())
                 })?;
                 Ok(Arc::new(crate::text::ner::llm::LlmBackend::new(llm)))
             }

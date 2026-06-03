@@ -91,10 +91,28 @@ data class OcrConfig(
      */
     val autoRotate: Boolean = false,
     /**
+     * Ergonomic VLM fallback policy.
+     *
+     * When set to anything other than `VlmFallbackPolicy.Disabled` and
+     * `OcrConfig.pipeline` is `null`, a multi-stage pipeline is synthesised
+     * automatically:
+     *
+     * - `VlmFallbackPolicy.OnLowQuality` → `[classical_stage, vlm_stage]` with the
+     *   `quality_threshold` mapped onto `OcrQualityThresholds.pipeline_min_quality`.
+     *
+     * - `VlmFallbackPolicy.Always` → `[vlm_stage]` only.
+     *
+     * Requires `OcrConfig.vlm_config` to be `Some` when not `Disabled`.
+     * When `OcrConfig.pipeline` is explicitly set, this field is ignored.
+     */
+    @field:com.fasterxml.jackson.databind.annotation.JsonSerialize(`as` = VlmFallbackPolicy::class)
+    val vlmFallback: VlmFallbackPolicy = VlmFallbackPolicy.Disabled,
+    /**
      * VLM (Vision Language Model) OCR configuration.
      *
-     * Required when `backend` is `"vlm"`. Uses liter-llm to send page
-     * images to a vision model for text extraction.
+     * Required when `backend` is `"vlm"` or when `vlm_fallback` is not
+     * `VlmFallbackPolicy.Disabled`. Uses liter-llm to send page images to a
+     * vision model for text extraction.
      */
     val vlmConfig: LlmConfig? = null,
     /**

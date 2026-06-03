@@ -64,16 +64,14 @@ const DEFAULT_LABELS: &[&str] = &["person", "organization", "location", "date", 
 /// Returns the path to the cached ONNX file. The CLI `warm --ner` /
 /// `--ner-model` / `--all-ner-models` flags delegate here.
 pub fn download_model(repo_id: &str, _cache_dir: Option<PathBuf>) -> Result<PathBuf> {
-    let model_path = crate::model_download::hf_download(repo_id, DEFAULT_MODEL_FILE).map_err(|e| {
-        crate::KreuzbergError::Plugin {
+    let model_path =
+        crate::model_download::hf_download(repo_id, DEFAULT_MODEL_FILE).map_err(|e| crate::KreuzbergError::Plugin {
             message: format!("Failed to download GLiNER model '{repo_id}': {e}"),
             plugin_name: "ner-gline".to_string(),
-        }
-    })?;
-    if repo_id == DEFAULT_MODEL_REPO && !DEFAULT_MODEL_SHA256.is_empty() {
-        crate::model_download::verify_sha256(&model_path, DEFAULT_MODEL_SHA256, "ner-gline-model").map_err(|e| {
-            crate::KreuzbergError::validation(format!("GLiNER model SHA256 verification failed: {e}"))
         })?;
+    if repo_id == DEFAULT_MODEL_REPO && !DEFAULT_MODEL_SHA256.is_empty() {
+        crate::model_download::verify_sha256(&model_path, DEFAULT_MODEL_SHA256, "ner-gline-model")
+            .map_err(|e| crate::KreuzbergError::validation(format!("GLiNER model SHA256 verification failed: {e}")))?;
     }
 
     let tokenizer_path = crate::model_download::hf_download(repo_id, DEFAULT_TOKENIZER_FILE).map_err(|e| {
@@ -203,7 +201,11 @@ impl NerBackend for GlineBackend {
                 plugin_name: "ner-gline".to_string(),
             })?;
             let output = guard.inference(input).map_err(|e| crate::KreuzbergError::Plugin {
-                message: format!("GLiNER inference failed for model '{}' (tokenizer '{}'): {e}", model_path.display(), tokenizer_path.display()),
+                message: format!(
+                    "GLiNER inference failed for model '{}' (tokenizer '{}'): {e}",
+                    model_path.display(),
+                    tokenizer_path.display()
+                ),
                 plugin_name: "ner-gline".to_string(),
             })?;
             drop(guard);
@@ -248,7 +250,11 @@ impl NerBackend for GlineBackend {
         } else {
             let mut seen = std::collections::HashSet::new();
             let mut result = Vec::new();
-            for label in categories.iter().map(category_to_label).chain(custom_labels.iter().cloned()) {
+            for label in categories
+                .iter()
+                .map(category_to_label)
+                .chain(custom_labels.iter().cloned())
+            {
                 if seen.insert(label.clone()) {
                     result.push(label);
                 }
@@ -324,7 +330,10 @@ mod tests {
         assert_eq!(category_to_label(&EntityCategory::Email), "email");
         assert_eq!(category_to_label(&EntityCategory::Phone), "phone");
         assert_eq!(category_to_label(&EntityCategory::Url), "url");
-        assert_eq!(category_to_label(&EntityCategory::Custom("vessel".to_string())), "vessel");
+        assert_eq!(
+            category_to_label(&EntityCategory::Custom("vessel".to_string())),
+            "vessel"
+        );
     }
 
     #[test]
@@ -339,7 +348,10 @@ mod tests {
         assert_eq!(label_to_category("email"), EntityCategory::Email);
         assert_eq!(label_to_category("phone"), EntityCategory::Phone);
         assert_eq!(label_to_category("url"), EntityCategory::Url);
-        assert_eq!(label_to_category("unknown_label"), EntityCategory::Custom("unknown_label".to_string()));
+        assert_eq!(
+            label_to_category("unknown_label"),
+            EntityCategory::Custom("unknown_label".to_string())
+        );
     }
 
     #[test]
@@ -358,7 +370,11 @@ mod tests {
         ];
         for category in &categories {
             let label = category_to_label(category);
-            assert_eq!(label_to_category(&label), *category, "roundtrip failed for {category:?}");
+            assert_eq!(
+                label_to_category(&label),
+                *category,
+                "roundtrip failed for {category:?}"
+            );
         }
     }
 
@@ -375,6 +391,9 @@ mod tests {
             .expect("detect failed");
         assert!(!entities.is_empty(), "expected at least one entity");
         let texts: Vec<&str> = entities.iter().map(|e| e.text.as_str()).collect();
-        assert!(texts.contains(&"Elon Musk") || texts.contains(&"SpaceX"), "expected at least one known entity, got: {texts:?}");
+        assert!(
+            texts.contains(&"Elon Musk") || texts.contains(&"SpaceX"),
+            "expected at least one known entity, got: {texts:?}"
+        );
     }
 }

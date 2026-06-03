@@ -8,9 +8,8 @@ use crate::types::redaction::PiiCategory;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static RE_SWIFT: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b").expect("swift regex compiles")
-});
+static RE_SWIFT: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b").expect("swift regex compiles"));
 
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     let upper = text.to_ascii_uppercase();

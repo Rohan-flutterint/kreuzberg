@@ -146,7 +146,13 @@ pub async fn redact(result: &mut ExtractionResult, config: &RedactionConfig) -> 
 
     // 10. Rewrite translation body + formatted markup.
     if let Some(translation) = result.translation.as_mut() {
-        translation.content = redact_string(&translation.content, &categories_vec, config, &custom_regexes, &mut counter);
+        translation.content = redact_string(
+            &translation.content,
+            &categories_vec,
+            config,
+            &custom_regexes,
+            &mut counter,
+        );
         if let Some(formatted) = translation.formatted_content.as_mut() {
             *formatted = redact_string(formatted, &categories_vec, config, &custom_regexes, &mut counter);
         }
@@ -226,9 +232,8 @@ fn build_matches_for(
 /// [`RedactionConfig::validate`]; this function silently skips malformed inputs
 /// so a residual stray pattern can't crash the engine.
 fn compile_custom(config: &RedactionConfig) -> Vec<(String, regex::Regex)> {
-    let mut out: Vec<(String, regex::Regex)> = Vec::with_capacity(
-        config.custom_terms.len() + config.custom_patterns.len(),
-    );
+    let mut out: Vec<(String, regex::Regex)> =
+        Vec::with_capacity(config.custom_terms.len() + config.custom_patterns.len());
 
     for term in &config.custom_terms {
         if term.value.is_empty() {
@@ -304,10 +309,10 @@ fn dedupe_overlaps(mut matches: Vec<PatternMatch>) -> Vec<PatternMatch> {
     matches.sort_by(|a, b| a.start.cmp(&b.start).then((b.end - b.start).cmp(&(a.end - a.start))));
     let mut kept: Vec<PatternMatch> = Vec::with_capacity(matches.len());
     for m in matches {
-        if let Some(last) = kept.last() {
-            if m.start < last.end {
-                continue;
-            }
+        if let Some(last) = kept.last()
+            && m.start < last.end
+        {
+            continue;
         }
         kept.push(m);
     }
@@ -420,9 +425,7 @@ fn make_ner_backend(
             #[cfg(feature = "ner-llm")]
             {
                 let llm = config.llm.clone().ok_or_else(|| {
-                    crate::KreuzbergError::validation(
-                        "Llm NER backend selected but NerConfig.llm is None".to_string(),
-                    )
+                    crate::KreuzbergError::validation("Llm NER backend selected but NerConfig.llm is None".to_string())
                 })?;
                 let backend = crate::text::ner::llm::LlmBackend::new(llm);
                 Ok(std::sync::Arc::new(backend))

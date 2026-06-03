@@ -14,9 +14,8 @@ mod frb_generated;
 pub use flutter_rust_bridge::DartFnFuture;
 use flutter_rust_bridge::frb;
 
-/// Opaque JSON carrier for Rust's internal `InternalDocument` trait contract.
-/// Dart code should pass this value back to Alef-generated bridge APIs rather
-/// than treating it as the public `ExtractionResult` DTO.
+/// Opaque JSON carrier for Rust's excluded `InternalDocument` trait-bridge contract.
+/// Dart code should pass this value back to Alef-generated bridge APIs.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct InternalDocumentBridge {
     pub json: String,
@@ -58,6 +57,33 @@ pub struct AccelerationConfig {
     pub provider: ExecutionProviderType,
     /// GPU device ID (for CUDA/TensorRT). Ignored for CPU/CoreML/Auto.
     pub device_id: i64,
+}
+
+/// Configuration for the VLM captioning post-processor.
+#[frb(mirror(CaptioningConfig))]
+pub struct CaptioningConfig {
+    /// LLM configuration used for the VLM call.
+    pub llm: LlmConfig,
+    /// Optional custom caption prompt. `None` uses the default `RegionKind::Caption`
+    /// prompt that ships with `crate::llm::region_extractor`.
+    pub prompt: Option<String>,
+    /// Skip images whose `width * height` is below this threshold (in pixels).
+    /// Default `1_000` filters out icons and decorations.
+    pub min_image_area: i64,
+}
+
+/// Configuration for the page-classification post-processor.
+#[frb(mirror(PageClassificationConfig))]
+pub struct PageClassificationConfig {
+    /// Minijinja prompt template. Receives `{{ labels }}` (joined list), `{{ page_text }}`
+    /// and `{{ multi_label }}` variables. `None` lets the backend pick a sensible default.
+    pub prompt_template: Option<String>,
+    /// The set of labels the classifier may emit. Must contain at least one entry.
+    pub labels: Vec<String>,
+    /// Allow multiple labels per page. Single-label mode returns at most one label.
+    pub multi_label: bool,
+    /// LLM configuration used for classification.
+    pub llm: LlmConfig,
 }
 
 /// Cross-extractor content filtering configuration.
@@ -343,6 +369,29 @@ pub struct ExtractionConfig {
     /// provided JSON schema. The structured response is stored in
     /// `ExtractionResult::structured_output`.
     pub structured_extraction: Option<StructuredExtractionConfig>,
+    /// Named-entity recognition configuration. When set, the NER post-processor runs at
+    /// the Middle stage and populates `ExtractionResult::entities`.
+    pub ner: Option<NerConfig>,
+    /// Redaction / anonymisation configuration. When set, the redaction post-processor
+    /// runs at the Late stage and rewrites every textual field in `ExtractionResult`,
+    /// emitting an audit trail in `ExtractionResult::redaction_report`.
+    pub redaction: Option<RedactionConfig>,
+    /// Summarisation configuration. When set, the summarisation post-processor runs at
+    /// the Middle stage and populates `ExtractionResult::summary`.
+    pub summarization: Option<SummarizationConfig>,
+    /// Translation configuration. When set, the translation post-processor runs at the
+    /// Middle stage and populates `ExtractionResult::translation`.
+    pub translation: Option<TranslationConfig>,
+    /// Per-page classification configuration. When set, the classification post-processor
+    /// runs at the Middle stage and populates `ExtractionResult::page_classifications`.
+    pub page_classification: Option<PageClassificationConfig>,
+    /// VLM captioning configuration for extracted images. When set, the captioning
+    /// post-processor runs at the Middle stage and writes a caption into each
+    /// `ExtractedImage::caption`.
+    pub captioning: Option<CaptioningConfig>,
+    /// Enable QR-code detection in extracted images. When `true`, the QR post-processor
+    /// runs at the Middle stage and populates `ExtractedImage::qr_codes`.
+    pub qr_codes: Option<bool>,
     /// Cancellation token for this extraction (None = no external cancellation).
     ///
     /// Pass a [`CancellationToken`] clone here and call [`CancellationToken::cancel`]
@@ -684,6 +733,33 @@ pub struct StructuredExtractionConfig {
     pub llm: LlmConfig,
 }
 
+/// Configuration for the NER post-processor.
+#[frb(mirror(NerConfig))]
+pub struct NerConfig {
+    /// Backend that runs the entity detection.
+    pub backend: NerBackendKind,
+    /// Entity categories to detect. Defaults to a sensible PERSON/ORG/LOCATION/EMAIL set
+    /// when empty.
+    pub categories: Vec<EntityCategory>,
+    /// Override the default model — only used by [`NerBackendKind::Onnx`].
+    /// `None` lets the backend pick its pinned default
+    /// (`urchade/gliner_multi-v2.1` for gline-rs).
+    pub model: Option<String>,
+    /// Optional LLM configuration — only used by [`NerBackendKind::Llm`]. Token usage
+    /// for LLM backends is recorded in `ExtractionResult::llm_usage`.
+    pub llm: Option<LlmConfig>,
+    /// Arbitrary user-supplied entity labels for zero-shot detection.
+    ///
+    /// gline-rs natively supports zero-shot inference over caller-supplied labels —
+    /// this is the primary value of GLiNER. The LLM backend also honours these
+    /// labels by including them in the structured-output schema. Custom labels
+    /// surface as [`EntityCategory::Custom`] in the resulting `Entity` stream.
+    ///
+    /// Use this when you need domain-specific entity types (e.g. `"Treatment"`,
+    /// `"Product"`, `"Vessel"`) without forking GLiNER's taxonomy.
+    pub custom_labels: Vec<String>,
+}
+
 /// Quality thresholds for OCR fallback decisions and pipeline quality gating.
 ///
 /// All fields default to the values that match the previous hardcoded behavior,
@@ -827,10 +903,24 @@ pub struct OcrConfig {
     /// rotated with high confidence, the image is corrected before recognition.
     /// This is critical for handling rotated scanned documents.
     pub auto_rotate: bool,
+    /// Ergonomic VLM fallback policy.
+    ///
+    /// When set to anything other than [`VlmFallbackPolicy::Disabled`] and
+    /// [`OcrConfig::pipeline`] is `None`, a multi-stage pipeline is synthesised
+    /// automatically:
+    ///
+    /// - [`VlmFallbackPolicy::OnLowQuality`] → `[classical_stage, vlm_stage]` with the
+    ///   `quality_threshold` mapped onto [`OcrQualityThresholds::pipeline_min_quality`].
+    /// - [`VlmFallbackPolicy::Always`] → `[vlm_stage]` only.
+    ///
+    /// Requires [`OcrConfig::vlm_config`] to be `Some` when not `Disabled`.
+    /// When [`OcrConfig::pipeline`] is explicitly set, this field is ignored.
+    pub vlm_fallback: VlmFallbackPolicy,
     /// VLM (Vision Language Model) OCR configuration.
     ///
-    /// Required when `backend` is `"vlm"`. Uses liter-llm to send page
-    /// images to a vision model for text extraction.
+    /// Required when `backend` is `"vlm"` or when `vlm_fallback` is not
+    /// [`VlmFallbackPolicy::Disabled`]. Uses liter-llm to send page images to a
+    /// vision model for text extraction.
     pub vlm_config: Option<LlmConfig>,
     /// Custom Jinja2 prompt template for VLM OCR.
     ///
@@ -1052,6 +1142,95 @@ pub struct EmbeddingConfig {
     /// for common in-process inference; increase for large batches on slow
     /// hardware.
     pub max_embed_duration_secs: Option<i64>,
+}
+
+/// Configuration for the redaction post-processor.
+#[frb(mirror(RedactionConfig))]
+pub struct RedactionConfig {
+    /// Categories to redact. Empty means "every category supported by the engine."
+    pub categories: Vec<PiiCategory>,
+    /// Strategy applied to every match.
+    pub strategy: RedactionStrategy,
+    /// Optional NER backend — required to redact PERSON / ORGANIZATION / LOCATION
+    /// categories (the pure-Rust pattern engine only covers regex-detectable PII).
+    pub ner: Option<NerConfig>,
+    /// When `true`, chunk byte ranges are kept consistent with the rewritten content by
+    /// adjusting `byte_start` / `byte_end` after replacement. When `false`, chunk byte
+    /// ranges still refer to the *original* content offsets — useful when downstream
+    /// consumers want to map findings back to the original document.
+    pub preserve_offsets: bool,
+    /// Arbitrary user-supplied literal terms to redact.
+    ///
+    /// Each term is treated as a regex hit against the document, surfacing as
+    /// `PiiCategory::Custom(label)` in [`RedactionFinding`](crate::types::redaction::RedactionFinding)
+    /// where `label` is the per-term label (defaulting to the literal value itself).
+    /// Case-insensitive by default; set [`RedactionTerm::case_sensitive`] for exact match.
+    ///
+    /// Use this when you need to redact tenant-specific tokens (employee IDs,
+    /// project codes, internal product names) without writing a custom plugin.
+    pub custom_terms: Vec<RedactionTerm>,
+    /// Arbitrary user-supplied regex patterns to redact.
+    ///
+    /// Same surfacing semantics as [`custom_terms`](Self::custom_terms): each
+    /// hit becomes a `PiiCategory::Custom(label)` finding. Patterns are validated
+    /// at config-construction time via [`RedactionConfig::validate`].
+    pub custom_patterns: Vec<RedactionPattern>,
+}
+
+/// One user-supplied literal term to redact.
+///
+/// Matched as a regex-escaped substring (so callers do not need to escape
+/// metacharacters themselves). Case-insensitive by default — set
+/// [`Self::case_sensitive`] to `true` for exact byte-match semantics.
+#[frb(mirror(RedactionTerm))]
+pub struct RedactionTerm {
+    /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+    pub label: String,
+    /// Literal value to match. Regex metacharacters are escaped automatically.
+    pub value: String,
+    /// When `true`, match the value as-is; otherwise match ASCII-case-insensitively.
+    pub case_sensitive: bool,
+}
+
+/// One user-supplied regex pattern to redact.
+///
+/// The pattern is compiled with the Rust `regex` crate (no look-around). Case
+/// sensitivity is encoded in the pattern via the `(?i)` inline flag when
+/// [`Self::case_sensitive`] is `false`.
+#[frb(mirror(RedactionPattern))]
+pub struct RedactionPattern {
+    /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+    pub label: String,
+    /// Regex pattern (Rust `regex` crate dialect — no look-around).
+    pub pattern: String,
+    /// When `true`, match case-sensitively; otherwise prepend `(?i)` to the regex.
+    pub case_sensitive: bool,
+}
+
+/// Configuration for the summarisation post-processor.
+#[frb(mirror(SummarizationConfig))]
+pub struct SummarizationConfig {
+    /// Summarisation strategy.
+    pub strategy: SummaryStrategy,
+    /// Maximum summary length in tokens. `None` lets the backend pick a default.
+    pub max_tokens: Option<i64>,
+    /// LLM configuration for the abstractive backend. Ignored when
+    /// `strategy = Extractive`. Required when `strategy = Abstractive`.
+    pub llm: Option<LlmConfig>,
+}
+
+/// Configuration for the translation post-processor.
+#[frb(mirror(TranslationConfig))]
+pub struct TranslationConfig {
+    /// BCP-47 language tag for the target language (e.g. `"de"`, `"fr-CA"`).
+    pub target_lang: String,
+    /// Optional explicit source language. `None` asks the backend to auto-detect.
+    pub source_lang: Option<String>,
+    /// Translate the formatted (Markdown/HTML) rendition alongside plain text when
+    /// `formatted_content` is present.
+    pub preserve_markup: bool,
+    /// LLM configuration used for translation.
+    pub llm: LlmConfig,
 }
 
 /// Configuration for tree-sitter language pack integration.
@@ -1347,6 +1526,68 @@ pub struct TokenReductionConfig {
     pub enable_semantic_clustering: bool,
 }
 
+/// kreuzberg-gliner-rs ONNX backend wrapper.
+///
+/// Holds an initialised [`GLiNER<SpanMode>`] behind an `Arc<Mutex<...>>` so the
+/// model can be safely shared across async tasks (inference is synchronous and
+/// serialised internally by the mutex).
+#[frb(mirror(GlineBackend))]
+pub struct GlineBackend {
+    pub repo_id: String,
+    pub model_path: String,
+    pub tokenizer_path: String,
+}
+
+/// liter-llm-backed NER backend.
+#[frb(opaque)]
+pub struct LlmBackend {
+    pub(crate) inner: kreuzberg::text::ner::llm::LlmBackend,
+}
+
+impl From<kreuzberg::text::ner::llm::LlmBackend> for LlmBackend {
+    fn from(inner: kreuzberg::text::ner::llm::LlmBackend) -> Self {
+        Self { inner }
+    }
+}
+
+impl From<LlmBackend> for kreuzberg::text::ner::llm::LlmBackend {
+    fn from(value: LlmBackend) -> Self {
+        value.inner
+    }
+}
+
+/// One detected PII span in the input text.
+#[frb(mirror(PatternMatch))]
+pub struct PatternMatch {
+    /// Inclusive byte-offset start of the match in the source text.
+    pub start: i64,
+    /// Exclusive byte-offset end of the match.
+    pub end: i64,
+    /// Category the match belongs to.
+    pub category: PiiCategory,
+    /// Matched substring (owned copy — pattern engine returns owned data so the
+    /// caller can free the original text if needed before replacement).
+    pub text: String,
+}
+
+/// Per-category running counter for [`RedactionStrategy::TokenReplace`].
+#[frb(opaque)]
+pub struct TokenCounter {
+    pub(crate) inner: kreuzberg::text::redaction::strategy::TokenCounter,
+}
+
+impl From<kreuzberg::text::redaction::strategy::TokenCounter> for TokenCounter {
+    fn from(inner: kreuzberg::text::redaction::strategy::TokenCounter) -> Self {
+        Self { inner }
+    }
+}
+
+impl From<TokenCounter> for kreuzberg::text::redaction::strategy::TokenCounter {
+    fn from(value: TokenCounter) -> Self {
+        value.inner
+    }
+}
+
 /// A PDF annotation extracted from a document page.
 #[frb(mirror(PdfAnnotation))]
 pub struct PdfAnnotation {
@@ -1358,6 +1599,26 @@ pub struct PdfAnnotation {
     pub page_number: i64,
     /// Bounding box of the annotation on the page.
     pub bounding_box: Option<BoundingBox>,
+}
+
+/// Classification result for a single page.
+#[frb(mirror(PageClassification))]
+pub struct PageClassification {
+    /// 1-indexed page number this classification belongs to.
+    pub page_number: i64,
+    /// Labels assigned to the page. Single-label classification yields exactly one
+    /// entry; multi-label classification yields any subset of the configured label set.
+    pub labels: Vec<ClassificationLabel>,
+}
+
+/// A single label + confidence pair.
+#[frb(mirror(ClassificationLabel))]
+pub struct ClassificationLabel {
+    /// Label name as configured in `PageClassificationConfig::labels`.
+    pub label: String,
+    /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend (e.g. an LLM
+    /// prompt without explicit confidence schema) did not report one.
+    pub confidence: Option<f64>,
 }
 
 /// Comprehensive Djot document structure with semantic preservation.
@@ -1587,6 +1848,22 @@ pub struct TextAnnotation {
     pub kind: AnnotationKind,
 }
 
+/// A single named entity detected in the extracted text.
+#[frb(mirror(Entity))]
+pub struct Entity {
+    /// Canonical category the entity belongs to (PERSON, ORG, LOCATION, etc.).
+    pub category: EntityCategory,
+    /// Raw mention text exactly as it appeared in the source.
+    pub text: String,
+    /// Byte-offset span in `ExtractionResult::content` where the mention starts.
+    pub start: i64,
+    /// Byte-offset span in `ExtractionResult::content` where the mention ends (exclusive).
+    pub end: i64,
+    /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend does not
+    /// expose confidence scores.
+    pub confidence: Option<f64>,
+}
+
 /// General extraction result used by the core extraction API.
 ///
 /// This is the main result type returned by all extraction functions.
@@ -1735,6 +2012,32 @@ pub struct ExtractionResult {
     ///
     /// `None` when no LLM was used.
     pub llm_usage: Option<Vec<LlmUsage>>,
+    /// Named entities detected in `content` by the NER post-processor.
+    ///
+    /// `None` when no NER backend is configured. Populated by the gline-rs ONNX
+    /// backend or the LLM-driven backend (see `crates/kreuzberg/src/text/ner/`).
+    pub entities: Option<Vec<Entity>>,
+    /// Summary of `content` produced by the summarisation post-processor.
+    ///
+    /// `None` when summarisation is not configured. Populated by the TextRank
+    /// extractive backend (deterministic, no external service) or by the
+    /// liter-llm-driven abstractive backend.
+    pub summary: Option<DocumentSummary>,
+    /// Translation of `content` produced by the translation post-processor.
+    ///
+    /// `None` when translation is not configured.
+    pub translation: Option<Translation>,
+    /// Per-page classifications produced by the page-classification post-processor.
+    ///
+    /// `None` when classification is not configured.
+    pub page_classifications: Option<Vec<PageClassification>>,
+    /// Audit report of redactions applied by the redaction post-processor.
+    ///
+    /// The redaction processor rewrites `content`, `formatted_content`, every
+    /// chunk's text, and the textual fields of `entities` / `summary` / `translation` /
+    /// `page_classifications` in place. This report describes what was found and how it
+    /// was replaced. `None` when redaction is not configured.
+    pub redaction_report: Option<RedactionReport>,
     /// Pre-rendered content in the requested output format.
     ///
     /// Populated during `derive_extraction_result` before tree derivation consumes
@@ -1926,6 +2229,19 @@ pub struct ExtractedImage {
     /// Identifier shared across images that form a single logical figure
     /// (e.g. all raster tiles of one technical drawing). `None` for singletons.
     pub cluster_id: Option<i64>,
+    /// VLM-generated caption describing the image, when captioning is configured.
+    ///
+    /// Populated by the captioning post-processor
+    /// (`crates/kreuzberg/src/plugins/processor/builtin/captioning.rs`), which routes
+    /// each image through `crate::llm::region_extractor::extract_region_with_vlm` in
+    /// caption mode. `None` when captioning is disabled or the VLM declined to caption.
+    pub caption: Option<String>,
+    /// QR codes decoded from this image, when QR detection is enabled.
+    ///
+    /// Populated by the QR post-processor (`crates/kreuzberg/src/extractors/qr.rs`) via
+    /// the pure-Rust `rqrr` decoder. `None` when QR detection is disabled; an empty
+    /// `Some(vec![])` when detection ran but found nothing.
+    pub qr_codes: Option<Vec<QrCode>>,
 }
 
 /// Bounding box coordinates for element positioning.
@@ -3004,6 +3320,60 @@ pub struct HierarchicalBlock {
     pub bbox: Option<Vec<f64>>,
 }
 
+/// One QR code decoded from an extracted image.
+#[frb(mirror(QrCode))]
+pub struct QrCode {
+    /// Decoded payload (text, URL, vCard string, …).
+    pub payload: String,
+    /// Detector-reported confidence in `[0.0, 1.0]`. `None` when the decoder
+    /// does not expose confidence (the default `rqrr` backend always reports
+    /// `Some` because successful decode implies high confidence).
+    pub confidence: Option<f64>,
+    /// Bounding box of the QR code inside the source image, in pixel coordinates
+    /// (`x`, `y` of the top-left corner; `width`, `height` of the rectangle).
+    /// `None` if the decoder did not report a bounding box.
+    pub bbox: Option<QrBoundingBox>,
+}
+
+/// Pixel-space bounding box of a QR code inside its source image.
+#[frb(mirror(QrBoundingBox))]
+pub struct QrBoundingBox {
+    pub x: i64,
+    pub y: i64,
+    pub width: i64,
+    pub height: i64,
+}
+
+/// Audit report describing what the redaction processor found and how it replaced it.
+///
+/// The redactor returns this alongside the rewritten content so compliance, replay, and
+/// audit-log consumers can see exactly what fired. Offsets are relative to the *original*
+/// pre-redaction `content` and are intended for audit reconstruction only — the original
+/// bytes are dropped at the end of the pipeline.
+#[frb(mirror(RedactionReport))]
+pub struct RedactionReport {
+    /// Individual redaction findings in original-source byte order.
+    pub findings: Vec<RedactionFinding>,
+    /// Total number of redactions applied across the document.
+    pub total_redacted: i64,
+}
+
+/// One redaction event: which span was rewritten, why, and with what.
+#[frb(mirror(RedactionFinding))]
+pub struct RedactionFinding {
+    /// Byte-offset start in the original (pre-redaction) `ExtractionResult::content`.
+    pub start: i64,
+    /// Byte-offset end (exclusive) in the original `ExtractionResult::content`.
+    pub end: i64,
+    /// PII category that fired this redaction.
+    pub category: PiiCategory,
+    /// Strategy applied to this finding (mask, hash, token-replace, drop).
+    pub strategy: RedactionStrategy,
+    /// String that replaced the original mention. Always present; for `Drop` the
+    /// replacement is the empty string.
+    pub replacement_token: String,
+}
+
 /// A single changed cell within a table.
 ///
 /// Defined here (rather than only in `crate::diff`) so `RevisionDelta` can
@@ -3070,6 +3440,17 @@ pub struct RevisionDelta {
     pub table_changes: Vec<CellChange>,
 }
 
+/// Summary of an extracted document.
+#[frb(mirror(DocumentSummary))]
+pub struct DocumentSummary {
+    /// Summary text (plain prose).
+    pub text: String,
+    /// Strategy that produced this summary.
+    pub strategy: SummaryStrategy,
+    /// Approximate token count of the summary, when known.
+    pub token_count: Option<i64>,
+}
+
 /// Extracted table structure.
 ///
 /// Represents a table detected and extracted from a document (PDF, image, etc.).
@@ -3102,6 +3483,25 @@ pub struct TableCell {
     pub is_header: bool,
 }
 
+/// Translation of the extracted content.
+///
+/// Holds the translated rendition of `ExtractionResult::content` and (when
+/// `preserve_markup` was requested) the translated `formatted_content`. Chunks
+/// are translated in place inside `ExtractionResult::chunks[*].content` rather
+/// than duplicated here.
+#[frb(mirror(Translation))]
+pub struct Translation {
+    /// BCP-47 language tag the translation was produced into (e.g. `"de"`, `"fr-CA"`).
+    pub target_lang: String,
+    /// BCP-47 source language. `None` when the translation backend was asked to detect.
+    pub source_lang: Option<String>,
+    /// Translated plain-text body. Matches the shape of `ExtractionResult::content`.
+    pub content: String,
+    /// Translated markup body (Markdown / HTML / etc.) when `preserve_markup` was
+    /// enabled on the config. `None` otherwise.
+    pub formatted_content: Option<String>,
+}
+
 /// A URI extracted from a document.
 ///
 /// Represents any link, reference, or resource pointer found during extraction.
@@ -3126,6 +3526,13 @@ pub struct DetectResponse {
     pub mime_type: String,
     /// Original filename (if provided)
     pub filename: Option<String>,
+}
+
+/// A text segment with its byte offset in the original document.
+#[frb(mirror(Segment))]
+pub struct Segment {
+    pub text: String,
+    pub byte_start: i64,
 }
 
 /// Options controlling how two `ExtractionResult` values are compared.
@@ -3459,6 +3866,56 @@ pub struct PdfMetadata {
     pub page_count: Option<i64>,
 }
 
+#[allow(unused_imports)]
+use kreuzberg::text::ner::NerBackend;
+impl LlmBackend {
+    #[frb]
+    pub fn new(config: LlmConfig) -> LlmBackend {
+        (|v| LlmBackend::from(v))(kreuzberg::LlmBackend::new(kreuzberg::LlmConfig::from(config)))
+    }
+    #[frb]
+    pub async fn detect(&self, text: String, categories: Vec<EntityCategory>) -> Result<Vec<Entity>, String> {
+        self.inner
+            .detect(&text, unsafe {
+                ::std::mem::transmute::<Vec<EntityCategory>, Vec<kreuzberg::EntityCategory>>(categories)
+            })
+            .await
+            .map(|v| v.into_iter().map(Entity::from).collect())
+            .map_err(|e| e.to_string())
+    }
+    #[frb]
+    pub async fn detect_with_custom(
+        &self,
+        text: String,
+        categories: Vec<EntityCategory>,
+        custom_labels: Vec<String>,
+    ) -> Result<Vec<Entity>, String> {
+        self.inner
+            .detect_with_custom(
+                &text,
+                unsafe { ::std::mem::transmute::<Vec<EntityCategory>, Vec<kreuzberg::EntityCategory>>(categories) },
+                &custom_labels.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+            )
+            .await
+            .map(|v| v.into_iter().map(Entity::from).collect())
+            .map_err(|e| e.to_string())
+    }
+}
+
+impl TokenCounter {
+    #[frb]
+    pub fn new() -> TokenCounter {
+        (|v| TokenCounter::from(v))(kreuzberg::TokenCounter::new())
+    }
+    #[frb]
+    pub fn next_token(&mut self, category: PiiCategory, original: String) -> String {
+        self.inner.next_token(
+            unsafe { ::std::mem::transmute::<&PiiCategory, &kreuzberg::PiiCategory>(&category) },
+            &original,
+        )
+    }
+}
+
 /// ONNX Runtime execution provider type.
 ///
 /// Determines which hardware backend is used for model inference.
@@ -3541,6 +3998,75 @@ pub enum TableModel {
     SlanetAuto,
     /// Disable table structure model inference entirely; use heuristic path only.
     Disabled,
+}
+
+/// NER backend selector.
+#[frb(mirror(NerBackendKind), unignore)]
+pub enum NerBackendKind {
+    /// gline-rs ONNX inference. Requires `ner-onnx` feature. Models download lazily from
+    /// HuggingFace via `model_download::hf_download`.
+    Onnx,
+    /// liter-llm zero-shot NER via structured-output prompts. Requires `ner-llm`
+    /// feature. Useful when domain-specific categories outstrip the ONNX taxonomy.
+    Llm,
+}
+
+/// Policy controlling when VLM (Vision Language Model) OCR is used as a fallback.
+///
+/// This knob is syntactic sugar over the explicit [`OcrPipelineConfig`] stage
+/// ordering. When `vlm_fallback` is set and `pipeline` is `None`, an equivalent
+/// pipeline is synthesised at extraction time:
+///
+/// - [`VlmFallbackPolicy::Disabled`] — no synthesis; single-backend mode (default).
+/// - [`VlmFallbackPolicy::OnLowQuality`] — tries the classical backend first; if the
+///   result scores below `quality_threshold`, tries VLM.
+/// - [`VlmFallbackPolicy::Always`] — skips the classical backend and sends every page
+///   to the VLM.
+///
+/// When [`OcrConfig::pipeline`] is explicitly set, `vlm_fallback` is ignored — the
+/// explicit pipeline takes precedence.
+///
+/// # Errors
+///
+/// Both `OnLowQuality` and `Always` require [`OcrConfig::vlm_config`] to be `Some`.
+/// Constructing an [`OcrConfig`] with one of these policies but no `vlm_config` is
+/// detected by [`OcrConfig::validate`] and will surface as a
+/// `Validation` error at extraction time, not a panic.
+///
+/// # Example
+///
+/// ```rust
+/// use kreuzberg::{OcrConfig, VlmFallbackPolicy, LlmConfig};
+///
+/// let config = OcrConfig {
+///     vlm_fallback: VlmFallbackPolicy::OnLowQuality { quality_threshold: 0.6 },
+///     vlm_config: Some(LlmConfig {
+///         model: "openai/gpt-4o-mini".to_string(),
+///         ..Default::default()
+///     }),
+///     ..Default::default()
+/// };
+///
+/// // Threshold calibration is deferred to the Stage 0 benchmark harness.
+/// assert!(matches!(config.vlm_fallback, VlmFallbackPolicy::OnLowQuality { .. }));
+/// ```
+#[frb(mirror(VlmFallbackPolicy), unignore)]
+pub enum VlmFallbackPolicy {
+    /// No VLM fallback (default). Behaves identically to the pre-policy single-backend mode.
+    Disabled,
+    /// Try the classical OCR backend first. If the quality score is below
+    /// `quality_threshold`, send the page to the VLM.
+    ///
+    /// `quality_threshold` is in the `[0.0, 1.0]` range produced by
+    /// `calculate_quality_score`. A value of `0.5` is a
+    /// reasonable starting point; calibrate with the Stage 0 benchmark harness.
+    OnLowQuality {
+        /// Minimum acceptable quality score from the classical backend.
+        /// Pages scoring below this are retried with VLM.
+        quality_threshold: f64,
+    },
+    /// Skip the classical OCR backend entirely. Every page is sent to the VLM.
+    Always,
 }
 
 /// Type of text chunker to use.
@@ -3906,6 +4432,25 @@ pub enum AnnotationKind {
     },
 }
 
+/// Standard entity categories produced by built-in NER backends.
+///
+/// The `Custom(String)` variant lets caller-supplied categories (e.g. LLM
+/// schemas) flow through without losing fidelity to the consumer.
+#[frb(mirror(EntityCategory), unignore)]
+pub enum EntityCategory {
+    Person,
+    Organization,
+    Location,
+    Date,
+    Time,
+    Money,
+    Percent,
+    Email,
+    Phone,
+    Url,
+    Custom { field0: String },
+}
+
 /// How the extracted text was produced.
 #[frb(mirror(ExtractionMethod), unignore)]
 pub enum ExtractionMethod {
@@ -4157,6 +4702,53 @@ pub enum PageUnitType {
     Sheet,
 }
 
+/// Strategy applied when a PII match is rewritten.
+#[frb(mirror(RedactionStrategy), unignore)]
+pub enum RedactionStrategy {
+    /// Replace the matched span with a fixed mask token (default `"[REDACTED]"`).
+    Mask,
+    /// Replace with a SHA-256 hash of the original value (truncated to 16 hex chars).
+    /// Lets downstream consumers do equality joins without recovering the source.
+    Hash,
+    /// Replace with a per-category running token (`"[PERSON_1]"`, `"[PERSON_2]"`, …)
+    /// so the same person referenced twice gets the same token within the document.
+    TokenReplace,
+    /// Delete the matched span entirely.
+    Drop,
+}
+
+/// PII categories the pattern engine recognises.
+#[frb(mirror(PiiCategory), unignore)]
+pub enum PiiCategory {
+    Email,
+    Phone,
+    Ssn,
+    CreditCard,
+    PostalCode,
+    IpAddress,
+    Iban,
+    SwiftBic,
+    DateOfBirth,
+    /// Person name, surfaced by the optional NER backend.
+    Person,
+    /// Organization name, surfaced by the optional NER backend.
+    Organization,
+    /// Location, surfaced by the optional NER backend.
+    Location,
+    /// Caller-supplied custom category (e.g. internal employee IDs).
+    ///
+    /// Surfaced by the redaction engine when a hit comes from
+    /// [`RedactionConfig::custom_terms`](crate::core::config::redaction::RedactionConfig::custom_terms)
+    /// or [`RedactionConfig::custom_patterns`](crate::core::config::redaction::RedactionConfig::custom_patterns).
+    /// The string is the label passed alongside the term/pattern. Use those
+    /// fields rather than constructing `Custom` directly via the
+    /// `categories` filter — the pattern engine cannot detect arbitrary text
+    /// from a category name alone.
+    Custom {
+        field0: String,
+    },
+}
+
 /// A single line in a unified-diff hunk.
 ///
 /// Defined here (rather than only in `crate::diff`) so `RevisionDelta` can
@@ -4221,6 +4813,18 @@ pub enum RevisionAnchor {
     },
 }
 
+/// Summarisation strategy.
+#[frb(mirror(SummaryStrategy), unignore)]
+pub enum SummaryStrategy {
+    /// Pure-Rust extractive summary (TextRank over the chunk graph). Deterministic,
+    /// fast, no external service required.
+    Extractive,
+    /// Abstractive summary produced by liter-llm. Requires `liter-llm` feature and
+    /// a configured `LlmConfig`. Token usage is captured in
+    /// [`ExtractionResult::llm_usage`](super::extraction::ExtractionResult::llm_usage).
+    Abstractive,
+}
+
 /// Semantic classification of an extracted URI.
 #[frb(mirror(UriKind), unignore)]
 pub enum UriKind {
@@ -4236,6 +4840,37 @@ pub enum UriKind {
     Reference,
     /// An email address (`mailto:` link or bare email).
     Email,
+}
+
+/// Classification of a detected layout region that warrants VLM extraction.
+///
+/// Each variant maps to a specific prompt optimised for that content type.
+/// The mapping is intentionally narrow — only region kinds for which VLM
+/// extraction provides a clear quality benefit over classical suppression.
+#[frb(mirror(RegionKind), unignore)]
+pub enum RegionKind {
+    /// A figure, diagram, chart, or image region.
+    ///
+    /// VLM prompt: describe the diagram / chart, including axis labels,
+    /// legend entries, and any embedded text.
+    Figure,
+    /// A densely formatted or complex table that classical extraction garbles.
+    ///
+    /// VLM prompt: extract the table as GitHub-Flavoured Markdown.
+    DenseTable,
+    /// A region whose layout the classical pipeline cannot handle (multi-column
+    /// insets, heavily annotated forms, mixed text+diagram).
+    ///
+    /// VLM prompt: extract all text and structure as markdown, preserving
+    /// reading order.
+    ComplexLayout,
+    /// A standalone image to be captioned (not extracted as figure markdown).
+    ///
+    /// VLM prompt: produce a single-sentence alt-text-style caption suitable
+    /// for accessibility tooling and downstream indexing. Used by the
+    /// captioning post-processor to populate
+    /// [`ExtractedImage::caption`](crate::types::ExtractedImage::caption).
+    Caption,
 }
 
 /// Keyword algorithm selection.
@@ -4392,6 +5027,27 @@ impl From<kreuzberg::AccelerationConfig> for AccelerationConfig {
     }
 }
 
+impl From<kreuzberg::core::config::CaptioningConfig> for CaptioningConfig {
+    fn from(v: kreuzberg::core::config::CaptioningConfig) -> Self {
+        CaptioningConfig {
+            llm: LlmConfig::from(v.llm),
+            prompt: v.prompt.map(|s| s.into()),
+            min_image_area: v.min_image_area as _,
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::PageClassificationConfig> for PageClassificationConfig {
+    fn from(v: kreuzberg::core::config::PageClassificationConfig) -> Self {
+        PageClassificationConfig {
+            prompt_template: v.prompt_template.map(|s| s.into()),
+            labels: v.labels.into_iter().map(|s| s.into()).collect(),
+            multi_label: v.multi_label as _,
+            llm: LlmConfig::from(v.llm),
+        }
+    }
+}
+
 impl From<kreuzberg::ContentFilterConfig> for ContentFilterConfig {
     fn from(v: kreuzberg::ContentFilterConfig) -> Self {
         ContentFilterConfig {
@@ -4448,6 +5104,13 @@ impl From<kreuzberg::ExtractionConfig> for ExtractionConfig {
             max_archive_depth: v.max_archive_depth as _,
             tree_sitter: v.tree_sitter.map(TreeSitterConfig::from),
             structured_extraction: v.structured_extraction.map(StructuredExtractionConfig::from),
+            ner: v.ner.map(NerConfig::from),
+            redaction: v.redaction.map(RedactionConfig::from),
+            summarization: v.summarization.map(SummarizationConfig::from),
+            translation: v.translation.map(TranslationConfig::from),
+            page_classification: v.page_classification.map(PageClassificationConfig::from),
+            captioning: v.captioning.map(CaptioningConfig::from),
+            qr_codes: v.qr_codes.map(|x| x as _),
             cancel_token: Default::default(),
         }
     }
@@ -4590,6 +5253,18 @@ impl From<kreuzberg::StructuredExtractionConfig> for StructuredExtractionConfig 
     }
 }
 
+impl From<kreuzberg::core::config::NerConfig> for NerConfig {
+    fn from(v: kreuzberg::core::config::NerConfig) -> Self {
+        NerConfig {
+            backend: NerBackendKind::from(v.backend),
+            categories: v.categories.into_iter().map(EntityCategory::from).collect(),
+            model: v.model.map(|s| s.into()),
+            llm: v.llm.map(LlmConfig::from),
+            custom_labels: v.custom_labels.into_iter().map(|s| s.into()).collect(),
+        }
+    }
+}
+
 impl From<kreuzberg::OcrQualityThresholds> for OcrQualityThresholds {
     fn from(v: kreuzberg::OcrQualityThresholds) -> Self {
         OcrQualityThresholds {
@@ -4654,6 +5329,7 @@ impl From<kreuzberg::OcrConfig> for OcrConfig {
             quality_thresholds: v.quality_thresholds.map(OcrQualityThresholds::from),
             pipeline: v.pipeline.map(OcrPipelineConfig::from),
             auto_rotate: v.auto_rotate as _,
+            vlm_fallback: VlmFallbackPolicy::from(v.vlm_fallback),
             vlm_config: v.vlm_config.map(LlmConfig::from),
             vlm_prompt: v.vlm_prompt.map(|s| s.into()),
             acceleration: v.acceleration.map(AccelerationConfig::from),
@@ -4744,6 +5420,60 @@ impl From<kreuzberg::EmbeddingConfig> for EmbeddingConfig {
             cache_dir: v.cache_dir.map(|p| p.to_string_lossy().into_owned()),
             acceleration: v.acceleration.map(AccelerationConfig::from),
             max_embed_duration_secs: v.max_embed_duration_secs.map(|x| x as _),
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::RedactionConfig> for RedactionConfig {
+    fn from(v: kreuzberg::core::config::RedactionConfig) -> Self {
+        RedactionConfig {
+            categories: v.categories.into_iter().map(PiiCategory::from).collect(),
+            strategy: RedactionStrategy::from(v.strategy),
+            ner: v.ner.map(NerConfig::from),
+            preserve_offsets: v.preserve_offsets as _,
+            custom_terms: v.custom_terms.into_iter().map(RedactionTerm::from).collect(),
+            custom_patterns: v.custom_patterns.into_iter().map(RedactionPattern::from).collect(),
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::redaction::RedactionTerm> for RedactionTerm {
+    fn from(v: kreuzberg::core::config::redaction::RedactionTerm) -> Self {
+        RedactionTerm {
+            label: v.label.into(),
+            value: v.value.into(),
+            case_sensitive: v.case_sensitive as _,
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::redaction::RedactionPattern> for RedactionPattern {
+    fn from(v: kreuzberg::core::config::redaction::RedactionPattern) -> Self {
+        RedactionPattern {
+            label: v.label.into(),
+            pattern: v.pattern.into(),
+            case_sensitive: v.case_sensitive as _,
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::SummarizationConfig> for SummarizationConfig {
+    fn from(v: kreuzberg::core::config::SummarizationConfig) -> Self {
+        SummarizationConfig {
+            strategy: SummaryStrategy::from(v.strategy),
+            max_tokens: v.max_tokens.map(|x| x as _),
+            llm: v.llm.map(LlmConfig::from),
+        }
+    }
+}
+
+impl From<kreuzberg::core::config::TranslationConfig> for TranslationConfig {
+    fn from(v: kreuzberg::core::config::TranslationConfig) -> Self {
+        TranslationConfig {
+            target_lang: v.target_lang.into(),
+            source_lang: v.source_lang.map(|s| s.into()),
+            preserve_markup: v.preserve_markup as _,
+            llm: LlmConfig::from(v.llm),
         }
     }
 }
@@ -4927,6 +5657,27 @@ impl From<kreuzberg::TokenReductionConfig> for TokenReductionConfig {
     }
 }
 
+impl From<kreuzberg::text::ner::gline::GlineBackend> for GlineBackend {
+    fn from(v: kreuzberg::text::ner::gline::GlineBackend) -> Self {
+        GlineBackend {
+            repo_id: v.repo_id.into(),
+            model_path: v.model_path.to_string_lossy().into_owned(),
+            tokenizer_path: v.tokenizer_path.to_string_lossy().into_owned(),
+        }
+    }
+}
+
+impl From<kreuzberg::text::redaction::patterns::PatternMatch> for PatternMatch {
+    fn from(v: kreuzberg::text::redaction::patterns::PatternMatch) -> Self {
+        PatternMatch {
+            start: v.start as _,
+            end: v.end as _,
+            category: PiiCategory::from(v.category),
+            text: v.text.into(),
+        }
+    }
+}
+
 impl From<kreuzberg::PdfAnnotation> for PdfAnnotation {
     fn from(v: kreuzberg::PdfAnnotation) -> Self {
         PdfAnnotation {
@@ -4934,6 +5685,24 @@ impl From<kreuzberg::PdfAnnotation> for PdfAnnotation {
             content: v.content.map(|s| s.into()),
             page_number: v.page_number as _,
             bounding_box: v.bounding_box.map(BoundingBox::from),
+        }
+    }
+}
+
+impl From<kreuzberg::PageClassification> for PageClassification {
+    fn from(v: kreuzberg::PageClassification) -> Self {
+        PageClassification {
+            page_number: v.page_number as _,
+            labels: v.labels.into_iter().map(ClassificationLabel::from).collect(),
+        }
+    }
+}
+
+impl From<kreuzberg::ClassificationLabel> for ClassificationLabel {
+    fn from(v: kreuzberg::ClassificationLabel) -> Self {
+        ClassificationLabel {
+            label: v.label.into(),
+            confidence: v.confidence.map(|x| x as _),
         }
     }
 }
@@ -5085,6 +5854,18 @@ impl From<kreuzberg::TextAnnotation> for TextAnnotation {
     }
 }
 
+impl From<kreuzberg::Entity> for Entity {
+    fn from(v: kreuzberg::Entity) -> Self {
+        Entity {
+            category: EntityCategory::from(v.category),
+            text: v.text.into(),
+            start: v.start as _,
+            end: v.end as _,
+            confidence: v.confidence.map(|x| x as _),
+        }
+    }
+}
+
 impl From<kreuzberg::ExtractionResult> for ExtractionResult {
     fn from(v: kreuzberg::ExtractionResult) -> Self {
         ExtractionResult {
@@ -5125,6 +5906,13 @@ impl From<kreuzberg::ExtractionResult> for ExtractionResult {
                 .code_intelligence
                 .map(|j| serde_json::to_string(&j).unwrap_or_default()),
             llm_usage: v.llm_usage.map(|vec| vec.into_iter().map(LlmUsage::from).collect()),
+            entities: v.entities.map(|vec| vec.into_iter().map(Entity::from).collect()),
+            summary: v.summary.map(DocumentSummary::from),
+            translation: v.translation.map(Translation::from),
+            page_classifications: v
+                .page_classifications
+                .map(|vec| vec.into_iter().map(PageClassification::from).collect()),
+            redaction_report: v.redaction_report.map(RedactionReport::from),
             formatted_content: v.formatted_content.map(|s| s.into()),
             ocr_internal_document: Default::default(),
         }
@@ -5227,6 +6015,8 @@ impl From<kreuzberg::ExtractedImage> for ExtractedImage {
             image_kind: v.image_kind.map(ImageKind::from),
             kind_confidence: v.kind_confidence.map(|x| x as _),
             cluster_id: v.cluster_id.map(|x| x as _),
+            caption: v.caption.map(|s| s.into()),
+            qr_codes: v.qr_codes.map(|vec| vec.into_iter().map(QrCode::from).collect()),
         }
     }
 }
@@ -5948,6 +6738,48 @@ impl From<kreuzberg::HierarchicalBlock> for HierarchicalBlock {
     }
 }
 
+impl From<kreuzberg::QrCode> for QrCode {
+    fn from(v: kreuzberg::QrCode) -> Self {
+        QrCode {
+            payload: v.payload.into(),
+            confidence: v.confidence.map(|x| x as _),
+            bbox: v.bbox.map(QrBoundingBox::from),
+        }
+    }
+}
+
+impl From<kreuzberg::QrBoundingBox> for QrBoundingBox {
+    fn from(v: kreuzberg::QrBoundingBox) -> Self {
+        QrBoundingBox {
+            x: v.x as _,
+            y: v.y as _,
+            width: v.width as _,
+            height: v.height as _,
+        }
+    }
+}
+
+impl From<kreuzberg::RedactionReport> for RedactionReport {
+    fn from(v: kreuzberg::RedactionReport) -> Self {
+        RedactionReport {
+            findings: v.findings.into_iter().map(RedactionFinding::from).collect(),
+            total_redacted: v.total_redacted as _,
+        }
+    }
+}
+
+impl From<kreuzberg::RedactionFinding> for RedactionFinding {
+    fn from(v: kreuzberg::RedactionFinding) -> Self {
+        RedactionFinding {
+            start: v.start as _,
+            end: v.end as _,
+            category: PiiCategory::from(v.category),
+            strategy: RedactionStrategy::from(v.strategy),
+            replacement_token: v.replacement_token.into(),
+        }
+    }
+}
+
 impl From<kreuzberg::CellChange> for CellChange {
     fn from(v: kreuzberg::CellChange) -> Self {
         CellChange {
@@ -5981,6 +6813,16 @@ impl From<kreuzberg::RevisionDelta> for RevisionDelta {
     }
 }
 
+impl From<kreuzberg::DocumentSummary> for DocumentSummary {
+    fn from(v: kreuzberg::DocumentSummary) -> Self {
+        DocumentSummary {
+            text: v.text.into(),
+            strategy: SummaryStrategy::from(v.strategy),
+            token_count: v.token_count.map(|x| x as _),
+        }
+    }
+}
+
 impl From<kreuzberg::Table> for Table {
     fn from(v: kreuzberg::Table) -> Self {
         Table {
@@ -6003,6 +6845,17 @@ impl From<kreuzberg::TableCell> for TableCell {
     }
 }
 
+impl From<kreuzberg::Translation> for Translation {
+    fn from(v: kreuzberg::Translation) -> Self {
+        Translation {
+            target_lang: v.target_lang.into(),
+            source_lang: v.source_lang.map(|s| s.into()),
+            content: v.content.into(),
+            formatted_content: v.formatted_content.map(|s| s.into()),
+        }
+    }
+}
+
 impl From<kreuzberg::ExtractedUri> for ExtractedUri {
     fn from(v: kreuzberg::ExtractedUri) -> Self {
         ExtractedUri {
@@ -6019,6 +6872,15 @@ impl From<kreuzberg::api::DetectResponse> for DetectResponse {
         DetectResponse {
             mime_type: v.mime_type.into(),
             filename: v.filename.map(|s| s.into()),
+        }
+    }
+}
+
+impl From<kreuzberg::chunking::semantic::merge::Segment<'_>> for Segment {
+    fn from(v: kreuzberg::chunking::semantic::merge::Segment<'_>) -> Self {
+        Segment {
+            text: v.text.into(),
+            byte_start: v.byte_start as _,
         }
     }
 }
@@ -6299,6 +7161,27 @@ impl From<kreuzberg::TableModel> for TableModel {
     }
 }
 
+impl From<kreuzberg::core::config::NerBackendKind> for NerBackendKind {
+    fn from(v: kreuzberg::core::config::NerBackendKind) -> Self {
+        match v {
+            kreuzberg::core::config::NerBackendKind::Onnx => NerBackendKind::Onnx,
+            kreuzberg::core::config::NerBackendKind::Llm => NerBackendKind::Llm,
+        }
+    }
+}
+
+impl From<kreuzberg::VlmFallbackPolicy> for VlmFallbackPolicy {
+    fn from(v: kreuzberg::VlmFallbackPolicy) -> Self {
+        match v {
+            kreuzberg::VlmFallbackPolicy::Disabled => VlmFallbackPolicy::Disabled,
+            kreuzberg::VlmFallbackPolicy::OnLowQuality { quality_threshold } => VlmFallbackPolicy::OnLowQuality {
+                quality_threshold: quality_threshold as _,
+            },
+            kreuzberg::VlmFallbackPolicy::Always => VlmFallbackPolicy::Always,
+        }
+    }
+}
+
 impl From<kreuzberg::ChunkerType> for ChunkerType {
     fn from(v: kreuzberg::ChunkerType) -> Self {
         match v {
@@ -6566,6 +7449,24 @@ impl From<kreuzberg::AnnotationKind> for AnnotationKind {
     }
 }
 
+impl From<kreuzberg::EntityCategory> for EntityCategory {
+    fn from(v: kreuzberg::EntityCategory) -> Self {
+        match v {
+            kreuzberg::EntityCategory::Person => EntityCategory::Person,
+            kreuzberg::EntityCategory::Organization => EntityCategory::Organization,
+            kreuzberg::EntityCategory::Location => EntityCategory::Location,
+            kreuzberg::EntityCategory::Date => EntityCategory::Date,
+            kreuzberg::EntityCategory::Time => EntityCategory::Time,
+            kreuzberg::EntityCategory::Money => EntityCategory::Money,
+            kreuzberg::EntityCategory::Percent => EntityCategory::Percent,
+            kreuzberg::EntityCategory::Email => EntityCategory::Email,
+            kreuzberg::EntityCategory::Phone => EntityCategory::Phone,
+            kreuzberg::EntityCategory::Url => EntityCategory::Url,
+            kreuzberg::EntityCategory::Custom(f0) => EntityCategory::Custom { field0: f0 },
+        }
+    }
+}
+
 impl From<kreuzberg::ExtractionMethod> for ExtractionMethod {
     fn from(v: kreuzberg::ExtractionMethod) -> Self {
         match v {
@@ -6795,6 +7696,37 @@ impl From<kreuzberg::PageUnitType> for PageUnitType {
     }
 }
 
+impl From<kreuzberg::RedactionStrategy> for RedactionStrategy {
+    fn from(v: kreuzberg::RedactionStrategy) -> Self {
+        match v {
+            kreuzberg::RedactionStrategy::Mask => RedactionStrategy::Mask,
+            kreuzberg::RedactionStrategy::Hash => RedactionStrategy::Hash,
+            kreuzberg::RedactionStrategy::TokenReplace => RedactionStrategy::TokenReplace,
+            kreuzberg::RedactionStrategy::Drop => RedactionStrategy::Drop,
+        }
+    }
+}
+
+impl From<kreuzberg::PiiCategory> for PiiCategory {
+    fn from(v: kreuzberg::PiiCategory) -> Self {
+        match v {
+            kreuzberg::PiiCategory::Email => PiiCategory::Email,
+            kreuzberg::PiiCategory::Phone => PiiCategory::Phone,
+            kreuzberg::PiiCategory::Ssn => PiiCategory::Ssn,
+            kreuzberg::PiiCategory::CreditCard => PiiCategory::CreditCard,
+            kreuzberg::PiiCategory::PostalCode => PiiCategory::PostalCode,
+            kreuzberg::PiiCategory::IpAddress => PiiCategory::IpAddress,
+            kreuzberg::PiiCategory::Iban => PiiCategory::Iban,
+            kreuzberg::PiiCategory::SwiftBic => PiiCategory::SwiftBic,
+            kreuzberg::PiiCategory::DateOfBirth => PiiCategory::DateOfBirth,
+            kreuzberg::PiiCategory::Person => PiiCategory::Person,
+            kreuzberg::PiiCategory::Organization => PiiCategory::Organization,
+            kreuzberg::PiiCategory::Location => PiiCategory::Location,
+            kreuzberg::PiiCategory::Custom(f0) => PiiCategory::Custom { field0: f0 },
+        }
+    }
+}
+
 impl From<kreuzberg::DiffLine> for DiffLine {
     fn from(v: kreuzberg::DiffLine) -> Self {
         match v {
@@ -6835,6 +7767,15 @@ impl From<kreuzberg::RevisionAnchor> for RevisionAnchor {
     }
 }
 
+impl From<kreuzberg::SummaryStrategy> for SummaryStrategy {
+    fn from(v: kreuzberg::SummaryStrategy) -> Self {
+        match v {
+            kreuzberg::SummaryStrategy::Extractive => SummaryStrategy::Extractive,
+            kreuzberg::SummaryStrategy::Abstractive => SummaryStrategy::Abstractive,
+        }
+    }
+}
+
 impl From<kreuzberg::UriKind> for UriKind {
     fn from(v: kreuzberg::UriKind) -> Self {
         match v {
@@ -6844,6 +7785,17 @@ impl From<kreuzberg::UriKind> for UriKind {
             kreuzberg::UriKind::Citation => UriKind::Citation,
             kreuzberg::UriKind::Reference => UriKind::Reference,
             kreuzberg::UriKind::Email => UriKind::Email,
+        }
+    }
+}
+
+impl From<kreuzberg::llm::region_extractor::RegionKind> for RegionKind {
+    fn from(v: kreuzberg::llm::region_extractor::RegionKind) -> Self {
+        match v {
+            kreuzberg::llm::region_extractor::RegionKind::Figure => RegionKind::Figure,
+            kreuzberg::llm::region_extractor::RegionKind::DenseTable => RegionKind::DenseTable,
+            kreuzberg::llm::region_extractor::RegionKind::ComplexLayout => RegionKind::ComplexLayout,
+            kreuzberg::llm::region_extractor::RegionKind::Caption => RegionKind::Caption,
         }
     }
 }
@@ -6935,6 +7887,27 @@ impl From<AccelerationConfig> for kreuzberg::AccelerationConfig {
     }
 }
 
+impl From<CaptioningConfig> for kreuzberg::core::config::CaptioningConfig {
+    fn from(v: CaptioningConfig) -> Self {
+        kreuzberg::core::config::CaptioningConfig {
+            llm: v.llm.into(),
+            prompt: v.prompt.map(Into::into),
+            min_image_area: v.min_image_area as _,
+        }
+    }
+}
+
+impl From<PageClassificationConfig> for kreuzberg::core::config::PageClassificationConfig {
+    fn from(v: PageClassificationConfig) -> Self {
+        kreuzberg::core::config::PageClassificationConfig {
+            prompt_template: v.prompt_template.map(Into::into),
+            labels: v.labels.into_iter().map(Into::into).collect(),
+            multi_label: v.multi_label as _,
+            llm: v.llm.into(),
+        }
+    }
+}
+
 impl From<ContentFilterConfig> for kreuzberg::ContentFilterConfig {
     fn from(v: ContentFilterConfig) -> Self {
         kreuzberg::ContentFilterConfig {
@@ -6992,6 +7965,13 @@ impl From<ExtractionConfig> for kreuzberg::ExtractionConfig {
             max_archive_depth: v.max_archive_depth as _,
             tree_sitter: v.tree_sitter.map(Into::into),
             structured_extraction: v.structured_extraction.map(Into::into),
+            ner: v.ner.map(Into::into),
+            redaction: v.redaction.map(Into::into),
+            summarization: v.summarization.map(Into::into),
+            translation: v.translation.map(Into::into),
+            page_classification: v.page_classification.map(Into::into),
+            captioning: v.captioning.map(Into::into),
+            qr_codes: v.qr_codes.map(|x| x as _),
             cancel_token: Default::default(),
             ..Default::default()
         }
@@ -7137,6 +8117,18 @@ impl From<StructuredExtractionConfig> for kreuzberg::StructuredExtractionConfig 
     }
 }
 
+impl From<NerConfig> for kreuzberg::core::config::NerConfig {
+    fn from(v: NerConfig) -> Self {
+        kreuzberg::core::config::NerConfig {
+            backend: v.backend.into(),
+            categories: v.categories.into_iter().map(Into::into).collect(),
+            model: v.model.map(Into::into),
+            llm: v.llm.map(Into::into),
+            custom_labels: v.custom_labels.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
 impl From<OcrQualityThresholds> for kreuzberg::OcrQualityThresholds {
     fn from(v: OcrQualityThresholds) -> Self {
         kreuzberg::OcrQualityThresholds {
@@ -7203,8 +8195,8 @@ impl From<OcrConfig> for kreuzberg::OcrConfig {
             quality_thresholds: v.quality_thresholds.map(Into::into),
             pipeline: v.pipeline.map(Into::into),
             auto_rotate: v.auto_rotate as _,
+            vlm_fallback: v.vlm_fallback.into(),
             vlm_config: v.vlm_config.map(Into::into),
-            vlm_fallback: Default::default(),
             vlm_prompt: v.vlm_prompt.map(Into::into),
             acceleration: v.acceleration.map(Into::into),
             tessdata_bytes: v
@@ -7294,6 +8286,60 @@ impl From<EmbeddingConfig> for kreuzberg::EmbeddingConfig {
             cache_dir: v.cache_dir.map(std::path::PathBuf::from),
             acceleration: v.acceleration.map(Into::into),
             max_embed_duration_secs: v.max_embed_duration_secs.map(|x| x as _),
+        }
+    }
+}
+
+impl From<RedactionConfig> for kreuzberg::core::config::RedactionConfig {
+    fn from(v: RedactionConfig) -> Self {
+        kreuzberg::core::config::RedactionConfig {
+            categories: v.categories.into_iter().map(Into::into).collect(),
+            strategy: v.strategy.into(),
+            ner: v.ner.map(Into::into),
+            preserve_offsets: v.preserve_offsets as _,
+            custom_terms: v.custom_terms.into_iter().map(Into::into).collect(),
+            custom_patterns: v.custom_patterns.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<RedactionTerm> for kreuzberg::core::config::redaction::RedactionTerm {
+    fn from(v: RedactionTerm) -> Self {
+        kreuzberg::core::config::redaction::RedactionTerm {
+            label: v.label.into(),
+            value: v.value.into(),
+            case_sensitive: v.case_sensitive as _,
+        }
+    }
+}
+
+impl From<RedactionPattern> for kreuzberg::core::config::redaction::RedactionPattern {
+    fn from(v: RedactionPattern) -> Self {
+        kreuzberg::core::config::redaction::RedactionPattern {
+            label: v.label.into(),
+            pattern: v.pattern.into(),
+            case_sensitive: v.case_sensitive as _,
+        }
+    }
+}
+
+impl From<SummarizationConfig> for kreuzberg::core::config::SummarizationConfig {
+    fn from(v: SummarizationConfig) -> Self {
+        kreuzberg::core::config::SummarizationConfig {
+            strategy: v.strategy.into(),
+            max_tokens: v.max_tokens.map(|x| x as _),
+            llm: v.llm.map(Into::into),
+        }
+    }
+}
+
+impl From<TranslationConfig> for kreuzberg::core::config::TranslationConfig {
+    fn from(v: TranslationConfig) -> Self {
+        kreuzberg::core::config::TranslationConfig {
+            target_lang: v.target_lang.into(),
+            source_lang: v.source_lang.map(Into::into),
+            preserve_markup: v.preserve_markup as _,
+            llm: v.llm.into(),
         }
     }
 }
@@ -7394,6 +8440,24 @@ impl From<PdfAnnotation> for kreuzberg::PdfAnnotation {
             content: v.content.map(Into::into),
             page_number: v.page_number as _,
             bounding_box: v.bounding_box.map(Into::into),
+        }
+    }
+}
+
+impl From<PageClassification> for kreuzberg::PageClassification {
+    fn from(v: PageClassification) -> Self {
+        kreuzberg::PageClassification {
+            page_number: v.page_number as _,
+            labels: v.labels.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<ClassificationLabel> for kreuzberg::ClassificationLabel {
+    fn from(v: ClassificationLabel) -> Self {
+        kreuzberg::ClassificationLabel {
+            label: v.label.into(),
+            confidence: v.confidence.map(|x| x as _),
         }
     }
 }
@@ -7545,6 +8609,18 @@ impl From<TextAnnotation> for kreuzberg::TextAnnotation {
     }
 }
 
+impl From<Entity> for kreuzberg::Entity {
+    fn from(v: Entity) -> Self {
+        kreuzberg::Entity {
+            category: v.category.into(),
+            text: v.text.into(),
+            start: v.start as _,
+            end: v.end as _,
+            confidence: v.confidence.map(|x| x as _),
+        }
+    }
+}
+
 #[allow(clippy::needless_update)]
 impl From<ExtractionResult> for kreuzberg::ExtractionResult {
     fn from(v: ExtractionResult) -> Self {
@@ -7582,6 +8658,13 @@ impl From<ExtractionResult> for kreuzberg::ExtractionResult {
                 .as_deref()
                 .and_then(|s| serde_json::from_str(s).ok()),
             llm_usage: v.llm_usage.map(|vec| vec.into_iter().map(Into::into).collect()),
+            entities: v.entities.map(|vec| vec.into_iter().map(Into::into).collect()),
+            summary: v.summary.map(Into::into),
+            translation: v.translation.map(Into::into),
+            page_classifications: v
+                .page_classifications
+                .map(|vec| vec.into_iter().map(Into::into).collect()),
+            redaction_report: v.redaction_report.map(Into::into),
             formatted_content: v.formatted_content.map(Into::into),
             ocr_internal_document: Default::default(),
             ..Default::default()
@@ -7685,6 +8768,8 @@ impl From<ExtractedImage> for kreuzberg::ExtractedImage {
             image_kind: v.image_kind.map(Into::into),
             kind_confidence: v.kind_confidence.map(|x| x as _),
             cluster_id: v.cluster_id.map(|x| x as _),
+            caption: v.caption.map(Into::into),
+            qr_codes: v.qr_codes.map(|vec| vec.into_iter().map(Into::into).collect()),
         }
     }
 }
@@ -8247,6 +9332,48 @@ impl From<HierarchicalBlock> for kreuzberg::HierarchicalBlock {
     }
 }
 
+impl From<QrCode> for kreuzberg::QrCode {
+    fn from(v: QrCode) -> Self {
+        kreuzberg::QrCode {
+            payload: v.payload.into(),
+            confidence: v.confidence.map(|x| x as _),
+            bbox: v.bbox.map(Into::into),
+        }
+    }
+}
+
+impl From<QrBoundingBox> for kreuzberg::QrBoundingBox {
+    fn from(v: QrBoundingBox) -> Self {
+        kreuzberg::QrBoundingBox {
+            x: v.x as _,
+            y: v.y as _,
+            width: v.width as _,
+            height: v.height as _,
+        }
+    }
+}
+
+impl From<RedactionReport> for kreuzberg::RedactionReport {
+    fn from(v: RedactionReport) -> Self {
+        kreuzberg::RedactionReport {
+            findings: v.findings.into_iter().map(Into::into).collect(),
+            total_redacted: v.total_redacted as _,
+        }
+    }
+}
+
+impl From<RedactionFinding> for kreuzberg::RedactionFinding {
+    fn from(v: RedactionFinding) -> Self {
+        kreuzberg::RedactionFinding {
+            start: v.start as _,
+            end: v.end as _,
+            category: v.category.into(),
+            strategy: v.strategy.into(),
+            replacement_token: v.replacement_token.into(),
+        }
+    }
+}
+
 impl From<CellChange> for kreuzberg::CellChange {
     fn from(v: CellChange) -> Self {
         kreuzberg::CellChange {
@@ -8280,6 +9407,16 @@ impl From<RevisionDelta> for kreuzberg::RevisionDelta {
     }
 }
 
+impl From<DocumentSummary> for kreuzberg::DocumentSummary {
+    fn from(v: DocumentSummary) -> Self {
+        kreuzberg::DocumentSummary {
+            text: v.text.into(),
+            strategy: v.strategy.into(),
+            token_count: v.token_count.map(|x| x as _),
+        }
+    }
+}
+
 impl From<Table> for kreuzberg::Table {
     fn from(v: Table) -> Self {
         kreuzberg::Table {
@@ -8291,6 +9428,17 @@ impl From<Table> for kreuzberg::Table {
             markdown: v.markdown.into(),
             page_number: v.page_number as _,
             bounding_box: v.bounding_box.map(Into::into),
+        }
+    }
+}
+
+impl From<Translation> for kreuzberg::Translation {
+    fn from(v: Translation) -> Self {
+        kreuzberg::Translation {
+            target_lang: v.target_lang.into(),
+            source_lang: v.source_lang.map(Into::into),
+            content: v.content.into(),
+            formatted_content: v.formatted_content.map(Into::into),
         }
     }
 }
@@ -8420,6 +9568,27 @@ impl From<TableModel> for kreuzberg::TableModel {
             TableModel::SlanetPlus => kreuzberg::TableModel::SlanetPlus,
             TableModel::SlanetAuto => kreuzberg::TableModel::SlanetAuto,
             TableModel::Disabled => kreuzberg::TableModel::Disabled,
+        }
+    }
+}
+
+impl From<NerBackendKind> for kreuzberg::core::config::NerBackendKind {
+    fn from(v: NerBackendKind) -> Self {
+        match v {
+            NerBackendKind::Onnx => kreuzberg::core::config::NerBackendKind::Onnx,
+            NerBackendKind::Llm => kreuzberg::core::config::NerBackendKind::Llm,
+        }
+    }
+}
+
+impl From<VlmFallbackPolicy> for kreuzberg::VlmFallbackPolicy {
+    fn from(v: VlmFallbackPolicy) -> Self {
+        match v {
+            VlmFallbackPolicy::Disabled => kreuzberg::VlmFallbackPolicy::Disabled,
+            VlmFallbackPolicy::OnLowQuality { quality_threshold } => kreuzberg::VlmFallbackPolicy::OnLowQuality {
+                quality_threshold: quality_threshold as _,
+            },
+            VlmFallbackPolicy::Always => kreuzberg::VlmFallbackPolicy::Always,
         }
     }
 }
@@ -8677,6 +9846,24 @@ impl From<AnnotationKind> for kreuzberg::AnnotationKind {
     }
 }
 
+impl From<EntityCategory> for kreuzberg::EntityCategory {
+    fn from(v: EntityCategory) -> Self {
+        match v {
+            EntityCategory::Person => kreuzberg::EntityCategory::Person,
+            EntityCategory::Organization => kreuzberg::EntityCategory::Organization,
+            EntityCategory::Location => kreuzberg::EntityCategory::Location,
+            EntityCategory::Date => kreuzberg::EntityCategory::Date,
+            EntityCategory::Time => kreuzberg::EntityCategory::Time,
+            EntityCategory::Money => kreuzberg::EntityCategory::Money,
+            EntityCategory::Percent => kreuzberg::EntityCategory::Percent,
+            EntityCategory::Email => kreuzberg::EntityCategory::Email,
+            EntityCategory::Phone => kreuzberg::EntityCategory::Phone,
+            EntityCategory::Url => kreuzberg::EntityCategory::Url,
+            EntityCategory::Custom { field0 } => kreuzberg::EntityCategory::Custom(field0),
+        }
+    }
+}
+
 impl From<ExtractionMethod> for kreuzberg::ExtractionMethod {
     fn from(v: ExtractionMethod) -> Self {
         match v {
@@ -8866,6 +10053,37 @@ impl From<PageUnitType> for kreuzberg::PageUnitType {
     }
 }
 
+impl From<RedactionStrategy> for kreuzberg::RedactionStrategy {
+    fn from(v: RedactionStrategy) -> Self {
+        match v {
+            RedactionStrategy::Mask => kreuzberg::RedactionStrategy::Mask,
+            RedactionStrategy::Hash => kreuzberg::RedactionStrategy::Hash,
+            RedactionStrategy::TokenReplace => kreuzberg::RedactionStrategy::TokenReplace,
+            RedactionStrategy::Drop => kreuzberg::RedactionStrategy::Drop,
+        }
+    }
+}
+
+impl From<PiiCategory> for kreuzberg::PiiCategory {
+    fn from(v: PiiCategory) -> Self {
+        match v {
+            PiiCategory::Email => kreuzberg::PiiCategory::Email,
+            PiiCategory::Phone => kreuzberg::PiiCategory::Phone,
+            PiiCategory::Ssn => kreuzberg::PiiCategory::Ssn,
+            PiiCategory::CreditCard => kreuzberg::PiiCategory::CreditCard,
+            PiiCategory::PostalCode => kreuzberg::PiiCategory::PostalCode,
+            PiiCategory::IpAddress => kreuzberg::PiiCategory::IpAddress,
+            PiiCategory::Iban => kreuzberg::PiiCategory::Iban,
+            PiiCategory::SwiftBic => kreuzberg::PiiCategory::SwiftBic,
+            PiiCategory::DateOfBirth => kreuzberg::PiiCategory::DateOfBirth,
+            PiiCategory::Person => kreuzberg::PiiCategory::Person,
+            PiiCategory::Organization => kreuzberg::PiiCategory::Organization,
+            PiiCategory::Location => kreuzberg::PiiCategory::Location,
+            PiiCategory::Custom { field0 } => kreuzberg::PiiCategory::Custom(field0),
+        }
+    }
+}
+
 impl From<DiffLine> for kreuzberg::DiffLine {
     fn from(v: DiffLine) -> Self {
         match v {
@@ -8902,6 +10120,15 @@ impl From<RevisionAnchor> for kreuzberg::RevisionAnchor {
                 index: index as _,
                 name: if name.is_empty() { None } else { Some(name) },
             },
+        }
+    }
+}
+
+impl From<SummaryStrategy> for kreuzberg::SummaryStrategy {
+    fn from(v: SummaryStrategy) -> Self {
+        match v {
+            SummaryStrategy::Extractive => kreuzberg::SummaryStrategy::Extractive,
+            SummaryStrategy::Abstractive => kreuzberg::SummaryStrategy::Abstractive,
         }
     }
 }
@@ -9173,6 +10400,31 @@ pub fn get_extensions_for_mime(mime_type: String) -> Result<Vec<String>, String>
         .map_err(|e| e.to_string())
 }
 
+/// Detect QR codes in the bytes of an `ExtractedImage`.
+///
+/// `format_hint` is currently unused — the `image` crate auto-detects the
+/// container format from magic bytes — but the parameter is retained so future
+/// backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+/// break.
+///
+/// Returns an empty vector on any of:
+///
+/// - Empty input.
+/// - Image-decode failure.
+/// - No QR grids detected.
+/// - All detected grids fail to decode.
+///
+/// Successfully decoded QR codes carry their payload, a confidence of `1.0`
+/// (rqrr does not expose per-grid confidence; a successful decode is treated
+/// as high-confidence by convention), and the pixel-space bounding box derived
+/// from the four corner points of the grid.
+pub fn detect_qr_codes(image_bytes: Vec<u8>, _format_hint: Option<String>) -> Vec<QrCode> {
+    (|v| v.into_iter().map(QrCode::from).collect())(kreuzberg::extractors::qr::detect_qr_codes(
+        &image_bytes,
+        _format_hint.as_deref(),
+    ))
+}
+
 /// List the names of all registered embedding backends.
 ///
 /// Used by `kreuzberg-cli`, the api/mcp endpoints, and generated language
@@ -9200,6 +10452,19 @@ pub fn list_document_extractors() -> Result<Vec<String>, String> {
 pub fn list_ocr_backends() -> Result<Vec<String>, String> {
     kreuzberg::list_ocr_backends()
         .map(|v| v.into_iter().map(|s| s.to_string()).collect::<Vec<_>>())
+        .map_err(|e| e.to_string())
+}
+
+/// Register every built-in post-processor enabled by the active feature set.
+///
+/// This is the single entry point that callers (including
+/// `register_default_post_processors`) use to populate the global
+/// post-processor registry with the in-tree built-ins. Each submodule's own
+/// `register` function is gated by its feature flag so this aggregate stays
+/// safe to call on any target.
+pub fn register_builtin() -> Result<(), String> {
+    kreuzberg::plugins::processor::builtin::register_builtin()
+        .map(|v| v)
         .map_err(|e| e.to_string())
 }
 
@@ -9236,6 +10501,151 @@ pub fn list_validators() -> Result<Vec<String>, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Run page classification against an extraction result.
+///
+/// Mutates `result.page_classifications` with one entry per non-empty page and
+/// appends every LLM call's usage to `result.llm_usage`.
+///
+/// **Errors:**
+///
+/// Returns the first error encountered when rendering the prompt or calling the
+/// LLM. Partially produced classifications are discarded so callers do not see
+/// a half-populated vector.
+pub async fn classify_pages(result: ExtractionResult, config: PageClassificationConfig) -> Result<(), String> {
+    kreuzberg::text::classification::classify_pages(
+        &kreuzberg::ExtractionResult::from(result),
+        &kreuzberg::core::config::PageClassificationConfig::from(config),
+    )
+    .await
+    .map(|v| v)
+    .map_err(|e| e.to_string())
+}
+
+/// Eagerly download a NER model into the kreuzberg cache.
+///
+/// `name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
+/// CLI flag `kreuzberg warm --ner` delegates here.
+pub fn download_model(name: String, cache_dir: Option<String>) -> Result<String, String> {
+    kreuzberg::text::ner::download_model(&name, cache_dir.map(std::path::PathBuf::from))
+        .map(|v| v.to_string())
+        .map_err(|e| e.to_string())
+}
+
+/// Pinned default NER model identifier.
+pub fn default_model_name() -> String {
+    kreuzberg::text::ner::default_model_name().to_string()
+}
+
+/// All NER models kreuzberg knows about (used by `--all-ner-models`).
+pub fn known_models() -> Vec<String> {
+    kreuzberg::text::ner::known_models()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>()
+}
+
+/// Run pattern redaction (and optional NER-driven redaction) over `result` and
+/// rewrite every textual field. Populates `result.redaction_report`.
+pub async fn redact(result: ExtractionResult, config: RedactionConfig) -> Result<(), String> {
+    kreuzberg::text::redaction::redact(
+        &kreuzberg::ExtractionResult::from(result),
+        &kreuzberg::core::config::RedactionConfig::from(config),
+    )
+    .await
+    .map(|v| v)
+    .map_err(|e| e.to_string())
+}
+
+pub fn find_all(text: String) -> Vec<PatternMatch> {
+    (|v| v.into_iter().map(PatternMatch::from).collect())(kreuzberg::text::redaction::patterns::ssn::find_all(&text))
+}
+
+/// Scan `text` for every PII category in `categories` and return all matches
+/// in source-byte order.
+///
+/// When `categories` is empty every supported regex-detectable category fires.
+/// Person / Organization / Location are *not* covered by the pattern engine —
+/// they must be supplied by a NER backend through the redaction engine.
+pub fn scan_text(text: String, categories: Vec<PiiCategory>) -> Vec<PatternMatch> {
+    (|v| v.into_iter().map(PatternMatch::from).collect())(kreuzberg::text::redaction::patterns::scan_text(
+        &text,
+        unsafe { std::mem::transmute::<*const PiiCategory, *const kreuzberg::PiiCategory>(categories.as_ptr()) },
+    ))
+}
+
+/// Apply `strategy` to `original` for `category` and return the replacement token.
+///
+/// The optional `counter` is required for `RedactionStrategy.TokenReplace`;
+/// other strategies ignore it.
+pub fn apply_strategy(
+    strategy: RedactionStrategy,
+    original: String,
+    category: PiiCategory,
+    counter: TokenCounter,
+) -> String {
+    kreuzberg::text::redaction::strategy::apply_strategy(
+        unsafe { std::mem::transmute::<RedactionStrategy, kreuzberg::RedactionStrategy>(strategy) },
+        &original,
+        unsafe { std::mem::transmute::<&PiiCategory, &kreuzberg::PiiCategory>(&category) },
+        &counter.inner,
+    )
+    .to_string()
+}
+
+/// Score and return the top-N sentences from `text`, joined in original order.
+///
+/// `language` is an ISO 639 (or locale) code used to pick a stopword list;
+/// pass `null` (or an unknown code) to fall back to English.
+/// `max_tokens` bounds the summary length by whitespace-separated tokens;
+/// `null` falls back to `DEFAULT_MAX_TOKENS`.
+pub fn summarize(text: String, language: Option<String>, max_tokens: Option<i64>) -> Option<String> {
+    kreuzberg::text::summarization::textrank::summarize(&text, language.as_deref(), max_tokens.map(|v| v as u32))
+        .map(|s| s.to_string())
+}
+
+/// Count whitespace-separated tokens (used for token-budget bookkeeping by
+/// callers).
+pub fn token_count(text: String) -> i64 {
+    kreuzberg::text::summarization::textrank::token_count(&text) as i64
+}
+
+/// Run abstractive summarisation against the configured LLM.
+///
+/// `text` is the document content to summarise (already extracted by the
+/// pipeline). `max_tokens` softly bounds the requested summary length in
+/// natural-language tokens; `null` uses `DEFAULT_MAX_TOKENS`.
+///
+/// Returns the summary string and the (optional) usage record.
+///
+/// **Errors:**
+///
+/// Propagates any LLM client / request error returned by
+/// `complete_text`.
+pub async fn summarize_with_llm(
+    text: String,
+    llm_config: LlmConfig,
+    max_tokens: Option<i64>,
+) -> Result<String, String> {
+    let _ = (text, llm_config, max_tokens);
+    Ok(String::new())
+}
+
+/// Translate the extraction result in place.
+///
+/// Populates `result.translation` with the translated `content`, optionally the
+/// translated `formatted_content` (when `preserve_markup = true`), and rewrites
+/// every chunk's `content` field. Every LLM call's usage is appended to
+/// `result.llm_usage`.
+pub async fn translate_result(result: ExtractionResult, config: TranslationConfig) -> Result<(), String> {
+    kreuzberg::text::translation::translate_result(
+        &kreuzberg::ExtractionResult::from(result),
+        &kreuzberg::core::config::TranslationConfig::from(config),
+    )
+    .await
+    .map(|v| v)
+    .map_err(|e| e.to_string())
+}
+
 /// Compare two extraction results and return a structured diff.
 ///
 /// The comparison is purely structural — no I/O, no side effects. All fields
@@ -9246,6 +10656,106 @@ pub fn compare(a: ExtractionResult, b: ExtractionResult, opts: DiffOptions) -> E
         &kreuzberg::ExtractionResult::from(b),
         &kreuzberg::DiffOptions::from(opts),
     ))
+}
+
+/// Extract content from a pre-cropped image region using a VLM.
+///
+/// The caller is responsible for cropping the page image to the region's bounding
+/// box before calling this function. The `image_bytes` parameter must contain the
+/// raw bytes of the **cropped** region image (JPEG, PNG, WebP, etc.).
+///
+/// **Returns:**
+///
+/// Extracted Markdown text from the VLM, or an error if the VLM call fails.
+///
+/// **Errors:**
+///
+/// - `Ocr` if the VLM call fails or returns no content.
+/// - `MissingDependency` if the liter-llm client cannot
+///   be initialised.
+pub async fn extract_region_with_vlm(
+    image_bytes: Vec<u8>,
+    image_mime: String,
+    region_kind: RegionKind,
+    llm_config: LlmConfig,
+    custom_prompt: Option<String>,
+) -> Result<String, String> {
+    kreuzberg::llm::region_extractor::extract_region_with_vlm(
+        &image_bytes,
+        &image_mime,
+        unsafe { std::mem::transmute::<RegionKind, kreuzberg::llm::region_extractor::RegionKind>(region_kind) },
+        &kreuzberg::LlmConfig::from(llm_config),
+        custom_prompt.as_deref(),
+    )
+    .await
+    .map(|v| v.to_string())
+    .map_err(|e| e.to_string())
+}
+
+/// Same as `extract_region_with_vlm`, but also returns the `LlmUsage` data captured
+/// from the underlying VLM call.
+///
+/// Callers that need to track token / cost data per call (for example the captioning
+/// post-processor, which appends every call's usage to
+/// `ExtractionResult.llm_usage`) should
+/// prefer this variant. The plain `extract_region_with_vlm` is kept for callers that
+/// only care about the markdown output (PDF region splicing).
+///
+/// **Errors:**
+///
+/// Same as `extract_region_with_vlm`.
+pub async fn extract_region_with_vlm_usage(
+    image_bytes: Vec<u8>,
+    image_mime: String,
+    region_kind: RegionKind,
+    llm_config: LlmConfig,
+    custom_prompt: Option<String>,
+) -> Result<String, String> {
+    let _ = (image_bytes, image_mime, region_kind, llm_config, custom_prompt);
+    Ok(String::new())
+}
+
+/// Send a free-form prompt to the configured LLM with a JSON-schema response
+/// constraint and return the parsed JSON value plus captured usage.
+///
+/// This is the shared helper used by LLM-backed post-processors (page
+/// classification, LLM-driven NER, etc.) that need structured output but do not
+/// want to depend on `StructuredExtractionConfig`'s schema/prompt machinery.
+///
+///   distinguish multiple structured outputs).
+///
+/// - `schema` — the JSON schema the LLM is required to obey.
+/// - `source` — label used for the returned `LlmUsage` entry.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// the response contains no content, or the response is not parseable JSON.
+pub async fn complete_with_json_schema(
+    llm_config: LlmConfig,
+    prompt: String,
+    schema_name: String,
+    schema: String,
+    source: String,
+) -> Result<String, String> {
+    let _ = (llm_config, prompt, schema_name, schema, source);
+    Ok(String::new())
+}
+
+/// Send a single user prompt to the configured LLM and return the response text
+/// along with the captured usage metadata.
+///
+/// The `source` argument labels the `LlmUsage` entry that is returned so
+/// callers can aggregate per-feature spend (`"translation"`, `"summarisation"`,
+/// etc.). The helper performs a single non-streaming chat completion request.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// or the response does not contain assistant content.
+pub async fn complete_text(llm_config: LlmConfig, prompt: String, source: String) -> Result<String, String> {
+    let _ = (llm_config, prompt, source);
+    Ok(String::new())
 }
 
 /// Generate embeddings asynchronously for a list of text strings.
@@ -9355,6 +10865,20 @@ pub fn create_acceleration_config_from_json(json: String) -> Result<Acceleration
 }
 
 #[frb]
+pub fn create_captioning_config_from_json(json: String) -> Result<CaptioningConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::CaptioningConfig>(&json)
+        .map(CaptioningConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_page_classification_config_from_json(json: String) -> Result<PageClassificationConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::PageClassificationConfig>(&json)
+        .map(PageClassificationConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
 pub fn create_content_filter_config_from_json(json: String) -> Result<ContentFilterConfig, String> {
     serde_json::from_str::<kreuzberg::ContentFilterConfig>(&json)
         .map(ContentFilterConfig::from)
@@ -9446,6 +10970,13 @@ pub fn create_structured_extraction_config_from_json(json: String) -> Result<Str
 }
 
 #[frb]
+pub fn create_ner_config_from_json(json: String) -> Result<NerConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::NerConfig>(&json)
+        .map(NerConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
 pub fn create_ocr_quality_thresholds_from_json(json: String) -> Result<OcrQualityThresholds, String> {
     serde_json::from_str::<kreuzberg::OcrQualityThresholds>(&json)
         .map(OcrQualityThresholds::from)
@@ -9512,6 +11043,41 @@ pub fn create_chunking_config_from_json(json: String) -> Result<ChunkingConfig, 
 pub fn create_embedding_config_from_json(json: String) -> Result<EmbeddingConfig, String> {
     serde_json::from_str::<kreuzberg::EmbeddingConfig>(&json)
         .map(EmbeddingConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_redaction_config_from_json(json: String) -> Result<RedactionConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::RedactionConfig>(&json)
+        .map(RedactionConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_redaction_term_from_json(json: String) -> Result<RedactionTerm, String> {
+    serde_json::from_str::<kreuzberg::core::config::redaction::RedactionTerm>(&json)
+        .map(RedactionTerm::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_redaction_pattern_from_json(json: String) -> Result<RedactionPattern, String> {
+    serde_json::from_str::<kreuzberg::core::config::redaction::RedactionPattern>(&json)
+        .map(RedactionPattern::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_summarization_config_from_json(json: String) -> Result<SummarizationConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::SummarizationConfig>(&json)
+        .map(SummarizationConfig::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_translation_config_from_json(json: String) -> Result<TranslationConfig, String> {
+    serde_json::from_str::<kreuzberg::core::config::TranslationConfig>(&json)
+        .map(TranslationConfig::from)
         .map_err(|e| e.to_string())
 }
 
@@ -9600,6 +11166,20 @@ pub fn create_pdf_annotation_from_json(json: String) -> Result<PdfAnnotation, St
 }
 
 #[frb]
+pub fn create_page_classification_from_json(json: String) -> Result<PageClassification, String> {
+    serde_json::from_str::<kreuzberg::PageClassification>(&json)
+        .map(PageClassification::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_classification_label_from_json(json: String) -> Result<ClassificationLabel, String> {
+    serde_json::from_str::<kreuzberg::ClassificationLabel>(&json)
+        .map(ClassificationLabel::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
 pub fn create_djot_content_from_json(json: String) -> Result<DjotContent, String> {
     serde_json::from_str::<kreuzberg::DjotContent>(&json)
         .map(DjotContent::from)
@@ -9680,6 +11260,13 @@ pub fn create_grid_cell_from_json(json: String) -> Result<GridCell, String> {
 pub fn create_text_annotation_from_json(json: String) -> Result<TextAnnotation, String> {
     serde_json::from_str::<kreuzberg::TextAnnotation>(&json)
         .map(TextAnnotation::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_entity_from_json(json: String) -> Result<Entity, String> {
+    serde_json::from_str::<kreuzberg::Entity>(&json)
+        .map(Entity::from)
         .map_err(|e| e.to_string())
 }
 
@@ -10125,6 +11712,34 @@ pub fn create_hierarchical_block_from_json(json: String) -> Result<HierarchicalB
 }
 
 #[frb]
+pub fn create_qr_code_from_json(json: String) -> Result<QrCode, String> {
+    serde_json::from_str::<kreuzberg::QrCode>(&json)
+        .map(QrCode::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_qr_bounding_box_from_json(json: String) -> Result<QrBoundingBox, String> {
+    serde_json::from_str::<kreuzberg::QrBoundingBox>(&json)
+        .map(QrBoundingBox::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_redaction_report_from_json(json: String) -> Result<RedactionReport, String> {
+    serde_json::from_str::<kreuzberg::RedactionReport>(&json)
+        .map(RedactionReport::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_redaction_finding_from_json(json: String) -> Result<RedactionFinding, String> {
+    serde_json::from_str::<kreuzberg::RedactionFinding>(&json)
+        .map(RedactionFinding::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
 pub fn create_cell_change_from_json(json: String) -> Result<CellChange, String> {
     serde_json::from_str::<kreuzberg::CellChange>(&json)
         .map(CellChange::from)
@@ -10146,6 +11761,13 @@ pub fn create_revision_delta_from_json(json: String) -> Result<RevisionDelta, St
 }
 
 #[frb]
+pub fn create_document_summary_from_json(json: String) -> Result<DocumentSummary, String> {
+    serde_json::from_str::<kreuzberg::DocumentSummary>(&json)
+        .map(DocumentSummary::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
 pub fn create_table_from_json(json: String) -> Result<Table, String> {
     serde_json::from_str::<kreuzberg::Table>(&json)
         .map(Table::from)
@@ -10156,6 +11778,13 @@ pub fn create_table_from_json(json: String) -> Result<Table, String> {
 pub fn create_table_cell_from_json(json: String) -> Result<TableCell, String> {
     serde_json::from_str::<kreuzberg::TableCell>(&json)
         .map(TableCell::from)
+        .map_err(|e| e.to_string())
+}
+
+#[frb]
+pub fn create_translation_from_json(json: String) -> Result<Translation, String> {
+    serde_json::from_str::<kreuzberg::Translation>(&json)
+        .map(Translation::from)
         .map_err(|e| e.to_string())
 }
 

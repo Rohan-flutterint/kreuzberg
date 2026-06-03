@@ -459,6 +459,54 @@ object Kreuzberg {
         withContext(Dispatchers.IO) { getExtensionsForMime(mimeType) }
 
     /**
+     * Detect QR codes in the bytes of an `ExtractedImage`.
+     *
+     * `format_hint` is currently unused — the `image` crate auto-detects the
+     * container format from magic bytes — but the parameter is retained so future
+     * backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+     * break.
+     *
+     * Returns an empty vector on any of:
+     *
+     * - Empty input.
+     * - Image-decode failure.
+     * - No QR grids detected.
+     * - All detected grids fail to decode.
+     *
+     * Successfully decoded QR codes carry their payload, a confidence of `1.0`
+     * (rqrr does not expose per-grid confidence; a successful decode is treated
+     * as high-confidence by convention), and the pixel-space bounding box derived
+     * from the four corner points of the grid.
+     */
+    fun detectQrCodes(imageBytes: ByteArray, formatHint: String? = null): List<QrCode> {
+        val resultJson = KreuzbergBridge.nativeDetectQrCodes(imageBytes, formatHint ?: "")
+        return mapper.readValue(resultJson, object : TypeReference<List<QrCode>>() {})
+    }
+
+    /**
+     * Detect QR codes in the bytes of an `ExtractedImage`.
+     *
+     * `format_hint` is currently unused — the `image` crate auto-detects the
+     * container format from magic bytes — but the parameter is retained so future
+     * backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+     * break.
+     *
+     * Returns an empty vector on any of:
+     *
+     * - Empty input.
+     * - Image-decode failure.
+     * - No QR grids detected.
+     * - All detected grids fail to decode.
+     *
+     * Successfully decoded QR codes carry their payload, a confidence of `1.0`
+     * (rqrr does not expose per-grid confidence; a successful decode is treated
+     * as high-confidence by convention), and the pixel-space bounding box derived
+     * from the four corner points of the grid.
+     */
+    suspend fun detectQrCodesAsync(imageBytes: ByteArray, formatHint: String? = null): List<QrCode> =
+        withContext(Dispatchers.IO) { detectQrCodes(imageBytes, formatHint) }
+
+    /**
      * Clear all embedding backends from the global registry.
      *
      * Calls `shutdown()` on every registered backend, then empties the registry.
@@ -548,6 +596,16 @@ object Kreuzberg {
      */
     fun clearOcrBackends(): Unit = KreuzbergBridge.nativeClearOcrBackends()
     /**
+     * Register every built-in post-processor enabled by the active feature set.
+     *
+     * This is the single entry point that callers (including
+     * `register_default_post_processors`) use to populate the global
+     * post-processor registry with the in-tree built-ins. Each submodule's own
+     * `register` function is gated by its feature flag so this aggregate stays
+     * safe to call on any target.
+     */
+    fun registerBuiltin(): Unit = KreuzbergBridge.nativeRegisterBuiltin()
+    /**
      * List all registered post-processor names.
      *
      * Returns a vector of all post-processor names currently registered in the
@@ -626,6 +684,120 @@ object Kreuzberg {
     /** Remove all registered validators. */
     fun clearValidators(): Unit = KreuzbergBridge.nativeClearValidators()
     /**
+     * Run page classification against an extraction result.
+     *
+     * Mutates `result.page_classifications` with one entry per non-empty page and
+     * appends every LLM call's usage to `result.llm_usage`.
+     *
+     * **Errors:**
+     *
+     * Returns the first error encountered when rendering the prompt or calling the
+     * LLM. Partially produced classifications are discarded so callers do not see
+     * a half-populated vector.
+     */
+    fun classifyPages(result: ExtractionResult, config: PageClassificationConfig): Unit = KreuzbergBridge.nativeClassifyPages(mapper.writeValueAsString(result), mapper.writeValueAsString(config))
+    /**
+     * Eagerly download a NER model into the kreuzberg cache.
+     *
+     * `name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
+     * CLI flag `kreuzberg warm --ner` delegates here.
+     */
+    fun downloadModel(name: String, cacheDir: String? = null): Long = KreuzbergBridge.nativeDownloadModel(name, cacheDir ?: "")
+    /** Pinned default NER model identifier. */
+    fun defaultModelName(): String = KreuzbergBridge.nativeDefaultModelName()
+    /** All NER models kreuzberg knows about (used by `--all-ner-models`). */
+    fun knownModels(): List<String> {
+        val resultJson = KreuzbergBridge.nativeKnownModels()
+        return mapper.readValue(resultJson, object : TypeReference<List<String>>() {})
+    }
+
+    /** All NER models kreuzberg knows about (used by `--all-ner-models`). */
+    suspend fun knownModelsAsync(): List<String> =
+        withContext(Dispatchers.IO) { knownModels() }
+
+    /**
+     * Run pattern redaction (and optional NER-driven redaction) over `result` and
+     * rewrite every textual field. Populates `result.redaction_report`.
+     */
+    fun redact(result: ExtractionResult, config: RedactionConfig): Unit = KreuzbergBridge.nativeRedact(mapper.writeValueAsString(result), mapper.writeValueAsString(config))
+    fun findAll(text: String): List<PatternMatch> {
+        val resultJson = KreuzbergBridge.nativeFindAll(text)
+        return mapper.readValue(resultJson, object : TypeReference<List<PatternMatch>>() {})
+    }
+
+    suspend fun findAllAsync(text: String): List<PatternMatch> =
+        withContext(Dispatchers.IO) { findAll(text) }
+
+    /**
+     * Scan `text` for every PII category in `categories` and return all matches
+     * in source-byte order.
+     *
+     * When `categories` is empty every supported regex-detectable category fires.
+     * Person / Organization / Location are *not* covered by the pattern engine —
+     * they must be supplied by a NER backend through the redaction engine.
+     */
+    fun scanText(text: String, categories: List<PiiCategory>): List<PatternMatch> {
+        val resultJson = KreuzbergBridge.nativeScanText(text, mapper.writeValueAsString(categories))
+        return mapper.readValue(resultJson, object : TypeReference<List<PatternMatch>>() {})
+    }
+
+    /**
+     * Scan `text` for every PII category in `categories` and return all matches
+     * in source-byte order.
+     *
+     * When `categories` is empty every supported regex-detectable category fires.
+     * Person / Organization / Location are *not* covered by the pattern engine —
+     * they must be supplied by a NER backend through the redaction engine.
+     */
+    suspend fun scanTextAsync(text: String, categories: List<PiiCategory>): List<PatternMatch> =
+        withContext(Dispatchers.IO) { scanText(text, categories) }
+
+    /**
+     * Apply `strategy` to `original` for `category` and return the replacement token.
+     *
+     * The optional `counter` is required for `RedactionStrategy.TokenReplace`;
+     * other strategies ignore it.
+     */
+    fun applyStrategy(strategy: RedactionStrategy, original: String, category: PiiCategory, counter: TokenCounter): String = KreuzbergBridge.nativeApplyStrategy(mapper.writeValueAsString(strategy), original, mapper.writeValueAsString(category), counter.handle)
+    /**
+     * Score and return the top-N sentences from `text`, joined in original order.
+     *
+     * `language` is an ISO 639 (or locale) code used to pick a stopword list;
+     * pass `null` (or an unknown code) to fall back to English.
+     * `max_tokens` bounds the summary length by whitespace-separated tokens;
+     * `null` falls back to `DEFAULT_MAX_TOKENS`.
+     */
+    fun summarize(text: String, language: String? = null, maxTokens: Int? = null): String? = KreuzbergBridge.nativeSummarize(text, language ?: "", maxTokens ?: 0)
+    /**
+     * Count whitespace-separated tokens (used for token-budget bookkeeping by
+     * callers).
+     */
+    fun tokenCount(text: String): Int = KreuzbergBridge.nativeTokenCount(text)
+    /**
+     * Run abstractive summarisation against the configured LLM.
+     *
+     * `text` is the document content to summarise (already extracted by the
+     * pipeline). `max_tokens` softly bounds the requested summary length in
+     * natural-language tokens; `null` uses `DEFAULT_MAX_TOKENS`.
+     *
+     * Returns the summary string and the (optional) usage record.
+     *
+     * **Errors:**
+     *
+     * Propagates any LLM client / request error returned by
+     * `complete_text`.
+     */
+    fun summarizeWithLlm(text: String, llmConfig: LlmConfig, maxTokens: Int? = null): String = KreuzbergBridge.nativeSummarizeWithLlm(text, mapper.writeValueAsString(llmConfig), maxTokens ?: 0)
+    /**
+     * Translate the extraction result in place.
+     *
+     * Populates `result.translation` with the translated `content`, optionally the
+     * translated `formatted_content` (when `preserve_markup = true`), and rewrites
+     * every chunk's `content` field. Every LLM call's usage is appended to
+     * `result.llm_usage`.
+     */
+    fun translateResult(result: ExtractionResult, config: TranslationConfig): Unit = KreuzbergBridge.nativeTranslateResult(mapper.writeValueAsString(result), mapper.writeValueAsString(config))
+    /**
      * Compare two extraction results and return a structured diff.
      *
      * The comparison is purely structural — no I/O, no side effects. All fields
@@ -645,6 +817,72 @@ object Kreuzberg {
     suspend fun compareAsync(a: ExtractionResult, b: ExtractionResult, opts: DiffOptions): ExtractionDiff =
         withContext(Dispatchers.IO) { compare(a, b, opts) }
 
+    /**
+     * Extract content from a pre-cropped image region using a VLM.
+     *
+     * The caller is responsible for cropping the page image to the region's bounding
+     * box before calling this function. The `image_bytes` parameter must contain the
+     * raw bytes of the **cropped** region image (JPEG, PNG, WebP, etc.).
+     *
+     * **Returns:**
+     *
+     * Extracted Markdown text from the VLM, or an error if the VLM call fails.
+     *
+     * **Errors:**
+     *
+     * - `Ocr` if the VLM call fails or returns no content.
+     * - `MissingDependency` if the liter-llm client cannot
+     *   be initialised.
+     */
+    fun extractRegionWithVlm(imageBytes: ByteArray, imageMime: String, regionKind: RegionKind, llmConfig: LlmConfig, customPrompt: String? = null): String = KreuzbergBridge.nativeExtractRegionWithVlm(imageBytes, imageMime, mapper.writeValueAsString(regionKind), mapper.writeValueAsString(llmConfig), customPrompt ?: "")
+    /**
+     * Same as `extract_region_with_vlm`, but also returns the `LlmUsage` data captured
+     * from the underlying VLM call.
+     *
+     * Callers that need to track token / cost data per call (for example the captioning
+     * post-processor, which appends every call's usage to
+     * `ExtractionResult.llm_usage`) should
+     * prefer this variant. The plain `extract_region_with_vlm` is kept for callers that
+     * only care about the markdown output (PDF region splicing).
+     *
+     * **Errors:**
+     *
+     * Same as `extract_region_with_vlm`.
+     */
+    fun extractRegionWithVlmUsage(imageBytes: ByteArray, imageMime: String, regionKind: RegionKind, llmConfig: LlmConfig, customPrompt: String? = null): String = KreuzbergBridge.nativeExtractRegionWithVlmUsage(imageBytes, imageMime, mapper.writeValueAsString(regionKind), mapper.writeValueAsString(llmConfig), customPrompt ?: "")
+    /**
+     * Send a free-form prompt to the configured LLM with a JSON-schema response
+     * constraint and return the parsed JSON value plus captured usage.
+     *
+     * This is the shared helper used by LLM-backed post-processors (page
+     * classification, LLM-driven NER, etc.) that need structured output but do not
+     * want to depend on `StructuredExtractionConfig`'s schema/prompt machinery.
+     *
+     *   distinguish multiple structured outputs).
+     *
+     * - `schema` — the JSON schema the LLM is required to obey.
+     * - `source` — label used for the returned `LlmUsage` entry.
+     *
+     * **Errors:**
+     *
+     * Returns an error if the LLM client cannot be constructed, the request fails,
+     * the response contains no content, or the response is not parseable JSON.
+     */
+    fun completeWithJsonSchema(llmConfig: LlmConfig, prompt: String, schemaName: String, schema: String, source: String): String = KreuzbergBridge.nativeCompleteWithJsonSchema(mapper.writeValueAsString(llmConfig), prompt, schemaName, schema, source)
+    /**
+     * Send a single user prompt to the configured LLM and return the response text
+     * along with the captured usage metadata.
+     *
+     * The `source` argument labels the `LlmUsage` entry that is returned so
+     * callers can aggregate per-feature spend (`"translation"`, `"summarisation"`,
+     * etc.). The helper performs a single non-streaming chat completion request.
+     *
+     * **Errors:**
+     *
+     * Returns an error if the LLM client cannot be constructed, the request fails,
+     * or the response does not contain assistant content.
+     */
+    fun completeText(llmConfig: LlmConfig, prompt: String, source: String): String = KreuzbergBridge.nativeCompleteText(mapper.writeValueAsString(llmConfig), prompt, source)
     /**
      * Render a single PDF page to PNG bytes.
      *

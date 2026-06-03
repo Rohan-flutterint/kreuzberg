@@ -1853,6 +1853,606 @@ as String,
 }
 
 /// @nodoc
+mixin _$EntityCategory {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory()';
+}
+
+
+}
+
+/// @nodoc
+class $EntityCategoryCopyWith<$Res>  {
+$EntityCategoryCopyWith(EntityCategory _, $Res Function(EntityCategory) __);
+}
+
+
+/// Adds pattern-matching-related methods to [EntityCategory].
+extension EntityCategoryPatterns on EntityCategory {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( EntityCategory_Person value)?  person,TResult Function( EntityCategory_Organization value)?  organization,TResult Function( EntityCategory_Location value)?  location,TResult Function( EntityCategory_Date value)?  date,TResult Function( EntityCategory_Time value)?  time,TResult Function( EntityCategory_Money value)?  money,TResult Function( EntityCategory_Percent value)?  percent,TResult Function( EntityCategory_Email value)?  email,TResult Function( EntityCategory_Phone value)?  phone,TResult Function( EntityCategory_Url value)?  url,TResult Function( EntityCategory_Custom value)?  custom,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case EntityCategory_Person() when person != null:
+return person(_that);case EntityCategory_Organization() when organization != null:
+return organization(_that);case EntityCategory_Location() when location != null:
+return location(_that);case EntityCategory_Date() when date != null:
+return date(_that);case EntityCategory_Time() when time != null:
+return time(_that);case EntityCategory_Money() when money != null:
+return money(_that);case EntityCategory_Percent() when percent != null:
+return percent(_that);case EntityCategory_Email() when email != null:
+return email(_that);case EntityCategory_Phone() when phone != null:
+return phone(_that);case EntityCategory_Url() when url != null:
+return url(_that);case EntityCategory_Custom() when custom != null:
+return custom(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( EntityCategory_Person value)  person,required TResult Function( EntityCategory_Organization value)  organization,required TResult Function( EntityCategory_Location value)  location,required TResult Function( EntityCategory_Date value)  date,required TResult Function( EntityCategory_Time value)  time,required TResult Function( EntityCategory_Money value)  money,required TResult Function( EntityCategory_Percent value)  percent,required TResult Function( EntityCategory_Email value)  email,required TResult Function( EntityCategory_Phone value)  phone,required TResult Function( EntityCategory_Url value)  url,required TResult Function( EntityCategory_Custom value)  custom,}){
+final _that = this;
+switch (_that) {
+case EntityCategory_Person():
+return person(_that);case EntityCategory_Organization():
+return organization(_that);case EntityCategory_Location():
+return location(_that);case EntityCategory_Date():
+return date(_that);case EntityCategory_Time():
+return time(_that);case EntityCategory_Money():
+return money(_that);case EntityCategory_Percent():
+return percent(_that);case EntityCategory_Email():
+return email(_that);case EntityCategory_Phone():
+return phone(_that);case EntityCategory_Url():
+return url(_that);case EntityCategory_Custom():
+return custom(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( EntityCategory_Person value)?  person,TResult? Function( EntityCategory_Organization value)?  organization,TResult? Function( EntityCategory_Location value)?  location,TResult? Function( EntityCategory_Date value)?  date,TResult? Function( EntityCategory_Time value)?  time,TResult? Function( EntityCategory_Money value)?  money,TResult? Function( EntityCategory_Percent value)?  percent,TResult? Function( EntityCategory_Email value)?  email,TResult? Function( EntityCategory_Phone value)?  phone,TResult? Function( EntityCategory_Url value)?  url,TResult? Function( EntityCategory_Custom value)?  custom,}){
+final _that = this;
+switch (_that) {
+case EntityCategory_Person() when person != null:
+return person(_that);case EntityCategory_Organization() when organization != null:
+return organization(_that);case EntityCategory_Location() when location != null:
+return location(_that);case EntityCategory_Date() when date != null:
+return date(_that);case EntityCategory_Time() when time != null:
+return time(_that);case EntityCategory_Money() when money != null:
+return money(_that);case EntityCategory_Percent() when percent != null:
+return percent(_that);case EntityCategory_Email() when email != null:
+return email(_that);case EntityCategory_Phone() when phone != null:
+return phone(_that);case EntityCategory_Url() when url != null:
+return url(_that);case EntityCategory_Custom() when custom != null:
+return custom(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  person,TResult Function()?  organization,TResult Function()?  location,TResult Function()?  date,TResult Function()?  time,TResult Function()?  money,TResult Function()?  percent,TResult Function()?  email,TResult Function()?  phone,TResult Function()?  url,TResult Function( String field0)?  custom,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case EntityCategory_Person() when person != null:
+return person();case EntityCategory_Organization() when organization != null:
+return organization();case EntityCategory_Location() when location != null:
+return location();case EntityCategory_Date() when date != null:
+return date();case EntityCategory_Time() when time != null:
+return time();case EntityCategory_Money() when money != null:
+return money();case EntityCategory_Percent() when percent != null:
+return percent();case EntityCategory_Email() when email != null:
+return email();case EntityCategory_Phone() when phone != null:
+return phone();case EntityCategory_Url() when url != null:
+return url();case EntityCategory_Custom() when custom != null:
+return custom(_that.field0);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  person,required TResult Function()  organization,required TResult Function()  location,required TResult Function()  date,required TResult Function()  time,required TResult Function()  money,required TResult Function()  percent,required TResult Function()  email,required TResult Function()  phone,required TResult Function()  url,required TResult Function( String field0)  custom,}) {final _that = this;
+switch (_that) {
+case EntityCategory_Person():
+return person();case EntityCategory_Organization():
+return organization();case EntityCategory_Location():
+return location();case EntityCategory_Date():
+return date();case EntityCategory_Time():
+return time();case EntityCategory_Money():
+return money();case EntityCategory_Percent():
+return percent();case EntityCategory_Email():
+return email();case EntityCategory_Phone():
+return phone();case EntityCategory_Url():
+return url();case EntityCategory_Custom():
+return custom(_that.field0);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  person,TResult? Function()?  organization,TResult? Function()?  location,TResult? Function()?  date,TResult? Function()?  time,TResult? Function()?  money,TResult? Function()?  percent,TResult? Function()?  email,TResult? Function()?  phone,TResult? Function()?  url,TResult? Function( String field0)?  custom,}) {final _that = this;
+switch (_that) {
+case EntityCategory_Person() when person != null:
+return person();case EntityCategory_Organization() when organization != null:
+return organization();case EntityCategory_Location() when location != null:
+return location();case EntityCategory_Date() when date != null:
+return date();case EntityCategory_Time() when time != null:
+return time();case EntityCategory_Money() when money != null:
+return money();case EntityCategory_Percent() when percent != null:
+return percent();case EntityCategory_Email() when email != null:
+return email();case EntityCategory_Phone() when phone != null:
+return phone();case EntityCategory_Url() when url != null:
+return url();case EntityCategory_Custom() when custom != null:
+return custom(_that.field0);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class EntityCategory_Person extends EntityCategory {
+  const EntityCategory_Person(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Person);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.person()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Organization extends EntityCategory {
+  const EntityCategory_Organization(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Organization);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.organization()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Location extends EntityCategory {
+  const EntityCategory_Location(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Location);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.location()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Date extends EntityCategory {
+  const EntityCategory_Date(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Date);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.date()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Time extends EntityCategory {
+  const EntityCategory_Time(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Time);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.time()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Money extends EntityCategory {
+  const EntityCategory_Money(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Money);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.money()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Percent extends EntityCategory {
+  const EntityCategory_Percent(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Percent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.percent()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Email extends EntityCategory {
+  const EntityCategory_Email(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Email);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.email()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Phone extends EntityCategory {
+  const EntityCategory_Phone(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Phone);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.phone()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Url extends EntityCategory {
+  const EntityCategory_Url(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Url);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EntityCategory.url()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class EntityCategory_Custom extends EntityCategory {
+  const EntityCategory_Custom({required this.field0}): super._();
+  
+
+ final  String field0;
+
+/// Create a copy of EntityCategory
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$EntityCategory_CustomCopyWith<EntityCategory_Custom> get copyWith => _$EntityCategory_CustomCopyWithImpl<EntityCategory_Custom>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EntityCategory_Custom&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'EntityCategory.custom(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $EntityCategory_CustomCopyWith<$Res> implements $EntityCategoryCopyWith<$Res> {
+  factory $EntityCategory_CustomCopyWith(EntityCategory_Custom value, $Res Function(EntityCategory_Custom) _then) = _$EntityCategory_CustomCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$EntityCategory_CustomCopyWithImpl<$Res>
+    implements $EntityCategory_CustomCopyWith<$Res> {
+  _$EntityCategory_CustomCopyWithImpl(this._self, this._then);
+
+  final EntityCategory_Custom _self;
+  final $Res Function(EntityCategory_Custom) _then;
+
+/// Create a copy of EntityCategory
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(EntityCategory_Custom(
+field0: null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$FormatMetadata {
 
  Object get field0;
@@ -6980,6 +7580,682 @@ as String,
 }
 
 /// @nodoc
+mixin _$PiiCategory {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory()';
+}
+
+
+}
+
+/// @nodoc
+class $PiiCategoryCopyWith<$Res>  {
+$PiiCategoryCopyWith(PiiCategory _, $Res Function(PiiCategory) __);
+}
+
+
+/// Adds pattern-matching-related methods to [PiiCategory].
+extension PiiCategoryPatterns on PiiCategory {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( PiiCategory_Email value)?  email,TResult Function( PiiCategory_Phone value)?  phone,TResult Function( PiiCategory_Ssn value)?  ssn,TResult Function( PiiCategory_CreditCard value)?  creditCard,TResult Function( PiiCategory_PostalCode value)?  postalCode,TResult Function( PiiCategory_IpAddress value)?  ipAddress,TResult Function( PiiCategory_Iban value)?  iban,TResult Function( PiiCategory_SwiftBic value)?  swiftBic,TResult Function( PiiCategory_DateOfBirth value)?  dateOfBirth,TResult Function( PiiCategory_Person value)?  person,TResult Function( PiiCategory_Organization value)?  organization,TResult Function( PiiCategory_Location value)?  location,TResult Function( PiiCategory_Custom value)?  custom,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case PiiCategory_Email() when email != null:
+return email(_that);case PiiCategory_Phone() when phone != null:
+return phone(_that);case PiiCategory_Ssn() when ssn != null:
+return ssn(_that);case PiiCategory_CreditCard() when creditCard != null:
+return creditCard(_that);case PiiCategory_PostalCode() when postalCode != null:
+return postalCode(_that);case PiiCategory_IpAddress() when ipAddress != null:
+return ipAddress(_that);case PiiCategory_Iban() when iban != null:
+return iban(_that);case PiiCategory_SwiftBic() when swiftBic != null:
+return swiftBic(_that);case PiiCategory_DateOfBirth() when dateOfBirth != null:
+return dateOfBirth(_that);case PiiCategory_Person() when person != null:
+return person(_that);case PiiCategory_Organization() when organization != null:
+return organization(_that);case PiiCategory_Location() when location != null:
+return location(_that);case PiiCategory_Custom() when custom != null:
+return custom(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( PiiCategory_Email value)  email,required TResult Function( PiiCategory_Phone value)  phone,required TResult Function( PiiCategory_Ssn value)  ssn,required TResult Function( PiiCategory_CreditCard value)  creditCard,required TResult Function( PiiCategory_PostalCode value)  postalCode,required TResult Function( PiiCategory_IpAddress value)  ipAddress,required TResult Function( PiiCategory_Iban value)  iban,required TResult Function( PiiCategory_SwiftBic value)  swiftBic,required TResult Function( PiiCategory_DateOfBirth value)  dateOfBirth,required TResult Function( PiiCategory_Person value)  person,required TResult Function( PiiCategory_Organization value)  organization,required TResult Function( PiiCategory_Location value)  location,required TResult Function( PiiCategory_Custom value)  custom,}){
+final _that = this;
+switch (_that) {
+case PiiCategory_Email():
+return email(_that);case PiiCategory_Phone():
+return phone(_that);case PiiCategory_Ssn():
+return ssn(_that);case PiiCategory_CreditCard():
+return creditCard(_that);case PiiCategory_PostalCode():
+return postalCode(_that);case PiiCategory_IpAddress():
+return ipAddress(_that);case PiiCategory_Iban():
+return iban(_that);case PiiCategory_SwiftBic():
+return swiftBic(_that);case PiiCategory_DateOfBirth():
+return dateOfBirth(_that);case PiiCategory_Person():
+return person(_that);case PiiCategory_Organization():
+return organization(_that);case PiiCategory_Location():
+return location(_that);case PiiCategory_Custom():
+return custom(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( PiiCategory_Email value)?  email,TResult? Function( PiiCategory_Phone value)?  phone,TResult? Function( PiiCategory_Ssn value)?  ssn,TResult? Function( PiiCategory_CreditCard value)?  creditCard,TResult? Function( PiiCategory_PostalCode value)?  postalCode,TResult? Function( PiiCategory_IpAddress value)?  ipAddress,TResult? Function( PiiCategory_Iban value)?  iban,TResult? Function( PiiCategory_SwiftBic value)?  swiftBic,TResult? Function( PiiCategory_DateOfBirth value)?  dateOfBirth,TResult? Function( PiiCategory_Person value)?  person,TResult? Function( PiiCategory_Organization value)?  organization,TResult? Function( PiiCategory_Location value)?  location,TResult? Function( PiiCategory_Custom value)?  custom,}){
+final _that = this;
+switch (_that) {
+case PiiCategory_Email() when email != null:
+return email(_that);case PiiCategory_Phone() when phone != null:
+return phone(_that);case PiiCategory_Ssn() when ssn != null:
+return ssn(_that);case PiiCategory_CreditCard() when creditCard != null:
+return creditCard(_that);case PiiCategory_PostalCode() when postalCode != null:
+return postalCode(_that);case PiiCategory_IpAddress() when ipAddress != null:
+return ipAddress(_that);case PiiCategory_Iban() when iban != null:
+return iban(_that);case PiiCategory_SwiftBic() when swiftBic != null:
+return swiftBic(_that);case PiiCategory_DateOfBirth() when dateOfBirth != null:
+return dateOfBirth(_that);case PiiCategory_Person() when person != null:
+return person(_that);case PiiCategory_Organization() when organization != null:
+return organization(_that);case PiiCategory_Location() when location != null:
+return location(_that);case PiiCategory_Custom() when custom != null:
+return custom(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  email,TResult Function()?  phone,TResult Function()?  ssn,TResult Function()?  creditCard,TResult Function()?  postalCode,TResult Function()?  ipAddress,TResult Function()?  iban,TResult Function()?  swiftBic,TResult Function()?  dateOfBirth,TResult Function()?  person,TResult Function()?  organization,TResult Function()?  location,TResult Function( String field0)?  custom,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case PiiCategory_Email() when email != null:
+return email();case PiiCategory_Phone() when phone != null:
+return phone();case PiiCategory_Ssn() when ssn != null:
+return ssn();case PiiCategory_CreditCard() when creditCard != null:
+return creditCard();case PiiCategory_PostalCode() when postalCode != null:
+return postalCode();case PiiCategory_IpAddress() when ipAddress != null:
+return ipAddress();case PiiCategory_Iban() when iban != null:
+return iban();case PiiCategory_SwiftBic() when swiftBic != null:
+return swiftBic();case PiiCategory_DateOfBirth() when dateOfBirth != null:
+return dateOfBirth();case PiiCategory_Person() when person != null:
+return person();case PiiCategory_Organization() when organization != null:
+return organization();case PiiCategory_Location() when location != null:
+return location();case PiiCategory_Custom() when custom != null:
+return custom(_that.field0);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  email,required TResult Function()  phone,required TResult Function()  ssn,required TResult Function()  creditCard,required TResult Function()  postalCode,required TResult Function()  ipAddress,required TResult Function()  iban,required TResult Function()  swiftBic,required TResult Function()  dateOfBirth,required TResult Function()  person,required TResult Function()  organization,required TResult Function()  location,required TResult Function( String field0)  custom,}) {final _that = this;
+switch (_that) {
+case PiiCategory_Email():
+return email();case PiiCategory_Phone():
+return phone();case PiiCategory_Ssn():
+return ssn();case PiiCategory_CreditCard():
+return creditCard();case PiiCategory_PostalCode():
+return postalCode();case PiiCategory_IpAddress():
+return ipAddress();case PiiCategory_Iban():
+return iban();case PiiCategory_SwiftBic():
+return swiftBic();case PiiCategory_DateOfBirth():
+return dateOfBirth();case PiiCategory_Person():
+return person();case PiiCategory_Organization():
+return organization();case PiiCategory_Location():
+return location();case PiiCategory_Custom():
+return custom(_that.field0);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  email,TResult? Function()?  phone,TResult? Function()?  ssn,TResult? Function()?  creditCard,TResult? Function()?  postalCode,TResult? Function()?  ipAddress,TResult? Function()?  iban,TResult? Function()?  swiftBic,TResult? Function()?  dateOfBirth,TResult? Function()?  person,TResult? Function()?  organization,TResult? Function()?  location,TResult? Function( String field0)?  custom,}) {final _that = this;
+switch (_that) {
+case PiiCategory_Email() when email != null:
+return email();case PiiCategory_Phone() when phone != null:
+return phone();case PiiCategory_Ssn() when ssn != null:
+return ssn();case PiiCategory_CreditCard() when creditCard != null:
+return creditCard();case PiiCategory_PostalCode() when postalCode != null:
+return postalCode();case PiiCategory_IpAddress() when ipAddress != null:
+return ipAddress();case PiiCategory_Iban() when iban != null:
+return iban();case PiiCategory_SwiftBic() when swiftBic != null:
+return swiftBic();case PiiCategory_DateOfBirth() when dateOfBirth != null:
+return dateOfBirth();case PiiCategory_Person() when person != null:
+return person();case PiiCategory_Organization() when organization != null:
+return organization();case PiiCategory_Location() when location != null:
+return location();case PiiCategory_Custom() when custom != null:
+return custom(_that.field0);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class PiiCategory_Email extends PiiCategory {
+  const PiiCategory_Email(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Email);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.email()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Phone extends PiiCategory {
+  const PiiCategory_Phone(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Phone);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.phone()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Ssn extends PiiCategory {
+  const PiiCategory_Ssn(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Ssn);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.ssn()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_CreditCard extends PiiCategory {
+  const PiiCategory_CreditCard(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_CreditCard);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.creditCard()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_PostalCode extends PiiCategory {
+  const PiiCategory_PostalCode(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_PostalCode);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.postalCode()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_IpAddress extends PiiCategory {
+  const PiiCategory_IpAddress(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_IpAddress);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.ipAddress()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Iban extends PiiCategory {
+  const PiiCategory_Iban(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Iban);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.iban()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_SwiftBic extends PiiCategory {
+  const PiiCategory_SwiftBic(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_SwiftBic);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.swiftBic()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_DateOfBirth extends PiiCategory {
+  const PiiCategory_DateOfBirth(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_DateOfBirth);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.dateOfBirth()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Person extends PiiCategory {
+  const PiiCategory_Person(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Person);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.person()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Organization extends PiiCategory {
+  const PiiCategory_Organization(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Organization);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.organization()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Location extends PiiCategory {
+  const PiiCategory_Location(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Location);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PiiCategory.location()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class PiiCategory_Custom extends PiiCategory {
+  const PiiCategory_Custom({required this.field0}): super._();
+  
+
+ final  String field0;
+
+/// Create a copy of PiiCategory
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PiiCategory_CustomCopyWith<PiiCategory_Custom> get copyWith => _$PiiCategory_CustomCopyWithImpl<PiiCategory_Custom>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PiiCategory_Custom&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'PiiCategory.custom(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PiiCategory_CustomCopyWith<$Res> implements $PiiCategoryCopyWith<$Res> {
+  factory $PiiCategory_CustomCopyWith(PiiCategory_Custom value, $Res Function(PiiCategory_Custom) _then) = _$PiiCategory_CustomCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$PiiCategory_CustomCopyWithImpl<$Res>
+    implements $PiiCategory_CustomCopyWith<$Res> {
+  _$PiiCategory_CustomCopyWithImpl(this._self, this._then);
+
+  final PiiCategory_Custom _self;
+  final $Res Function(PiiCategory_Custom) _then;
+
+/// Create a copy of PiiCategory
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(PiiCategory_Custom(
+field0: null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$RevisionAnchor {
 
 
@@ -7500,5 +8776,303 @@ as String,
 
 
 }
+
+/// @nodoc
+mixin _$VlmFallbackPolicy {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VlmFallbackPolicy);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'VlmFallbackPolicy()';
+}
+
+
+}
+
+/// @nodoc
+class $VlmFallbackPolicyCopyWith<$Res>  {
+$VlmFallbackPolicyCopyWith(VlmFallbackPolicy _, $Res Function(VlmFallbackPolicy) __);
+}
+
+
+/// Adds pattern-matching-related methods to [VlmFallbackPolicy].
+extension VlmFallbackPolicyPatterns on VlmFallbackPolicy {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( VlmFallbackPolicy_Disabled value)?  disabled,TResult Function( VlmFallbackPolicy_OnLowQuality value)?  onLowQuality,TResult Function( VlmFallbackPolicy_Always value)?  always,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled() when disabled != null:
+return disabled(_that);case VlmFallbackPolicy_OnLowQuality() when onLowQuality != null:
+return onLowQuality(_that);case VlmFallbackPolicy_Always() when always != null:
+return always(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( VlmFallbackPolicy_Disabled value)  disabled,required TResult Function( VlmFallbackPolicy_OnLowQuality value)  onLowQuality,required TResult Function( VlmFallbackPolicy_Always value)  always,}){
+final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled():
+return disabled(_that);case VlmFallbackPolicy_OnLowQuality():
+return onLowQuality(_that);case VlmFallbackPolicy_Always():
+return always(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( VlmFallbackPolicy_Disabled value)?  disabled,TResult? Function( VlmFallbackPolicy_OnLowQuality value)?  onLowQuality,TResult? Function( VlmFallbackPolicy_Always value)?  always,}){
+final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled() when disabled != null:
+return disabled(_that);case VlmFallbackPolicy_OnLowQuality() when onLowQuality != null:
+return onLowQuality(_that);case VlmFallbackPolicy_Always() when always != null:
+return always(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  disabled,TResult Function( double qualityThreshold)?  onLowQuality,TResult Function()?  always,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled() when disabled != null:
+return disabled();case VlmFallbackPolicy_OnLowQuality() when onLowQuality != null:
+return onLowQuality(_that.qualityThreshold);case VlmFallbackPolicy_Always() when always != null:
+return always();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  disabled,required TResult Function( double qualityThreshold)  onLowQuality,required TResult Function()  always,}) {final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled():
+return disabled();case VlmFallbackPolicy_OnLowQuality():
+return onLowQuality(_that.qualityThreshold);case VlmFallbackPolicy_Always():
+return always();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  disabled,TResult? Function( double qualityThreshold)?  onLowQuality,TResult? Function()?  always,}) {final _that = this;
+switch (_that) {
+case VlmFallbackPolicy_Disabled() when disabled != null:
+return disabled();case VlmFallbackPolicy_OnLowQuality() when onLowQuality != null:
+return onLowQuality(_that.qualityThreshold);case VlmFallbackPolicy_Always() when always != null:
+return always();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class VlmFallbackPolicy_Disabled extends VlmFallbackPolicy {
+  const VlmFallbackPolicy_Disabled(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VlmFallbackPolicy_Disabled);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'VlmFallbackPolicy.disabled()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class VlmFallbackPolicy_OnLowQuality extends VlmFallbackPolicy {
+  const VlmFallbackPolicy_OnLowQuality({required this.qualityThreshold}): super._();
+  
+
+/// Minimum acceptable quality score from the classical backend.
+/// Pages scoring below this are retried with VLM.
+ final  double qualityThreshold;
+
+/// Create a copy of VlmFallbackPolicy
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$VlmFallbackPolicy_OnLowQualityCopyWith<VlmFallbackPolicy_OnLowQuality> get copyWith => _$VlmFallbackPolicy_OnLowQualityCopyWithImpl<VlmFallbackPolicy_OnLowQuality>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VlmFallbackPolicy_OnLowQuality&&(identical(other.qualityThreshold, qualityThreshold) || other.qualityThreshold == qualityThreshold));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,qualityThreshold);
+
+@override
+String toString() {
+  return 'VlmFallbackPolicy.onLowQuality(qualityThreshold: $qualityThreshold)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $VlmFallbackPolicy_OnLowQualityCopyWith<$Res> implements $VlmFallbackPolicyCopyWith<$Res> {
+  factory $VlmFallbackPolicy_OnLowQualityCopyWith(VlmFallbackPolicy_OnLowQuality value, $Res Function(VlmFallbackPolicy_OnLowQuality) _then) = _$VlmFallbackPolicy_OnLowQualityCopyWithImpl;
+@useResult
+$Res call({
+ double qualityThreshold
+});
+
+
+
+
+}
+/// @nodoc
+class _$VlmFallbackPolicy_OnLowQualityCopyWithImpl<$Res>
+    implements $VlmFallbackPolicy_OnLowQualityCopyWith<$Res> {
+  _$VlmFallbackPolicy_OnLowQualityCopyWithImpl(this._self, this._then);
+
+  final VlmFallbackPolicy_OnLowQuality _self;
+  final $Res Function(VlmFallbackPolicy_OnLowQuality) _then;
+
+/// Create a copy of VlmFallbackPolicy
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? qualityThreshold = null,}) {
+  return _then(VlmFallbackPolicy_OnLowQuality(
+qualityThreshold: null == qualityThreshold ? _self.qualityThreshold : qualityThreshold // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class VlmFallbackPolicy_Always extends VlmFallbackPolicy {
+  const VlmFallbackPolicy_Always(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VlmFallbackPolicy_Always);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'VlmFallbackPolicy.always()';
+}
+
+
+}
+
+
+
 
 // dart format on

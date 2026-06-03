@@ -505,6 +505,7 @@ Kreuzberg-wide API key fallback for LLM-backed features. When set, serves as a f
 **Used by**: VLM OCR, structured extraction, embeddings, NER (LLM backend), redaction (NER), summarisation (abstractive), translation, page classification, and VLM image captions.
 
 **Precedence** (highest to lowest):
+
 1. Explicit `api_key` field in the relevant config (`LlmConfig.api_key`, `OcrConfig.vlm_config.api_key`, etc.)
 2. Config file's `api_key` (loaded before CLI processing)
 3. CLI flag `--api-key`

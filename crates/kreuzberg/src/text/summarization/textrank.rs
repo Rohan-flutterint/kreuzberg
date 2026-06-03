@@ -119,10 +119,10 @@ fn tokenize(sentence: &str, stopwords: Option<&AHashSet<String>>) -> Vec<String>
                 return None;
             }
             let lowered = tok.to_lowercase();
-            if let Some(sw) = stopwords {
-                if sw.contains(&lowered) {
-                    return None;
-                }
+            if let Some(sw) = stopwords
+                && sw.contains(&lowered)
+            {
+                return None;
             }
             // Drop single-character tokens — they rarely carry signal.
             if lowered.chars().count() < 2 {
@@ -217,11 +217,7 @@ fn pagerank_scores(token_lists: &[Vec<String>]) -> Vec<f32> {
             }
             new_scores[i] = teleport + PAGERANK_DAMPING * (acc + dangling_mass);
         }
-        let delta: f32 = new_scores
-            .iter()
-            .zip(scores.iter())
-            .map(|(a, b)| (a - b).abs())
-            .sum();
+        let delta: f32 = new_scores.iter().zip(scores.iter()).map(|(a, b)| (a - b).abs()).sum();
         scores = new_scores;
         if delta < PAGERANK_TOLERANCE {
             break;
@@ -250,7 +246,11 @@ fn cosine_similarity(a: &AHashMap<&str, f32>, b: &AHashMap<&str, f32>, norm_a: f
 /// budget, then re-sort them by original index.
 fn select_top_sentences<'a>(sentences: &'a [&'a str], scores: &[f32], budget_tokens: usize) -> Vec<&'a str> {
     let mut ranked: Vec<(usize, f32)> = scores.iter().copied().enumerate().collect();
-    ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal).then(a.0.cmp(&b.0)));
+    ranked.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.0.cmp(&b.0))
+    });
 
     let mut chosen_indices: Vec<usize> = Vec::new();
     let mut accumulated = 0usize;

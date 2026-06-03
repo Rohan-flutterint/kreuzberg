@@ -46,6 +46,9 @@ object KreuzbergBridge {
     external fun nativeGetExtensionsForMime(mimeType: String): String
 
     @Throws(KreuzbergBridgeException::class)
+    external fun nativeDetectQrCodes(imageBytes: ByteArray, formatHint: String): String
+
+    @Throws(KreuzbergBridgeException::class)
     external fun nativeClearEmbeddingBackends()
 
     @Throws(KreuzbergBridgeException::class)
@@ -62,6 +65,9 @@ object KreuzbergBridge {
 
     @Throws(KreuzbergBridgeException::class)
     external fun nativeClearOcrBackends()
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeRegisterBuiltin()
 
     @Throws(KreuzbergBridgeException::class)
     external fun nativeListPostProcessors(): String
@@ -82,7 +88,55 @@ object KreuzbergBridge {
     external fun nativeClearValidators()
 
     @Throws(KreuzbergBridgeException::class)
+    external fun nativeClassifyPages(result: String, config: String)
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeDownloadModel(name: String, cacheDir: String): Long
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeDefaultModelName(): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeKnownModels(): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeRedact(result: String, config: String)
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeFindAll(text: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeScanText(text: String, categories: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeApplyStrategy(strategy: String, original: String, category: String, counter: Long): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeSummarize(text: String, language: String, maxTokens: Int): String?
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeTokenCount(text: String): Int
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeSummarizeWithLlm(text: String, llmConfig: String, maxTokens: Int): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeTranslateResult(result: String, config: String)
+
+    @Throws(KreuzbergBridgeException::class)
     external fun nativeCompare(a: String, b: String, opts: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeExtractRegionWithVlm(imageBytes: ByteArray, imageMime: String, regionKind: String, llmConfig: String, customPrompt: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeExtractRegionWithVlmUsage(imageBytes: ByteArray, imageMime: String, regionKind: String, llmConfig: String, customPrompt: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeCompleteWithJsonSchema(llmConfig: String, prompt: String, schemaName: String, schema: String, source: String): String
+
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeCompleteText(llmConfig: String, prompt: String, source: String): String
 
     @Throws(KreuzbergBridgeException::class)
     external fun nativeRenderPdfPageToPng(pdfBytes: ByteArray, pageIndex: Long, dpi: Int, password: String): ByteArray
@@ -98,6 +152,16 @@ object KreuzbergBridge {
 
     @Throws(KreuzbergBridgeException::class)
     external fun nativeListEmbeddingPresets(): String
+
+    // JNI external funs for client instance methods.
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeLlmBackendDetect(handle: Long, requestJson: String): String
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeLlmBackendDetectWithCustom(handle: Long, requestJson: String): String
+    external fun nativeFreeLlmBackend(handle: Long)
+    @Throws(KreuzbergBridgeException::class)
+    external fun nativeTokenCounterNextToken(handle: Long, requestJson: String): String
+    external fun nativeFreeTokenCounter(handle: Long)
 
     // JNI trait-bridge external funs — implementations are Rust JNI shims.
 

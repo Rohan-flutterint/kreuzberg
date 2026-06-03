@@ -116,11 +116,7 @@ fn parse_response(page_number: u32, value: &Value, multi_label: bool) -> PageCla
 /// extraction has no page boundary metadata, the whole content is treated as a
 /// single page (`page_number = 1`).
 fn page_slices(result: &ExtractionResult) -> Vec<(u32, &str)> {
-    let boundaries = result
-        .metadata
-        .pages
-        .as_ref()
-        .and_then(|p| p.boundaries.as_deref());
+    let boundaries = result.metadata.pages.as_ref().and_then(|p| p.boundaries.as_deref());
 
     match boundaries {
         Some(b) if !b.is_empty() => split_pages(&result.content, b),

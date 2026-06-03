@@ -40,9 +40,9 @@ data class ExtractedImage(
      * Image format (e.g., "jpeg", "png", "webp")
      * Uses Cow<'static, str> to avoid allocation for static literals.
      */
-    val format: String,
+    val format: String = "",
     /** Zero-indexed position of this image in the document/page */
-    val imageIndex: Int,
+    val imageIndex: Int = 0,
     /** Page/slide number where image was found (1-indexed) */
     val pageNumber: Int? = null,
     /** Image width in pixels */
@@ -54,7 +54,7 @@ data class ExtractedImage(
     /** Bits per color component (e.g., 8, 16) */
     val bitsPerComponent: Int? = null,
     /** Whether this image is a mask image */
-    val isMask: Boolean,
+    val isMask: Boolean = false,
     /** Optional description of the image */
     val description: String? = null,
     /**
@@ -86,4 +86,21 @@ data class ExtractedImage(
      * (e.g. all raster tiles of one technical drawing). `null` for singletons.
      */
     val clusterId: Int? = null,
+    /**
+     * VLM-generated caption describing the image, when captioning is configured.
+     *
+     * Populated by the captioning post-processor
+     * (`crates/kreuzberg/src/plugins/processor/builtin/captioning.rs`), which routes
+     * each image through `crate.llm.region_extractor.extract_region_with_vlm` in
+     * caption mode. `null` when captioning is disabled or the VLM declined to caption.
+     */
+    val caption: String? = null,
+    /**
+     * QR codes decoded from this image, when QR detection is enabled.
+     *
+     * Populated by the QR post-processor (`crates/kreuzberg/src/extractors/qr.rs`) via
+     * the pure-Rust `rqrr` decoder. `null` when QR detection is disabled; an empty
+     * `Some(vec![])` when detection ran but found nothing.
+     */
+    val qrCodes: List<QrCode>? = null,
 )

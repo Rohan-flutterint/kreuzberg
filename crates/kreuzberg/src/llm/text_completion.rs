@@ -38,9 +38,10 @@ pub async fn complete_text(
     request.temperature = llm_config.temperature;
     request.max_tokens = llm_config.max_tokens;
 
-    let response = client.chat(request).await.map_err(|e| {
-        crate::KreuzbergError::parsing(format!("LLM text completion request failed ({source}): {e}"))
-    })?;
+    let response = client
+        .chat(request)
+        .await
+        .map_err(|e| crate::KreuzbergError::parsing(format!("LLM text completion request failed ({source}): {e}")))?;
 
     let usage = super::usage::extract_usage_from_chat(&response, source);
 

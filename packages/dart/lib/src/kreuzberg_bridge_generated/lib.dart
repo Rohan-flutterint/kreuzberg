@@ -8,8 +8,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'lib.freezed.dart';
 
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `DocumentExtractorDartCallbacks`, `EmbeddingBackendDartCallbacks`, `OcrBackendDartCallbacks`, `PostProcessorDartCallbacks`, `RendererDartCallbacks`, `ValidatorDartCallbacks`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `backend_type`, `can_handle`, `dimensions`, `embed`, `estimated_duration_ms`, `extract_bytes`, `extract_file`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `initialize`, `initialize`, `initialize`, `initialize`, `initialize`, `initialize`, `name`, `name`, `name`, `name`, `name`, `name`, `priority`, `priority`, `priority`, `process_document`, `process_image_file`, `process_image`, `process`, `processing_stage`, `render`, `should_process`, `should_validate`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `supported_languages`, `supported_mime_types`, `supports_document_processing`, `supports_language`, `supports_table_detection`, `validate`, `version`, `version`, `version`, `version`, `version`, `version`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `DocumentExtractorDartCallbacks`, `EmbeddingBackendDartCallbacks`, `GlineBackend`, `OcrBackendDartCallbacks`, `PostProcessorDartCallbacks`, `RendererDartCallbacks`, `Segment`, `ValidatorDartCallbacks`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `backend_type`, `can_handle`, `dimensions`, `embed`, `estimated_duration_ms`, `extract_bytes`, `extract_file`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `initialize`, `initialize`, `initialize`, `initialize`, `initialize`, `initialize`, `name`, `name`, `name`, `name`, `name`, `name`, `priority`, `priority`, `priority`, `process_document`, `process_image_file`, `process_image`, `process`, `processing_stage`, `render`, `should_process`, `should_validate`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `shutdown`, `supported_languages`, `supported_mime_types`, `supports_document_processing`, `supports_language`, `supports_table_detection`, `validate`, `version`, `version`, `version`, `version`, `version`, `version`
 
 /// Extract content from a byte array.
 ///
@@ -221,6 +221,32 @@ Future<String> detectMimeTypeFromBytes({required List<int> content}) =>
 Future<List<String>> getExtensionsForMime({required String mimeType}) =>
     RustLib.instance.api.crateGetExtensionsForMime(mimeType: mimeType);
 
+/// Detect QR codes in the bytes of an `ExtractedImage`.
+///
+/// `format_hint` is currently unused — the `image` crate auto-detects the
+/// container format from magic bytes — but the parameter is retained so future
+/// backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+/// break.
+///
+/// Returns an empty vector on any of:
+///
+/// - Empty input.
+/// - Image-decode failure.
+/// - No QR grids detected.
+/// - All detected grids fail to decode.
+///
+/// Successfully decoded QR codes carry their payload, a confidence of `1.0`
+/// (rqrr does not expose per-grid confidence; a successful decode is treated
+/// as high-confidence by convention), and the pixel-space bounding box derived
+/// from the four corner points of the grid.
+Future<List<QrCode>> detectQrCodes({
+  required List<int> imageBytes,
+  String? formatHint,
+}) => RustLib.instance.api.crateDetectQrCodes(
+  imageBytes: imageBytes,
+  formatHint: formatHint,
+);
+
 /// List the names of all registered embedding backends.
 ///
 /// Used by `kreuzberg-cli`, the api/mcp endpoints, and generated language
@@ -241,6 +267,15 @@ Future<List<String>> listDocumentExtractors() =>
 /// A vector of OCR backend names.
 Future<List<String>> listOcrBackends() =>
     RustLib.instance.api.crateListOcrBackends();
+
+/// Register every built-in post-processor enabled by the active feature set.
+///
+/// This is the single entry point that callers (including
+/// `register_default_post_processors`) use to populate the global
+/// post-processor registry with the in-tree built-ins. Each submodule's own
+/// `register` function is gated by its feature flag so this aggregate stays
+/// safe to call on any target.
+Future<void> registerBuiltin() => RustLib.instance.api.crateRegisterBuiltin();
 
 /// List all registered post-processor names.
 ///
@@ -266,6 +301,126 @@ Future<List<String>> listRenderers() =>
 Future<List<String>> listValidators() =>
     RustLib.instance.api.crateListValidators();
 
+/// Run page classification against an extraction result.
+///
+/// Mutates `result.page_classifications` with one entry per non-empty page and
+/// appends every LLM call's usage to `result.llm_usage`.
+///
+/// **Errors:**
+///
+/// Returns the first error encountered when rendering the prompt or calling the
+/// LLM. Partially produced classifications are discarded so callers do not see
+/// a half-populated vector.
+Future<void> classifyPages({
+  required ExtractionResult result,
+  required PageClassificationConfig config,
+}) => RustLib.instance.api.crateClassifyPages(result: result, config: config);
+
+/// Eagerly download a NER model into the kreuzberg cache.
+///
+/// `name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
+/// CLI flag `kreuzberg warm --ner` delegates here.
+Future<String> downloadModel({required String name, String? cacheDir}) =>
+    RustLib.instance.api.crateDownloadModel(name: name, cacheDir: cacheDir);
+
+/// Pinned default NER model identifier.
+Future<String> defaultModelName() =>
+    RustLib.instance.api.crateDefaultModelName();
+
+/// All NER models kreuzberg knows about (used by `--all-ner-models`).
+Future<List<String>> knownModels() => RustLib.instance.api.crateKnownModels();
+
+/// Run pattern redaction (and optional NER-driven redaction) over `result` and
+/// rewrite every textual field. Populates `result.redaction_report`.
+Future<void> redact({
+  required ExtractionResult result,
+  required RedactionConfig config,
+}) => RustLib.instance.api.crateRedact(result: result, config: config);
+
+Future<List<PatternMatch>> findAll({required String text}) =>
+    RustLib.instance.api.crateFindAll(text: text);
+
+/// Scan `text` for every PII category in `categories` and return all matches
+/// in source-byte order.
+///
+/// When `categories` is empty every supported regex-detectable category fires.
+/// Person / Organization / Location are *not* covered by the pattern engine —
+/// they must be supplied by a NER backend through the redaction engine.
+Future<List<PatternMatch>> scanText({
+  required String text,
+  required List<PiiCategory> categories,
+}) => RustLib.instance.api.crateScanText(text: text, categories: categories);
+
+/// Apply `strategy` to `original` for `category` and return the replacement token.
+///
+/// The optional `counter` is required for `RedactionStrategy.TokenReplace`;
+/// other strategies ignore it.
+Future<String> applyStrategy({
+  required RedactionStrategy strategy,
+  required String original,
+  required PiiCategory category,
+  required TokenCounter counter,
+}) => RustLib.instance.api.crateApplyStrategy(
+  strategy: strategy,
+  original: original,
+  category: category,
+  counter: counter,
+);
+
+/// Score and return the top-N sentences from `text`, joined in original order.
+///
+/// `language` is an ISO 639 (or locale) code used to pick a stopword list;
+/// pass `null` (or an unknown code) to fall back to English.
+/// `max_tokens` bounds the summary length by whitespace-separated tokens;
+/// `null` falls back to `DEFAULT_MAX_TOKENS`.
+Future<String?> summarize({
+  required String text,
+  String? language,
+  PlatformInt64? maxTokens,
+}) => RustLib.instance.api.crateSummarize(
+  text: text,
+  language: language,
+  maxTokens: maxTokens,
+);
+
+/// Count whitespace-separated tokens (used for token-budget bookkeeping by
+/// callers).
+Future<PlatformInt64> tokenCount({required String text}) =>
+    RustLib.instance.api.crateTokenCount(text: text);
+
+/// Run abstractive summarisation against the configured LLM.
+///
+/// `text` is the document content to summarise (already extracted by the
+/// pipeline). `max_tokens` softly bounds the requested summary length in
+/// natural-language tokens; `null` uses `DEFAULT_MAX_TOKENS`.
+///
+/// Returns the summary string and the (optional) usage record.
+///
+/// **Errors:**
+///
+/// Propagates any LLM client / request error returned by
+/// `complete_text`.
+Future<String> summarizeWithLlm({
+  required String text,
+  required LlmConfig llmConfig,
+  PlatformInt64? maxTokens,
+}) => RustLib.instance.api.crateSummarizeWithLlm(
+  text: text,
+  llmConfig: llmConfig,
+  maxTokens: maxTokens,
+);
+
+/// Translate the extraction result in place.
+///
+/// Populates `result.translation` with the translated `content`, optionally the
+/// translated `formatted_content` (when `preserve_markup = true`), and rewrites
+/// every chunk's `content` field. Every LLM call's usage is appended to
+/// `result.llm_usage`.
+Future<void> translateResult({
+  required ExtractionResult result,
+  required TranslationConfig config,
+}) => RustLib.instance.api.crateTranslateResult(result: result, config: config);
+
 /// Compare two extraction results and return a structured diff.
 ///
 /// The comparison is purely structural — no I/O, no side effects. All fields
@@ -275,6 +430,112 @@ Future<ExtractionDiff> compare({
   required ExtractionResult b,
   required DiffOptions opts,
 }) => RustLib.instance.api.crateCompare(a: a, b: b, opts: opts);
+
+/// Extract content from a pre-cropped image region using a VLM.
+///
+/// The caller is responsible for cropping the page image to the region's bounding
+/// box before calling this function. The `image_bytes` parameter must contain the
+/// raw bytes of the **cropped** region image (JPEG, PNG, WebP, etc.).
+///
+/// **Returns:**
+///
+/// Extracted Markdown text from the VLM, or an error if the VLM call fails.
+///
+/// **Errors:**
+///
+/// - `Ocr` if the VLM call fails or returns no content.
+/// - `MissingDependency` if the liter-llm client cannot
+///   be initialised.
+Future<String> extractRegionWithVlm({
+  required List<int> imageBytes,
+  required String imageMime,
+  required RegionKind regionKind,
+  required LlmConfig llmConfig,
+  String? customPrompt,
+}) => RustLib.instance.api.crateExtractRegionWithVlm(
+  imageBytes: imageBytes,
+  imageMime: imageMime,
+  regionKind: regionKind,
+  llmConfig: llmConfig,
+  customPrompt: customPrompt,
+);
+
+/// Same as `extract_region_with_vlm`, but also returns the `LlmUsage` data captured
+/// from the underlying VLM call.
+///
+/// Callers that need to track token / cost data per call (for example the captioning
+/// post-processor, which appends every call's usage to
+/// `ExtractionResult.llm_usage`) should
+/// prefer this variant. The plain `extract_region_with_vlm` is kept for callers that
+/// only care about the markdown output (PDF region splicing).
+///
+/// **Errors:**
+///
+/// Same as `extract_region_with_vlm`.
+Future<String> extractRegionWithVlmUsage({
+  required List<int> imageBytes,
+  required String imageMime,
+  required RegionKind regionKind,
+  required LlmConfig llmConfig,
+  String? customPrompt,
+}) => RustLib.instance.api.crateExtractRegionWithVlmUsage(
+  imageBytes: imageBytes,
+  imageMime: imageMime,
+  regionKind: regionKind,
+  llmConfig: llmConfig,
+  customPrompt: customPrompt,
+);
+
+/// Send a free-form prompt to the configured LLM with a JSON-schema response
+/// constraint and return the parsed JSON value plus captured usage.
+///
+/// This is the shared helper used by LLM-backed post-processors (page
+/// classification, LLM-driven NER, etc.) that need structured output but do not
+/// want to depend on `StructuredExtractionConfig`'s schema/prompt machinery.
+///
+///   distinguish multiple structured outputs).
+///
+/// - `schema` — the JSON schema the LLM is required to obey.
+/// - `source` — label used for the returned `LlmUsage` entry.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// the response contains no content, or the response is not parseable JSON.
+Future<String> completeWithJsonSchema({
+  required LlmConfig llmConfig,
+  required String prompt,
+  required String schemaName,
+  required String schema,
+  required String source,
+}) => RustLib.instance.api.crateCompleteWithJsonSchema(
+  llmConfig: llmConfig,
+  prompt: prompt,
+  schemaName: schemaName,
+  schema: schema,
+  source: source,
+);
+
+/// Send a single user prompt to the configured LLM and return the response text
+/// along with the captured usage metadata.
+///
+/// The `source` argument labels the `LlmUsage` entry that is returned so
+/// callers can aggregate per-feature spend (`"translation"`, `"summarisation"`,
+/// etc.). The helper performs a single non-streaming chat completion request.
+///
+/// **Errors:**
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// or the response does not contain assistant content.
+Future<String> completeText({
+  required LlmConfig llmConfig,
+  required String prompt,
+  required String source,
+}) => RustLib.instance.api.crateCompleteText(
+  llmConfig: llmConfig,
+  prompt: prompt,
+  source: source,
+);
 
 /// Generate embeddings asynchronously for a list of text strings.
 ///
@@ -355,6 +616,16 @@ Future<AccelerationConfig> createAccelerationConfigFromJson({
   required String json,
 }) => RustLib.instance.api.crateCreateAccelerationConfigFromJson(json: json);
 
+Future<CaptioningConfig> createCaptioningConfigFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateCaptioningConfigFromJson(json: json);
+
+Future<PageClassificationConfig> createPageClassificationConfigFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreatePageClassificationConfigFromJson(
+  json: json,
+);
+
 Future<ContentFilterConfig> createContentFilterConfigFromJson({
   required String json,
 }) => RustLib.instance.api.crateCreateContentFilterConfigFromJson(json: json);
@@ -406,6 +677,9 @@ Future<StructuredExtractionConfig> createStructuredExtractionConfigFromJson({
   json: json,
 );
 
+Future<NerConfig> createNerConfigFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateNerConfigFromJson(json: json);
+
 Future<OcrQualityThresholds> createOcrQualityThresholdsFromJson({
   required String json,
 }) => RustLib.instance.api.crateCreateOcrQualityThresholdsFromJson(json: json);
@@ -439,6 +713,24 @@ Future<ChunkingConfig> createChunkingConfigFromJson({required String json}) =>
 
 Future<EmbeddingConfig> createEmbeddingConfigFromJson({required String json}) =>
     RustLib.instance.api.crateCreateEmbeddingConfigFromJson(json: json);
+
+Future<RedactionConfig> createRedactionConfigFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateRedactionConfigFromJson(json: json);
+
+Future<RedactionTerm> createRedactionTermFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateRedactionTermFromJson(json: json);
+
+Future<RedactionPattern> createRedactionPatternFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateRedactionPatternFromJson(json: json);
+
+Future<SummarizationConfig> createSummarizationConfigFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateSummarizationConfigFromJson(json: json);
+
+Future<TranslationConfig> createTranslationConfigFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateTranslationConfigFromJson(json: json);
 
 Future<TreeSitterConfig> createTreeSitterConfigFromJson({
   required String json,
@@ -484,6 +776,14 @@ Future<TokenReductionConfig> createTokenReductionConfigFromJson({
 Future<PdfAnnotation> createPdfAnnotationFromJson({required String json}) =>
     RustLib.instance.api.crateCreatePdfAnnotationFromJson(json: json);
 
+Future<PageClassification> createPageClassificationFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreatePageClassificationFromJson(json: json);
+
+Future<ClassificationLabel> createClassificationLabelFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateClassificationLabelFromJson(json: json);
+
 Future<DjotContent> createDjotContentFromJson({required String json}) =>
     RustLib.instance.api.crateCreateDjotContentFromJson(json: json);
 
@@ -521,6 +821,9 @@ Future<GridCell> createGridCellFromJson({required String json}) =>
 
 Future<TextAnnotation> createTextAnnotationFromJson({required String json}) =>
     RustLib.instance.api.crateCreateTextAnnotationFromJson(json: json);
+
+Future<Entity> createEntityFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateEntityFromJson(json: json);
 
 Future<ExtractionResult> createExtractionResultFromJson({
   required String json,
@@ -730,6 +1033,19 @@ Future<HierarchicalBlock> createHierarchicalBlockFromJson({
   required String json,
 }) => RustLib.instance.api.crateCreateHierarchicalBlockFromJson(json: json);
 
+Future<QrCode> createQrCodeFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateQrCodeFromJson(json: json);
+
+Future<QrBoundingBox> createQrBoundingBoxFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateQrBoundingBoxFromJson(json: json);
+
+Future<RedactionReport> createRedactionReportFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateRedactionReportFromJson(json: json);
+
+Future<RedactionFinding> createRedactionFindingFromJson({
+  required String json,
+}) => RustLib.instance.api.crateCreateRedactionFindingFromJson(json: json);
+
 Future<CellChange> createCellChangeFromJson({required String json}) =>
     RustLib.instance.api.crateCreateCellChangeFromJson(json: json);
 
@@ -740,11 +1056,17 @@ Future<DocumentRevision> createDocumentRevisionFromJson({
 Future<RevisionDelta> createRevisionDeltaFromJson({required String json}) =>
     RustLib.instance.api.crateCreateRevisionDeltaFromJson(json: json);
 
+Future<DocumentSummary> createDocumentSummaryFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateDocumentSummaryFromJson(json: json);
+
 Future<Table> createTableFromJson({required String json}) =>
     RustLib.instance.api.crateCreateTableFromJson(json: json);
 
 Future<TableCell> createTableCellFromJson({required String json}) =>
     RustLib.instance.api.crateCreateTableCellFromJson(json: json);
+
+Future<Translation> createTranslationFromJson({required String json}) =>
+    RustLib.instance.api.crateCreateTranslationFromJson(json: json);
 
 Future<ExtractedUri> createExtractedUriFromJson({required String json}) =>
     RustLib.instance.api.crateCreateExtractedUriFromJson(json: json);
@@ -1112,6 +1434,24 @@ abstract class EmbeddingBackendDartImpl implements RustOpaqueInterface {
   set field0(ArcEmbeddingBackend field0);
 }
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LlmBackend>>
+abstract class LlmBackend implements RustOpaqueInterface {
+  Future<List<Entity>> detect({
+    required String text,
+    required List<EntityCategory> categories,
+  });
+
+  Future<List<Entity>> detectWithCustom({
+    required String text,
+    required List<EntityCategory> categories,
+    required List<String> customLabels,
+  });
+
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
+  static Future<LlmBackend> newInstance({required LlmConfig config}) =>
+      RustLib.instance.api.crateLlmBackendNew(config: config);
+}
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OcrBackendDartImpl>>
 abstract class OcrBackendDartImpl implements RustOpaqueInterface {
   ArcOcrBackend get field0;
@@ -1131,6 +1471,18 @@ abstract class RendererDartImpl implements RustOpaqueInterface {
   ArcRenderer get field0;
 
   set field0(ArcRenderer field0);
+}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TokenCounter>>
+abstract class TokenCounter implements RustOpaqueInterface {
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
+  static Future<TokenCounter> newInstance() =>
+      RustLib.instance.api.crateTokenCounterNew();
+
+  Future<String> nextToken({
+    required PiiCategory category,
+    required String original,
+  });
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ValidatorDartImpl>>
@@ -1505,6 +1857,38 @@ class CacheStats {
           availableSpaceMb == other.availableSpaceMb &&
           oldestFileAgeDays == other.oldestFileAgeDays &&
           newestFileAgeDays == other.newestFileAgeDays;
+}
+
+/// Configuration for the VLM captioning post-processor.
+class CaptioningConfig {
+  /// LLM configuration used for the VLM call.
+  final LlmConfig llm;
+
+  /// Optional custom caption prompt. `None` uses the default `RegionKind::Caption`
+  /// prompt that ships with `crate::llm::region_extractor`.
+  final String? prompt;
+
+  /// Skip images whose `width * height` is below this threshold (in pixels).
+  /// Default `1_000` filters out icons and decorations.
+  final PlatformInt64 minImageArea;
+
+  const CaptioningConfig({
+    required this.llm,
+    this.prompt,
+    required this.minImageArea,
+  });
+
+  @override
+  int get hashCode => llm.hashCode ^ prompt.hashCode ^ minImageArea.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CaptioningConfig &&
+          runtimeType == other.runtimeType &&
+          llm == other.llm &&
+          prompt == other.prompt &&
+          minImageArea == other.minImageArea;
 }
 
 /// A single changed cell within a table.
@@ -1902,6 +2286,29 @@ class CitationMetadata {
           yearRange == other.yearRange &&
           dois == other.dois &&
           keywords == other.keywords;
+}
+
+/// A single label + confidence pair.
+class ClassificationLabel {
+  /// Label name as configured in `PageClassificationConfig::labels`.
+  final String label;
+
+  /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend (e.g. an LLM
+  /// prompt without explicit confidence schema) did not report one.
+  final double? confidence;
+
+  const ClassificationLabel({required this.label, this.confidence});
+
+  @override
+  int get hashCode => label.hashCode ^ confidence.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClassificationLabel &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          confidence == other.confidence;
 }
 
 /// Content rendering mode for code extraction.
@@ -2756,6 +3163,36 @@ class DocumentStructure {
           nodeTypes == other.nodeTypes;
 }
 
+/// Summary of an extracted document.
+class DocumentSummary {
+  /// Summary text (plain prose).
+  final String text;
+
+  /// Strategy that produced this summary.
+  final SummaryStrategy strategy;
+
+  /// Approximate token count of the summary, when known.
+  final PlatformInt64? tokenCount;
+
+  const DocumentSummary({
+    required this.text,
+    required this.strategy,
+    this.tokenCount,
+  });
+
+  @override
+  int get hashCode => text.hashCode ^ strategy.hashCode ^ tokenCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DocumentSummary &&
+          runtimeType == other.runtimeType &&
+          text == other.text &&
+          strategy == other.strategy &&
+          tokenCount == other.tokenCount;
+}
+
 /// Application properties from docProps/app.xml for DOCX
 ///
 /// Contains Word-specific document statistics and metadata.
@@ -3554,6 +3991,70 @@ class EmbeddingPreset {
           description == other.description;
 }
 
+/// A single named entity detected in the extracted text.
+class Entity {
+  /// Canonical category the entity belongs to (PERSON, ORG, LOCATION, etc.).
+  final EntityCategory category;
+
+  /// Raw mention text exactly as it appeared in the source.
+  final String text;
+
+  /// Byte-offset span in `ExtractionResult::content` where the mention starts.
+  final PlatformInt64 start;
+
+  /// Byte-offset span in `ExtractionResult::content` where the mention ends (exclusive).
+  final PlatformInt64 end;
+
+  /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend does not
+  /// expose confidence scores.
+  final double? confidence;
+
+  const Entity({
+    required this.category,
+    required this.text,
+    required this.start,
+    required this.end,
+    this.confidence,
+  });
+
+  @override
+  int get hashCode =>
+      category.hashCode ^
+      text.hashCode ^
+      start.hashCode ^
+      end.hashCode ^
+      confidence.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Entity &&
+          runtimeType == other.runtimeType &&
+          category == other.category &&
+          text == other.text &&
+          start == other.start &&
+          end == other.end &&
+          confidence == other.confidence;
+}
+
+@freezed
+sealed class EntityCategory with _$EntityCategory {
+  const EntityCategory._();
+
+  const factory EntityCategory.person() = EntityCategory_Person;
+  const factory EntityCategory.organization() = EntityCategory_Organization;
+  const factory EntityCategory.location() = EntityCategory_Location;
+  const factory EntityCategory.date() = EntityCategory_Date;
+  const factory EntityCategory.time() = EntityCategory_Time;
+  const factory EntityCategory.money() = EntityCategory_Money;
+  const factory EntityCategory.percent() = EntityCategory_Percent;
+  const factory EntityCategory.email() = EntityCategory_Email;
+  const factory EntityCategory.phone() = EntityCategory_Phone;
+  const factory EntityCategory.url() = EntityCategory_Url;
+  const factory EntityCategory.custom({required String field0}) =
+      EntityCategory_Custom;
+}
+
 /// EPUB metadata (Dublin Core extensions).
 class EpubMetadata {
   final String? coverage;
@@ -3818,6 +4319,21 @@ class ExtractedImage {
   /// (e.g. all raster tiles of one technical drawing). `None` for singletons.
   final PlatformInt64? clusterId;
 
+  /// VLM-generated caption describing the image, when captioning is configured.
+  ///
+  /// Populated by the captioning post-processor
+  /// (`crates/kreuzberg/src/plugins/processor/builtin/captioning.rs`), which routes
+  /// each image through `crate::llm::region_extractor::extract_region_with_vlm` in
+  /// caption mode. `None` when captioning is disabled or the VLM declined to caption.
+  final String? caption;
+
+  /// QR codes decoded from this image, when QR detection is enabled.
+  ///
+  /// Populated by the QR post-processor (`crates/kreuzberg/src/extractors/qr.rs`) via
+  /// the pure-Rust `rqrr` decoder. `None` when QR detection is disabled; an empty
+  /// `Some(vec![])` when detection ran but found nothing.
+  final List<QrCode>? qrCodes;
+
   const ExtractedImage({
     required this.data,
     required this.format,
@@ -3835,6 +4351,8 @@ class ExtractedImage {
     this.imageKind,
     this.kindConfidence,
     this.clusterId,
+    this.caption,
+    this.qrCodes,
   });
 
   @override
@@ -3854,7 +4372,9 @@ class ExtractedImage {
       sourcePath.hashCode ^
       imageKind.hashCode ^
       kindConfidence.hashCode ^
-      clusterId.hashCode;
+      clusterId.hashCode ^
+      caption.hashCode ^
+      qrCodes.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -3876,7 +4396,9 @@ class ExtractedImage {
           sourcePath == other.sourcePath &&
           imageKind == other.imageKind &&
           kindConfidence == other.kindConfidence &&
-          clusterId == other.clusterId;
+          clusterId == other.clusterId &&
+          caption == other.caption &&
+          qrCodes == other.qrCodes;
 }
 
 /// A URI extracted from a document.
@@ -4156,6 +4678,36 @@ class ExtractionConfig {
   /// `ExtractionResult::structured_output`.
   final StructuredExtractionConfig? structuredExtraction;
 
+  /// Named-entity recognition configuration. When set, the NER post-processor runs at
+  /// the Middle stage and populates `ExtractionResult::entities`.
+  final NerConfig? ner;
+
+  /// Redaction / anonymisation configuration. When set, the redaction post-processor
+  /// runs at the Late stage and rewrites every textual field in `ExtractionResult`,
+  /// emitting an audit trail in `ExtractionResult::redaction_report`.
+  final RedactionConfig? redaction;
+
+  /// Summarisation configuration. When set, the summarisation post-processor runs at
+  /// the Middle stage and populates `ExtractionResult::summary`.
+  final SummarizationConfig? summarization;
+
+  /// Translation configuration. When set, the translation post-processor runs at the
+  /// Middle stage and populates `ExtractionResult::translation`.
+  final TranslationConfig? translation;
+
+  /// Per-page classification configuration. When set, the classification post-processor
+  /// runs at the Middle stage and populates `ExtractionResult::page_classifications`.
+  final PageClassificationConfig? pageClassification;
+
+  /// VLM captioning configuration for extracted images. When set, the captioning
+  /// post-processor runs at the Middle stage and writes a caption into each
+  /// `ExtractedImage::caption`.
+  final CaptioningConfig? captioning;
+
+  /// Enable QR-code detection in extracted images. When `true`, the QR post-processor
+  /// runs at the Middle stage and populates `ExtractedImage::qr_codes`.
+  final bool? qrCodes;
+
   /// Cancellation token for this extraction (None = no external cancellation).
   ///
   /// Pass a [`CancellationToken`] clone here and call [`CancellationToken::cancel`]
@@ -4202,6 +4754,13 @@ class ExtractionConfig {
     required this.maxArchiveDepth,
     this.treeSitter,
     this.structuredExtraction,
+    this.ner,
+    this.redaction,
+    this.summarization,
+    this.translation,
+    this.pageClassification,
+    this.captioning,
+    this.qrCodes,
     this.cancelToken,
   });
 
@@ -4241,6 +4800,13 @@ class ExtractionConfig {
       maxArchiveDepth.hashCode ^
       treeSitter.hashCode ^
       structuredExtraction.hashCode ^
+      ner.hashCode ^
+      redaction.hashCode ^
+      summarization.hashCode ^
+      translation.hashCode ^
+      pageClassification.hashCode ^
+      captioning.hashCode ^
+      qrCodes.hashCode ^
       cancelToken.hashCode;
 
   @override
@@ -4282,6 +4848,13 @@ class ExtractionConfig {
           maxArchiveDepth == other.maxArchiveDepth &&
           treeSitter == other.treeSitter &&
           structuredExtraction == other.structuredExtraction &&
+          ner == other.ner &&
+          redaction == other.redaction &&
+          summarization == other.summarization &&
+          translation == other.translation &&
+          pageClassification == other.pageClassification &&
+          captioning == other.captioning &&
+          qrCodes == other.qrCodes &&
           cancelToken == other.cancelToken;
 }
 
@@ -4515,6 +5088,37 @@ class ExtractionResult {
   /// `None` when no LLM was used.
   final List<LlmUsage>? llmUsage;
 
+  /// Named entities detected in `content` by the NER post-processor.
+  ///
+  /// `None` when no NER backend is configured. Populated by the gline-rs ONNX
+  /// backend or the LLM-driven backend (see `crates/kreuzberg/src/text/ner/`).
+  final List<Entity>? entities;
+
+  /// Summary of `content` produced by the summarisation post-processor.
+  ///
+  /// `None` when summarisation is not configured. Populated by the TextRank
+  /// extractive backend (deterministic, no external service) or by the
+  /// liter-llm-driven abstractive backend.
+  final DocumentSummary? summary;
+
+  /// Translation of `content` produced by the translation post-processor.
+  ///
+  /// `None` when translation is not configured.
+  final Translation? translation;
+
+  /// Per-page classifications produced by the page-classification post-processor.
+  ///
+  /// `None` when classification is not configured.
+  final List<PageClassification>? pageClassifications;
+
+  /// Audit report of redactions applied by the redaction post-processor.
+  ///
+  /// The redaction processor rewrites `content`, `formatted_content`, every
+  /// chunk's text, and the textual fields of `entities` / `summary` / `translation` /
+  /// `page_classifications` in place. This report describes what was found and how it
+  /// was replaced. `None` when redaction is not configured.
+  final RedactionReport? redactionReport;
+
   /// Pre-rendered content in the requested output format.
   ///
   /// Populated during `derive_extraction_result` before tree derivation consumes
@@ -4553,6 +5157,11 @@ class ExtractionResult {
     this.structuredOutput,
     this.codeIntelligence,
     this.llmUsage,
+    this.entities,
+    this.summary,
+    this.translation,
+    this.pageClassifications,
+    this.redactionReport,
     this.formattedContent,
     this.ocrInternalDocument,
   });
@@ -4582,6 +5191,11 @@ class ExtractionResult {
       structuredOutput.hashCode ^
       codeIntelligence.hashCode ^
       llmUsage.hashCode ^
+      entities.hashCode ^
+      summary.hashCode ^
+      translation.hashCode ^
+      pageClassifications.hashCode ^
+      redactionReport.hashCode ^
       formattedContent.hashCode ^
       ocrInternalDocument.hashCode;
 
@@ -4613,6 +5227,11 @@ class ExtractionResult {
           structuredOutput == other.structuredOutput &&
           codeIntelligence == other.codeIntelligence &&
           llmUsage == other.llmUsage &&
+          entities == other.entities &&
+          summary == other.summary &&
+          translation == other.translation &&
+          pageClassifications == other.pageClassifications &&
+          redactionReport == other.redactionReport &&
           formattedContent == other.formattedContent &&
           ocrInternalDocument == other.ocrInternalDocument;
 }
@@ -5876,9 +6495,8 @@ enum InlineType {
   symbol,
 }
 
-/// Opaque JSON carrier for Rust's internal `InternalDocument` trait contract.
-/// Dart code should pass this value back to Alef-generated bridge APIs rather
-/// than treating it as the public `ExtractionResult` DTO.
+/// Opaque JSON carrier for Rust's excluded `InternalDocument` trait-bridge contract.
+/// Dart code should pass this value back to Alef-generated bridge APIs.
 class InternalDocumentBridge {
   final String json;
 
@@ -6679,6 +7297,74 @@ class ModelPaths {
           dictFile == other.dictFile;
 }
 
+/// NER backend selector.
+enum NerBackendKind {
+  /// gline-rs ONNX inference. Requires `ner-onnx` feature. Models download lazily from
+  /// HuggingFace via `model_download::hf_download`.
+  onnx,
+
+  /// liter-llm zero-shot NER via structured-output prompts. Requires `ner-llm`
+  /// feature. Useful when domain-specific categories outstrip the ONNX taxonomy.
+  llm,
+}
+
+/// Configuration for the NER post-processor.
+class NerConfig {
+  /// Backend that runs the entity detection.
+  final NerBackendKind backend;
+
+  /// Entity categories to detect. Defaults to a sensible PERSON/ORG/LOCATION/EMAIL set
+  /// when empty.
+  final List<EntityCategory> categories;
+
+  /// Override the default model — only used by [`NerBackendKind::Onnx`].
+  /// `None` lets the backend pick its pinned default
+  /// (`urchade/gliner_multi-v2.1` for gline-rs).
+  final String? model;
+
+  /// Optional LLM configuration — only used by [`NerBackendKind::Llm`]. Token usage
+  /// for LLM backends is recorded in `ExtractionResult::llm_usage`.
+  final LlmConfig? llm;
+
+  /// Arbitrary user-supplied entity labels for zero-shot detection.
+  ///
+  /// gline-rs natively supports zero-shot inference over caller-supplied labels —
+  /// this is the primary value of GLiNER. The LLM backend also honours these
+  /// labels by including them in the structured-output schema. Custom labels
+  /// surface as [`EntityCategory::Custom`] in the resulting `Entity` stream.
+  ///
+  /// Use this when you need domain-specific entity types (e.g. `"Treatment"`,
+  /// `"Product"`, `"Vessel"`) without forking GLiNER's taxonomy.
+  final List<String> customLabels;
+
+  const NerConfig({
+    required this.backend,
+    required this.categories,
+    this.model,
+    this.llm,
+    required this.customLabels,
+  });
+
+  @override
+  int get hashCode =>
+      backend.hashCode ^
+      categories.hashCode ^
+      model.hashCode ^
+      llm.hashCode ^
+      customLabels.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NerConfig &&
+          runtimeType == other.runtimeType &&
+          backend == other.backend &&
+          categories == other.categories &&
+          model == other.model &&
+          llm == other.llm &&
+          customLabels == other.customLabels;
+}
+
 @freezed
 sealed class NodeContent with _$NodeContent {
   const NodeContent._();
@@ -6935,10 +7621,25 @@ class OcrConfig {
   /// This is critical for handling rotated scanned documents.
   final bool autoRotate;
 
+  /// Ergonomic VLM fallback policy.
+  ///
+  /// When set to anything other than [`VlmFallbackPolicy::Disabled`] and
+  /// [`OcrConfig::pipeline`] is `None`, a multi-stage pipeline is synthesised
+  /// automatically:
+  ///
+  /// - [`VlmFallbackPolicy::OnLowQuality`] → `[classical_stage, vlm_stage]` with the
+  ///   `quality_threshold` mapped onto [`OcrQualityThresholds::pipeline_min_quality`].
+  /// - [`VlmFallbackPolicy::Always`] → `[vlm_stage]` only.
+  ///
+  /// Requires [`OcrConfig::vlm_config`] to be `Some` when not `Disabled`.
+  /// When [`OcrConfig::pipeline`] is explicitly set, this field is ignored.
+  final VlmFallbackPolicy vlmFallback;
+
   /// VLM (Vision Language Model) OCR configuration.
   ///
-  /// Required when `backend` is `"vlm"`. Uses liter-llm to send page
-  /// images to a vision model for text extraction.
+  /// Required when `backend` is `"vlm"` or when `vlm_fallback` is not
+  /// [`VlmFallbackPolicy::Disabled`]. Uses liter-llm to send page images to a
+  /// vision model for text extraction.
   final LlmConfig? vlmConfig;
 
   /// Custom Jinja2 prompt template for VLM OCR.
@@ -6977,6 +7678,7 @@ class OcrConfig {
     this.qualityThresholds,
     this.pipeline,
     required this.autoRotate,
+    required this.vlmFallback,
     this.vlmConfig,
     this.vlmPrompt,
     this.acceleration,
@@ -6996,6 +7698,7 @@ class OcrConfig {
       qualityThresholds.hashCode ^
       pipeline.hashCode ^
       autoRotate.hashCode ^
+      vlmFallback.hashCode ^
       vlmConfig.hashCode ^
       vlmPrompt.hashCode ^
       acceleration.hashCode ^
@@ -7017,6 +7720,7 @@ class OcrConfig {
           qualityThresholds == other.qualityThresholds &&
           pipeline == other.pipeline &&
           autoRotate == other.autoRotate &&
+          vlmFallback == other.vlmFallback &&
           vlmConfig == other.vlmConfig &&
           vlmPrompt == other.vlmPrompt &&
           acceleration == other.acceleration &&
@@ -7834,6 +8538,69 @@ class PageBoundary {
           pageNumber == other.pageNumber;
 }
 
+/// Classification result for a single page.
+class PageClassification {
+  /// 1-indexed page number this classification belongs to.
+  final PlatformInt64 pageNumber;
+
+  /// Labels assigned to the page. Single-label classification yields exactly one
+  /// entry; multi-label classification yields any subset of the configured label set.
+  final List<ClassificationLabel> labels;
+
+  const PageClassification({required this.pageNumber, required this.labels});
+
+  @override
+  int get hashCode => pageNumber.hashCode ^ labels.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PageClassification &&
+          runtimeType == other.runtimeType &&
+          pageNumber == other.pageNumber &&
+          labels == other.labels;
+}
+
+/// Configuration for the page-classification post-processor.
+class PageClassificationConfig {
+  /// Minijinja prompt template. Receives `{{ labels }}` (joined list), `{{ page_text }}`
+  /// and `{{ multi_label }}` variables. `None` lets the backend pick a sensible default.
+  final String? promptTemplate;
+
+  /// The set of labels the classifier may emit. Must contain at least one entry.
+  final List<String> labels;
+
+  /// Allow multiple labels per page. Single-label mode returns at most one label.
+  final bool multiLabel;
+
+  /// LLM configuration used for classification.
+  final LlmConfig llm;
+
+  const PageClassificationConfig({
+    this.promptTemplate,
+    required this.labels,
+    required this.multiLabel,
+    required this.llm,
+  });
+
+  @override
+  int get hashCode =>
+      promptTemplate.hashCode ^
+      labels.hashCode ^
+      multiLabel.hashCode ^
+      llm.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PageClassificationConfig &&
+          runtimeType == other.runtimeType &&
+          promptTemplate == other.promptTemplate &&
+          labels == other.labels &&
+          multiLabel == other.multiLabel &&
+          llm == other.llm;
+}
+
 /// Page extraction and tracking configuration.
 ///
 /// Controls how pages are extracted, tracked, and represented in the extraction results.
@@ -8151,6 +8918,43 @@ enum PageUnitType {
   sheet,
 }
 
+/// One detected PII span in the input text.
+class PatternMatch {
+  /// Inclusive byte-offset start of the match in the source text.
+  final PlatformInt64 start;
+
+  /// Exclusive byte-offset end of the match.
+  final PlatformInt64 end;
+
+  /// Category the match belongs to.
+  final PiiCategory category;
+
+  /// Matched substring (owned copy — pattern engine returns owned data so the
+  /// caller can free the original text if needed before replacement).
+  final String text;
+
+  const PatternMatch({
+    required this.start,
+    required this.end,
+    required this.category,
+    required this.text,
+  });
+
+  @override
+  int get hashCode =>
+      start.hashCode ^ end.hashCode ^ category.hashCode ^ text.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PatternMatch &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end &&
+          category == other.category &&
+          text == other.text;
+}
+
 /// A PDF annotation extracted from a document page.
 class PdfAnnotation {
   /// The type of annotation.
@@ -8361,6 +9165,42 @@ class PdfMetadata {
           width == other.width &&
           height == other.height &&
           pageCount == other.pageCount;
+}
+
+@freezed
+sealed class PiiCategory with _$PiiCategory {
+  const PiiCategory._();
+
+  const factory PiiCategory.email() = PiiCategory_Email;
+  const factory PiiCategory.phone() = PiiCategory_Phone;
+  const factory PiiCategory.ssn() = PiiCategory_Ssn;
+  const factory PiiCategory.creditCard() = PiiCategory_CreditCard;
+  const factory PiiCategory.postalCode() = PiiCategory_PostalCode;
+  const factory PiiCategory.ipAddress() = PiiCategory_IpAddress;
+  const factory PiiCategory.iban() = PiiCategory_Iban;
+  const factory PiiCategory.swiftBic() = PiiCategory_SwiftBic;
+  const factory PiiCategory.dateOfBirth() = PiiCategory_DateOfBirth;
+
+  /// Person name, surfaced by the optional NER backend.
+  const factory PiiCategory.person() = PiiCategory_Person;
+
+  /// Organization name, surfaced by the optional NER backend.
+  const factory PiiCategory.organization() = PiiCategory_Organization;
+
+  /// Location, surfaced by the optional NER backend.
+  const factory PiiCategory.location() = PiiCategory_Location;
+
+  /// Caller-supplied custom category (e.g. internal employee IDs).
+  ///
+  /// Surfaced by the redaction engine when a hit comes from
+  /// [`RedactionConfig::custom_terms`](crate::core::config::redaction::RedactionConfig::custom_terms)
+  /// or [`RedactionConfig::custom_patterns`](crate::core::config::redaction::RedactionConfig::custom_patterns).
+  /// The string is the label passed alongside the term/pattern. Use those
+  /// fields rather than constructing `Custom` directly via the
+  /// `categories` filter — the pattern engine cannot detect arbitrary text
+  /// from a category name alone.
+  const factory PiiCategory.custom({required String field0}) =
+      PiiCategory_Custom;
 }
 
 /// Post-processor configuration.
@@ -8744,6 +9584,65 @@ class PstMetadata {
           messageCount == other.messageCount;
 }
 
+/// Pixel-space bounding box of a QR code inside its source image.
+class QrBoundingBox {
+  final PlatformInt64 x;
+  final PlatformInt64 y;
+  final PlatformInt64 width;
+  final PlatformInt64 height;
+
+  const QrBoundingBox({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  int get hashCode =>
+      x.hashCode ^ y.hashCode ^ width.hashCode ^ height.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QrBoundingBox &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y &&
+          width == other.width &&
+          height == other.height;
+}
+
+/// One QR code decoded from an extracted image.
+class QrCode {
+  /// Decoded payload (text, URL, vCard string, …).
+  final String payload;
+
+  /// Detector-reported confidence in `[0.0, 1.0]`. `None` when the decoder
+  /// does not expose confidence (the default `rqrr` backend always reports
+  /// `Some` because successful decode implies high confidence).
+  final double? confidence;
+
+  /// Bounding box of the QR code inside the source image, in pixel coordinates
+  /// (`x`, `y` of the top-left corner; `width`, `height` of the rectangle).
+  /// `None` if the decoder did not report a bounding box.
+  final QrBoundingBox? bbox;
+
+  const QrCode({required this.payload, this.confidence, this.bbox});
+
+  @override
+  int get hashCode => payload.hashCode ^ confidence.hashCode ^ bbox.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QrCode &&
+          runtimeType == other.runtimeType &&
+          payload == other.payload &&
+          confidence == other.confidence &&
+          bbox == other.bbox;
+}
+
 /// RAKE-specific parameters.
 class RakeParams {
   /// Minimum word length to consider (default: 1).
@@ -8805,7 +9704,266 @@ class RecognizedTable {
           markdown == other.markdown;
 }
 
+/// Configuration for the redaction post-processor.
+class RedactionConfig {
+  /// Categories to redact. Empty means "every category supported by the engine."
+  final List<PiiCategory> categories;
+
+  /// Strategy applied to every match.
+  final RedactionStrategy strategy;
+
+  /// Optional NER backend — required to redact PERSON / ORGANIZATION / LOCATION
+  /// categories (the pure-Rust pattern engine only covers regex-detectable PII).
+  final NerConfig? ner;
+
+  /// When `true`, chunk byte ranges are kept consistent with the rewritten content by
+  /// adjusting `byte_start` / `byte_end` after replacement. When `false`, chunk byte
+  /// ranges still refer to the *original* content offsets — useful when downstream
+  /// consumers want to map findings back to the original document.
+  final bool preserveOffsets;
+
+  /// Arbitrary user-supplied literal terms to redact.
+  ///
+  /// Each term is treated as a regex hit against the document, surfacing as
+  /// `PiiCategory::Custom(label)` in [`RedactionFinding`](crate::types::redaction::RedactionFinding)
+  /// where `label` is the per-term label (defaulting to the literal value itself).
+  /// Case-insensitive by default; set [`RedactionTerm::case_sensitive`] for exact match.
+  ///
+  /// Use this when you need to redact tenant-specific tokens (employee IDs,
+  /// project codes, internal product names) without writing a custom plugin.
+  final List<RedactionTerm> customTerms;
+
+  /// Arbitrary user-supplied regex patterns to redact.
+  ///
+  /// Same surfacing semantics as [`custom_terms`](Self::custom_terms): each
+  /// hit becomes a `PiiCategory::Custom(label)` finding. Patterns are validated
+  /// at config-construction time via [`RedactionConfig::validate`].
+  final List<RedactionPattern> customPatterns;
+
+  const RedactionConfig({
+    required this.categories,
+    required this.strategy,
+    this.ner,
+    required this.preserveOffsets,
+    required this.customTerms,
+    required this.customPatterns,
+  });
+
+  @override
+  int get hashCode =>
+      categories.hashCode ^
+      strategy.hashCode ^
+      ner.hashCode ^
+      preserveOffsets.hashCode ^
+      customTerms.hashCode ^
+      customPatterns.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RedactionConfig &&
+          runtimeType == other.runtimeType &&
+          categories == other.categories &&
+          strategy == other.strategy &&
+          ner == other.ner &&
+          preserveOffsets == other.preserveOffsets &&
+          customTerms == other.customTerms &&
+          customPatterns == other.customPatterns;
+}
+
+/// One redaction event: which span was rewritten, why, and with what.
+class RedactionFinding {
+  /// Byte-offset start in the original (pre-redaction) `ExtractionResult::content`.
+  final PlatformInt64 start;
+
+  /// Byte-offset end (exclusive) in the original `ExtractionResult::content`.
+  final PlatformInt64 end;
+
+  /// PII category that fired this redaction.
+  final PiiCategory category;
+
+  /// Strategy applied to this finding (mask, hash, token-replace, drop).
+  final RedactionStrategy strategy;
+
+  /// String that replaced the original mention. Always present; for `Drop` the
+  /// replacement is the empty string.
+  final String replacementToken;
+
+  const RedactionFinding({
+    required this.start,
+    required this.end,
+    required this.category,
+    required this.strategy,
+    required this.replacementToken,
+  });
+
+  @override
+  int get hashCode =>
+      start.hashCode ^
+      end.hashCode ^
+      category.hashCode ^
+      strategy.hashCode ^
+      replacementToken.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RedactionFinding &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end &&
+          category == other.category &&
+          strategy == other.strategy &&
+          replacementToken == other.replacementToken;
+}
+
+/// One user-supplied regex pattern to redact.
+///
+/// The pattern is compiled with the Rust `regex` crate (no look-around). Case
+/// sensitivity is encoded in the pattern via the `(?i)` inline flag when
+/// [`Self::case_sensitive`] is `false`.
+class RedactionPattern {
+  /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+  final String label;
+
+  /// Regex pattern (Rust `regex` crate dialect — no look-around).
+  final String pattern;
+
+  /// When `true`, match case-sensitively; otherwise prepend `(?i)` to the regex.
+  final bool caseSensitive;
+
+  const RedactionPattern({
+    required this.label,
+    required this.pattern,
+    required this.caseSensitive,
+  });
+
+  @override
+  int get hashCode =>
+      label.hashCode ^ pattern.hashCode ^ caseSensitive.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RedactionPattern &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          pattern == other.pattern &&
+          caseSensitive == other.caseSensitive;
+}
+
+/// Audit report describing what the redaction processor found and how it replaced it.
+///
+/// The redactor returns this alongside the rewritten content so compliance, replay, and
+/// audit-log consumers can see exactly what fired. Offsets are relative to the *original*
+/// pre-redaction `content` and are intended for audit reconstruction only — the original
+/// bytes are dropped at the end of the pipeline.
+class RedactionReport {
+  /// Individual redaction findings in original-source byte order.
+  final List<RedactionFinding> findings;
+
+  /// Total number of redactions applied across the document.
+  final PlatformInt64 totalRedacted;
+
+  const RedactionReport({required this.findings, required this.totalRedacted});
+
+  @override
+  int get hashCode => findings.hashCode ^ totalRedacted.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RedactionReport &&
+          runtimeType == other.runtimeType &&
+          findings == other.findings &&
+          totalRedacted == other.totalRedacted;
+}
+
+/// Strategy applied when a PII match is rewritten.
+enum RedactionStrategy {
+  /// Replace the matched span with a fixed mask token (default `"[REDACTED]"`).
+  mask,
+
+  /// Replace with a SHA-256 hash of the original value (truncated to 16 hex chars).
+  /// Lets downstream consumers do equality joins without recovering the source.
+  hash,
+
+  /// Replace with a per-category running token (`"[PERSON_1]"`, `"[PERSON_2]"`, …)
+  /// so the same person referenced twice gets the same token within the document.
+  tokenReplace,
+
+  /// Delete the matched span entirely.
+  drop,
+}
+
+/// One user-supplied literal term to redact.
+///
+/// Matched as a regex-escaped substring (so callers do not need to escape
+/// metacharacters themselves). Case-insensitive by default — set
+/// [`Self::case_sensitive`] to `true` for exact byte-match semantics.
+class RedactionTerm {
+  /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+  final String label;
+
+  /// Literal value to match. Regex metacharacters are escaped automatically.
+  final String value;
+
+  /// When `true`, match the value as-is; otherwise match ASCII-case-insensitively.
+  final bool caseSensitive;
+
+  const RedactionTerm({
+    required this.label,
+    required this.value,
+    required this.caseSensitive,
+  });
+
+  @override
+  int get hashCode => label.hashCode ^ value.hashCode ^ caseSensitive.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RedactionTerm &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          value == other.value &&
+          caseSensitive == other.caseSensitive;
+}
+
 enum ReductionLevel { off, light, moderate, aggressive, maximum }
+
+/// Classification of a detected layout region that warrants VLM extraction.
+///
+/// Each variant maps to a specific prompt optimised for that content type.
+/// The mapping is intentionally narrow — only region kinds for which VLM
+/// extraction provides a clear quality benefit over classical suppression.
+enum RegionKind {
+  /// A figure, diagram, chart, or image region.
+  ///
+  /// VLM prompt: describe the diagram / chart, including axis labels,
+  /// legend entries, and any embedded text.
+  figure,
+
+  /// A densely formatted or complex table that classical extraction garbles.
+  ///
+  /// VLM prompt: extract the table as GitHub-Flavoured Markdown.
+  denseTable,
+
+  /// A region whose layout the classical pipeline cannot handle (multi-column
+  /// insets, heavily annotated forms, mixed text+diagram).
+  ///
+  /// VLM prompt: extract all text and structure as markdown, preserving
+  /// reading order.
+  complexLayout,
+
+  /// A standalone image to be captioned (not extracted as figure markdown).
+  ///
+  /// VLM prompt: produce a single-sentence alt-text-style caption suitable
+  /// for accessibility tooling and downstream indexing. Used by the
+  /// captioning post-processor to populate
+  /// [`ExtractedImage::caption`](crate::types::ExtractedImage::caption).
+  caption,
+}
 
 /// Semantic kind of a relationship between document elements.
 enum RelationshipKind {
@@ -9215,6 +10373,45 @@ class StructuredExtractionConfig {
           strict == other.strict &&
           prompt == other.prompt &&
           llm == other.llm;
+}
+
+/// Configuration for the summarisation post-processor.
+class SummarizationConfig {
+  /// Summarisation strategy.
+  final SummaryStrategy strategy;
+
+  /// Maximum summary length in tokens. `None` lets the backend pick a default.
+  final PlatformInt64? maxTokens;
+
+  /// LLM configuration for the abstractive backend. Ignored when
+  /// `strategy = Extractive`. Required when `strategy = Abstractive`.
+  final LlmConfig? llm;
+
+  const SummarizationConfig({required this.strategy, this.maxTokens, this.llm});
+
+  @override
+  int get hashCode => strategy.hashCode ^ maxTokens.hashCode ^ llm.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SummarizationConfig &&
+          runtimeType == other.runtimeType &&
+          strategy == other.strategy &&
+          maxTokens == other.maxTokens &&
+          llm == other.llm;
+}
+
+/// Summarisation strategy.
+enum SummaryStrategy {
+  /// Pure-Rust extractive summary (TextRank over the chunk graph). Deterministic,
+  /// fast, no external service required.
+  extractive,
+
+  /// Abstractive summary produced by liter-llm. Requires `liter-llm` feature and
+  /// a configured `LlmConfig`. Token usage is captured in
+  /// [`ExtractionResult::llm_usage`](super::extraction::ExtractionResult::llm_usage).
+  abstractive,
 }
 
 /// A supported document format entry.
@@ -9819,6 +11016,91 @@ class TokenReductionOptions {
           preserveImportantWords == other.preserveImportantWords;
 }
 
+/// Translation of the extracted content.
+///
+/// Holds the translated rendition of `ExtractionResult::content` and (when
+/// `preserve_markup` was requested) the translated `formatted_content`. Chunks
+/// are translated in place inside `ExtractionResult::chunks[*].content` rather
+/// than duplicated here.
+class Translation {
+  /// BCP-47 language tag the translation was produced into (e.g. `"de"`, `"fr-CA"`).
+  final String targetLang;
+
+  /// BCP-47 source language. `None` when the translation backend was asked to detect.
+  final String? sourceLang;
+
+  /// Translated plain-text body. Matches the shape of `ExtractionResult::content`.
+  final String content;
+
+  /// Translated markup body (Markdown / HTML / etc.) when `preserve_markup` was
+  /// enabled on the config. `None` otherwise.
+  final String? formattedContent;
+
+  const Translation({
+    required this.targetLang,
+    this.sourceLang,
+    required this.content,
+    this.formattedContent,
+  });
+
+  @override
+  int get hashCode =>
+      targetLang.hashCode ^
+      sourceLang.hashCode ^
+      content.hashCode ^
+      formattedContent.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Translation &&
+          runtimeType == other.runtimeType &&
+          targetLang == other.targetLang &&
+          sourceLang == other.sourceLang &&
+          content == other.content &&
+          formattedContent == other.formattedContent;
+}
+
+/// Configuration for the translation post-processor.
+class TranslationConfig {
+  /// BCP-47 language tag for the target language (e.g. `"de"`, `"fr-CA"`).
+  final String targetLang;
+
+  /// Optional explicit source language. `None` asks the backend to auto-detect.
+  final String? sourceLang;
+
+  /// Translate the formatted (Markdown/HTML) rendition alongside plain text when
+  /// `formatted_content` is present.
+  final bool preserveMarkup;
+
+  /// LLM configuration used for translation.
+  final LlmConfig llm;
+
+  const TranslationConfig({
+    required this.targetLang,
+    this.sourceLang,
+    required this.preserveMarkup,
+    required this.llm,
+  });
+
+  @override
+  int get hashCode =>
+      targetLang.hashCode ^
+      sourceLang.hashCode ^
+      preserveMarkup.hashCode ^
+      llm.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TranslationConfig &&
+          runtimeType == other.runtimeType &&
+          targetLang == other.targetLang &&
+          sourceLang == other.sourceLang &&
+          preserveMarkup == other.preserveMarkup &&
+          llm == other.llm;
+}
+
 /// Configuration for tree-sitter language pack integration.
 ///
 /// Controls grammar download behavior and code analysis options.
@@ -9974,6 +11256,29 @@ enum UriKind {
 
   /// An email address (`mailto:` link or bare email).
   email,
+}
+
+@freezed
+sealed class VlmFallbackPolicy with _$VlmFallbackPolicy {
+  const VlmFallbackPolicy._();
+
+  /// No VLM fallback (default). Behaves identically to the pre-policy single-backend mode.
+  const factory VlmFallbackPolicy.disabled() = VlmFallbackPolicy_Disabled;
+
+  /// Try the classical OCR backend first. If the quality score is below
+  /// `quality_threshold`, send the page to the VLM.
+  ///
+  /// `quality_threshold` is in the `[0.0, 1.0]` range produced by
+  /// `calculate_quality_score`. A value of `0.5` is a
+  /// reasonable starting point; calibrate with the Stage 0 benchmark harness.
+  const factory VlmFallbackPolicy.onLowQuality({
+    /// Minimum acceptable quality score from the classical backend.
+    /// Pages scoring below this are retried with VLM.
+    required double qualityThreshold,
+  }) = VlmFallbackPolicy_OnLowQuality;
+
+  /// Skip the classical OCR backend entirely. Every page is sent to the VLM.
+  const factory VlmFallbackPolicy.always() = VlmFallbackPolicy_Always;
 }
 
 /// Application properties from docProps/app.xml for XLSX

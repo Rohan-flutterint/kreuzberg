@@ -52,13 +52,10 @@ impl NerBackend for LlmBackend {
         categories: &[EntityCategory],
         custom_labels: &[String],
     ) -> Result<Vec<Entity>> {
-        let (value, _usage) =
-            complete_with_json_schema(&self.config, text, categories, custom_labels).await?;
+        let (value, _usage) = complete_with_json_schema(&self.config, text, categories, custom_labels).await?;
 
-        let wire: EntityListWire =
-            serde_json::from_value(value).map_err(|e| crate::KreuzbergError::parsing(format!(
-                "LLM NER backend returned malformed JSON: {e}"
-            )))?;
+        let wire: EntityListWire = serde_json::from_value(value)
+            .map_err(|e| crate::KreuzbergError::parsing(format!("LLM NER backend returned malformed JSON: {e}")))?;
 
         // Build a lookup table so the LLM's lower-cased response can be matched
         // back to the original user-supplied label (which may be mixed-case).
@@ -88,10 +85,7 @@ impl NerBackend for LlmBackend {
     }
 }
 
-fn parse_category(
-    raw: &str,
-    custom_lookup: &std::collections::HashMap<String, String>,
-) -> EntityCategory {
+fn parse_category(raw: &str, custom_lookup: &std::collections::HashMap<String, String>) -> EntityCategory {
     let lower = raw.to_ascii_lowercase();
     match lower.as_str() {
         "person" => EntityCategory::Person,

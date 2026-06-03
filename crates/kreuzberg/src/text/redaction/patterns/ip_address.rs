@@ -10,10 +10,8 @@ use regex::Regex;
 
 static RE_IPV4: Lazy<Regex> = Lazy::new(|| {
     // Each octet 0-255 anchored on word boundaries.
-    Regex::new(
-        r"\b(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}\b",
-    )
-    .expect("ipv4 regex compiles")
+    Regex::new(r"\b(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}\b")
+        .expect("ipv4 regex compiles")
 });
 
 static RE_IPV6: Lazy<Regex> = Lazy::new(|| {

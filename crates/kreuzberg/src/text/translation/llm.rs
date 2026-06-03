@@ -49,8 +49,7 @@ async fn translate_segment(
         return Ok(text.to_string());
     }
     let prompt = render_prompt(config, text, preserve_markup)?;
-    let (translated, usage) =
-        crate::llm::text_completion::complete_text(&config.llm, &prompt, source_label).await?;
+    let (translated, usage) = crate::llm::text_completion::complete_text(&config.llm, &prompt, source_label).await?;
     if let Some(u) = usage {
         usages.push(u);
     }
@@ -73,7 +72,8 @@ pub async fn translate_result(result: &mut ExtractionResult, config: &Translatio
     let mut usages: Vec<LlmUsage> = Vec::new();
 
     // Translate plain content.
-    let translated_content = translate_segment(config, &result.content, false, "translation_content", &mut usages).await?;
+    let translated_content =
+        translate_segment(config, &result.content, false, "translation_content", &mut usages).await?;
 
     // Translate formatted_content (markup-preserving mode) when requested and present.
     let translated_formatted = if config.preserve_markup

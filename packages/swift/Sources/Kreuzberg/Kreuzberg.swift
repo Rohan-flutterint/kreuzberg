@@ -90,6 +90,82 @@ internal extension AccelerationConfig {
     }
 }
 
+/// Configuration for the VLM captioning post-processor.
+public struct CaptioningConfig: Codable, Sendable, Hashable {
+    /// LLM configuration used for the VLM call.
+    public let llm: LlmConfig
+    /// Optional custom caption prompt. `None` uses the default `RegionKind::Caption`
+    /// prompt that ships with `crate::llm::region_extractor`.
+    public let prompt: String?
+    /// Skip images whose `width * height` is below this threshold (in pixels).
+    /// Default `1_000` filters out icons and decorations.
+    public let minImageArea: UInt32
+    public init(llm: LlmConfig, prompt: String? = nil, minImageArea: UInt32) {
+        self.llm = llm
+        self.prompt = prompt
+        self.minImageArea = minImageArea
+    }
+    private enum CodingKeys: String, CodingKey {
+        case llm = "llm"
+        case prompt = "prompt"
+        case minImageArea = "min_image_area"
+    }
+}
+
+// MARK: - Internal FFI conversions for CaptioningConfig
+internal extension CaptioningConfig {
+    init(_ rb: RustBridge.CaptioningConfigRef) throws {
+        self.llm = try LlmConfig(rb.llm())
+        self.prompt = rb.prompt()?.toString()
+        self.minImageArea = rb.minImageArea()
+    }
+    func intoRust() throws -> RustBridge.CaptioningConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.captioningConfigFromJson(json)
+    }
+}
+
+/// Configuration for the page-classification post-processor.
+public struct PageClassificationConfig: Codable, Sendable, Hashable {
+    /// Minijinja prompt template. Receives `{{ labels }}` (joined list), `{{ page_text }}`
+    /// and `{{ multi_label }}` variables. `None` lets the backend pick a sensible default.
+    public let promptTemplate: String?
+    /// The set of labels the classifier may emit. Must contain at least one entry.
+    public let labels: [String]
+    /// Allow multiple labels per page. Single-label mode returns at most one label.
+    public let multiLabel: Bool
+    /// LLM configuration used for classification.
+    public let llm: LlmConfig
+    public init(promptTemplate: String? = nil, labels: [String], multiLabel: Bool, llm: LlmConfig) {
+        self.promptTemplate = promptTemplate
+        self.labels = labels
+        self.multiLabel = multiLabel
+        self.llm = llm
+    }
+    private enum CodingKeys: String, CodingKey {
+        case promptTemplate = "prompt_template"
+        case labels = "labels"
+        case multiLabel = "multi_label"
+        case llm = "llm"
+    }
+}
+
+// MARK: - Internal FFI conversions for PageClassificationConfig
+internal extension PageClassificationConfig {
+    init(_ rb: RustBridge.PageClassificationConfigRef) throws {
+        self.promptTemplate = rb.promptTemplate()?.toString()
+        self.labels = rb.labels().map { $0.as_str().toString() }
+        self.multiLabel = rb.multiLabel()
+        self.llm = try LlmConfig(rb.llm())
+    }
+    func intoRust() throws -> RustBridge.PageClassificationConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.pageClassificationConfigFromJson(json)
+    }
+}
+
 /// Cross-extractor content filtering configuration.
 ///
 /// Controls whether "furniture" content (headers, footers, page numbers,
@@ -650,6 +726,70 @@ internal extension LlmConfig {
 /// ```
 public typealias StructuredExtractionConfig = RustBridge.StructuredExtractionConfig
 
+/// Configuration for the NER post-processor.
+public struct NerConfig: Codable, Sendable, Hashable {
+    /// Backend that runs the entity detection.
+    public let backend: NerBackendKind
+    /// Entity categories to detect. Defaults to a sensible PERSON/ORG/LOCATION/EMAIL set
+    /// when empty.
+    public let categories: [EntityCategory]
+    /// Override the default model — only used by [`NerBackendKind::Onnx`].
+    /// `None` lets the backend pick its pinned default
+    /// (`urchade/gliner_multi-v2.1` for gline-rs).
+    public let model: String?
+    /// Optional LLM configuration — only used by [`NerBackendKind::Llm`]. Token usage
+    /// for LLM backends is recorded in `ExtractionResult::llm_usage`.
+    public let llm: LlmConfig?
+    /// Arbitrary user-supplied entity labels for zero-shot detection.
+    ///
+    /// gline-rs natively supports zero-shot inference over caller-supplied labels —
+    /// this is the primary value of GLiNER. The LLM backend also honours these
+    /// labels by including them in the structured-output schema. Custom labels
+    /// surface as [`EntityCategory::Custom`] in the resulting `Entity` stream.
+    ///
+    /// Use this when you need domain-specific entity types (e.g. `"Treatment"`,
+    /// `"Product"`, `"Vessel"`) without forking GLiNER's taxonomy.
+    public let customLabels: [String]
+    public init(backend: NerBackendKind, categories: [EntityCategory], model: String? = nil, llm: LlmConfig? = nil, customLabels: [String]) {
+        self.backend = backend
+        self.categories = categories
+        self.model = model
+        self.llm = llm
+        self.customLabels = customLabels
+    }
+    private enum CodingKeys: String, CodingKey {
+        case backend = "backend"
+        case categories = "categories"
+        case model = "model"
+        case llm = "llm"
+        case customLabels = "custom_labels"
+    }
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.backend = try container.decode(NerBackendKind.self, forKey: .backend)
+        self.categories = try container.decodeIfPresent([EntityCategory].self, forKey: .categories) ?? []
+        self.model = try container.decodeIfPresent(String.self, forKey: .model) ?? nil
+        self.llm = try container.decodeIfPresent(LlmConfig.self, forKey: .llm) ?? nil
+        self.customLabels = try container.decodeIfPresent([String].self, forKey: .customLabels) ?? []
+    }
+}
+
+// MARK: - Internal FFI conversions for NerConfig
+internal extension NerConfig {
+    init(_ rb: RustBridge.NerConfigRef) throws {
+        self.backend = NerBackendKind(rawValue: rb.backend().toString()) ?? { fatalError("Unknown NerBackendKind: \(rb.backend().toString())") }()
+        self.categories = try rb.categories().map { (s: RustStringRef) -> EntityCategory in let d = s.as_str().toString().data(using: .utf8) ?? Data(); return try JSONDecoder().decode(EntityCategory.self, from: d) }
+        self.model = rb.model()?.toString()
+        self.llm = try rb.llm().map { try LlmConfig($0) }
+        self.customLabels = rb.customLabels().map { $0.as_str().toString() }
+    }
+    func intoRust() throws -> RustBridge.NerConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.nerConfigFromJson(json)
+    }
+}
+
 /// Quality thresholds for OCR fallback decisions and pipeline quality gating.
 ///
 /// All fields default to the values that match the previous hardcoded behavior,
@@ -1056,6 +1196,237 @@ public typealias ChunkingConfig = RustBridge.ChunkingConfig
 /// Configures embedding generation using ONNX models via the vendored embedding engine.
 /// Requires the `embeddings` feature to be enabled.
 public typealias EmbeddingConfig = RustBridge.EmbeddingConfig
+
+/// Configuration for the redaction post-processor.
+public struct RedactionConfig: Codable, Sendable, Hashable {
+    /// Categories to redact. Empty means "every category supported by the engine."
+    public let categories: [PiiCategory]
+    /// Strategy applied to every match.
+    public let strategy: RedactionStrategy
+    /// Optional NER backend — required to redact PERSON / ORGANIZATION / LOCATION
+    /// categories (the pure-Rust pattern engine only covers regex-detectable PII).
+    public let ner: NerConfig?
+    /// When `true`, chunk byte ranges are kept consistent with the rewritten content by
+    /// adjusting `byte_start` / `byte_end` after replacement. When `false`, chunk byte
+    /// ranges still refer to the *original* content offsets — useful when downstream
+    /// consumers want to map findings back to the original document.
+    public let preserveOffsets: Bool
+    /// Arbitrary user-supplied literal terms to redact.
+    ///
+    /// Each term is treated as a regex hit against the document, surfacing as
+    /// `PiiCategory::Custom(label)` in [`RedactionFinding`](crate::types::redaction::RedactionFinding)
+    /// where `label` is the per-term label (defaulting to the literal value itself).
+    /// Case-insensitive by default; set [`RedactionTerm::case_sensitive`] for exact match.
+    ///
+    /// Use this when you need to redact tenant-specific tokens (employee IDs,
+    /// project codes, internal product names) without writing a custom plugin.
+    public let customTerms: [RedactionTerm]
+    /// Arbitrary user-supplied regex patterns to redact.
+    ///
+    /// Same surfacing semantics as [`custom_terms`](Self::custom_terms): each
+    /// hit becomes a `PiiCategory::Custom(label)` finding. Patterns are validated
+    /// at config-construction time via [`RedactionConfig::validate`].
+    public let customPatterns: [RedactionPattern]
+    public init(categories: [PiiCategory], strategy: RedactionStrategy, ner: NerConfig? = nil, preserveOffsets: Bool, customTerms: [RedactionTerm], customPatterns: [RedactionPattern]) {
+        self.categories = categories
+        self.strategy = strategy
+        self.ner = ner
+        self.preserveOffsets = preserveOffsets
+        self.customTerms = customTerms
+        self.customPatterns = customPatterns
+    }
+    private enum CodingKeys: String, CodingKey {
+        case categories = "categories"
+        case strategy = "strategy"
+        case ner = "ner"
+        case preserveOffsets = "preserve_offsets"
+        case customTerms = "custom_terms"
+        case customPatterns = "custom_patterns"
+    }
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.categories = try container.decodeIfPresent([PiiCategory].self, forKey: .categories) ?? []
+        self.strategy = try container.decode(RedactionStrategy.self, forKey: .strategy)
+        self.ner = try container.decodeIfPresent(NerConfig.self, forKey: .ner) ?? nil
+        self.preserveOffsets = try container.decodeIfPresent(Bool.self, forKey: .preserveOffsets) ?? true
+        self.customTerms = try container.decodeIfPresent([RedactionTerm].self, forKey: .customTerms) ?? []
+        self.customPatterns = try container.decodeIfPresent([RedactionPattern].self, forKey: .customPatterns) ?? []
+    }
+}
+
+// MARK: - Internal FFI conversions for RedactionConfig
+internal extension RedactionConfig {
+    init(_ rb: RustBridge.RedactionConfigRef) throws {
+        self.categories = try rb.categories().map { (s: RustStringRef) -> PiiCategory in let d = s.as_str().toString().data(using: .utf8) ?? Data(); return try JSONDecoder().decode(PiiCategory.self, from: d) }
+        self.strategy = RedactionStrategy(rawValue: rb.strategy().toString()) ?? { fatalError("Unknown RedactionStrategy: \(rb.strategy().toString())") }()
+        self.ner = try rb.ner().map { try NerConfig($0) }
+        self.preserveOffsets = rb.preserveOffsets()
+        self.customTerms = try rb.customTerms().map { try RedactionTerm($0) }
+        self.customPatterns = try rb.customPatterns().map { try RedactionPattern($0) }
+    }
+    func intoRust() throws -> RustBridge.RedactionConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.redactionConfigFromJson(json)
+    }
+}
+
+/// One user-supplied literal term to redact.
+///
+/// Matched as a regex-escaped substring (so callers do not need to escape
+/// metacharacters themselves). Case-insensitive by default — set
+/// [`Self::case_sensitive`] to `true` for exact byte-match semantics.
+public struct RedactionTerm: Codable, Sendable, Hashable {
+    /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+    public let label: String
+    /// Literal value to match. Regex metacharacters are escaped automatically.
+    public let value: String
+    /// When `true`, match the value as-is; otherwise match ASCII-case-insensitively.
+    public let caseSensitive: Bool
+    public init(label: String, value: String, caseSensitive: Bool) {
+        self.label = label
+        self.value = value
+        self.caseSensitive = caseSensitive
+    }
+    private enum CodingKeys: String, CodingKey {
+        case label = "label"
+        case value = "value"
+        case caseSensitive = "case_sensitive"
+    }
+}
+
+// MARK: - Internal FFI conversions for RedactionTerm
+internal extension RedactionTerm {
+    init(_ rb: RustBridge.RedactionTermRef) throws {
+        self.label = rb.label().toString()
+        self.value = rb.value().toString()
+        self.caseSensitive = rb.caseSensitive()
+    }
+    func intoRust() throws -> RustBridge.RedactionTerm {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.redactionTermFromJson(json)
+    }
+}
+
+/// One user-supplied regex pattern to redact.
+///
+/// The pattern is compiled with the Rust `regex` crate (no look-around). Case
+/// sensitivity is encoded in the pattern via the `(?i)` inline flag when
+/// [`Self::case_sensitive`] is `false`.
+public struct RedactionPattern: Codable, Sendable, Hashable {
+    /// Custom category label surfaced in [`RedactionFinding::category`](crate::types::redaction::RedactionFinding::category).
+    public let label: String
+    /// Regex pattern (Rust `regex` crate dialect — no look-around).
+    public let pattern: String
+    /// When `true`, match case-sensitively; otherwise prepend `(?i)` to the regex.
+    public let caseSensitive: Bool
+    public init(label: String, pattern: String, caseSensitive: Bool) {
+        self.label = label
+        self.pattern = pattern
+        self.caseSensitive = caseSensitive
+    }
+    private enum CodingKeys: String, CodingKey {
+        case label = "label"
+        case pattern = "pattern"
+        case caseSensitive = "case_sensitive"
+    }
+}
+
+// MARK: - Internal FFI conversions for RedactionPattern
+internal extension RedactionPattern {
+    init(_ rb: RustBridge.RedactionPatternRef) throws {
+        self.label = rb.label().toString()
+        self.pattern = rb.pattern().toString()
+        self.caseSensitive = rb.caseSensitive()
+    }
+    func intoRust() throws -> RustBridge.RedactionPattern {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.redactionPatternFromJson(json)
+    }
+}
+
+/// Configuration for the summarisation post-processor.
+public struct SummarizationConfig: Codable, Sendable, Hashable {
+    /// Summarisation strategy.
+    public let strategy: SummaryStrategy
+    /// Maximum summary length in tokens. `None` lets the backend pick a default.
+    public let maxTokens: UInt32?
+    /// LLM configuration for the abstractive backend. Ignored when
+    /// `strategy = Extractive`. Required when `strategy = Abstractive`.
+    public let llm: LlmConfig?
+    public init(strategy: SummaryStrategy, maxTokens: UInt32? = nil, llm: LlmConfig? = nil) {
+        self.strategy = strategy
+        self.maxTokens = maxTokens
+        self.llm = llm
+    }
+    private enum CodingKeys: String, CodingKey {
+        case strategy = "strategy"
+        case maxTokens = "max_tokens"
+        case llm = "llm"
+    }
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.strategy = try container.decode(SummaryStrategy.self, forKey: .strategy)
+        self.maxTokens = try container.decodeIfPresent(UInt32.self, forKey: .maxTokens) ?? nil
+        self.llm = try container.decodeIfPresent(LlmConfig.self, forKey: .llm) ?? nil
+    }
+}
+
+// MARK: - Internal FFI conversions for SummarizationConfig
+internal extension SummarizationConfig {
+    init(_ rb: RustBridge.SummarizationConfigRef) throws {
+        self.strategy = SummaryStrategy(rawValue: rb.strategy().toString()) ?? { fatalError("Unknown SummaryStrategy: \(rb.strategy().toString())") }()
+        self.maxTokens = rb.maxTokens()
+        self.llm = try rb.llm().map { try LlmConfig($0) }
+    }
+    func intoRust() throws -> RustBridge.SummarizationConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.summarizationConfigFromJson(json)
+    }
+}
+
+/// Configuration for the translation post-processor.
+public struct TranslationConfig: Codable, Sendable, Hashable {
+    /// BCP-47 language tag for the target language (e.g. `"de"`, `"fr-CA"`).
+    public let targetLang: String
+    /// Optional explicit source language. `None` asks the backend to auto-detect.
+    public let sourceLang: String?
+    /// Translate the formatted (Markdown/HTML) rendition alongside plain text when
+    /// `formatted_content` is present.
+    public let preserveMarkup: Bool
+    /// LLM configuration used for translation.
+    public let llm: LlmConfig
+    public init(targetLang: String, sourceLang: String? = nil, preserveMarkup: Bool, llm: LlmConfig) {
+        self.targetLang = targetLang
+        self.sourceLang = sourceLang
+        self.preserveMarkup = preserveMarkup
+        self.llm = llm
+    }
+    private enum CodingKeys: String, CodingKey {
+        case targetLang = "target_lang"
+        case sourceLang = "source_lang"
+        case preserveMarkup = "preserve_markup"
+        case llm = "llm"
+    }
+}
+
+// MARK: - Internal FFI conversions for TranslationConfig
+internal extension TranslationConfig {
+    init(_ rb: RustBridge.TranslationConfigRef) throws {
+        self.targetLang = rb.targetLang().toString()
+        self.sourceLang = rb.sourceLang()?.toString()
+        self.preserveMarkup = rb.preserveMarkup()
+        self.llm = try LlmConfig(rb.llm())
+    }
+    func intoRust() throws -> RustBridge.TranslationConfig {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.translationConfigFromJson(json)
+    }
+}
 
 /// Configuration for tree-sitter language pack integration.
 ///
@@ -1757,6 +2128,9 @@ internal extension SecurityLimits {
 
 public typealias TokenReductionConfig = RustBridge.TokenReductionConfig
 
+/// One detected PII span in the input text.
+public typealias PatternMatch = RustBridge.PatternMatch
+
 /// A PDF annotation extracted from a document page.
 public struct PdfAnnotation: Codable, Sendable, Hashable {
     /// The type of annotation.
@@ -1793,6 +2167,62 @@ internal extension PdfAnnotation {
         let data = try JSONEncoder().encode(self)
         let json = String(data: data, encoding: .utf8) ?? "{}"
         return try RustBridge.pdfAnnotationFromJson(json)
+    }
+}
+
+/// Classification result for a single page.
+public struct PageClassification: Codable, Sendable, Hashable {
+    /// 1-indexed page number this classification belongs to.
+    public let pageNumber: UInt32
+    /// Labels assigned to the page. Single-label classification yields exactly one
+    /// entry; multi-label classification yields any subset of the configured label set.
+    public let labels: [ClassificationLabel]
+    public init(pageNumber: UInt32, labels: [ClassificationLabel]) {
+        self.pageNumber = pageNumber
+        self.labels = labels
+    }
+    private enum CodingKeys: String, CodingKey {
+        case pageNumber = "page_number"
+        case labels = "labels"
+    }
+}
+
+// MARK: - Internal FFI conversions for PageClassification
+internal extension PageClassification {
+    init(_ rb: RustBridge.PageClassificationRef) throws {
+        self.pageNumber = rb.pageNumber()
+        self.labels = try rb.labels().map { try ClassificationLabel($0) }
+    }
+    func intoRust() throws -> RustBridge.PageClassification {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.pageClassificationFromJson(json)
+    }
+}
+
+/// A single label + confidence pair.
+public struct ClassificationLabel: Codable, Sendable, Hashable {
+    /// Label name as configured in `PageClassificationConfig::labels`.
+    public let label: String
+    /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend (e.g. an LLM
+    /// prompt without explicit confidence schema) did not report one.
+    public let confidence: Float?
+    public init(label: String, confidence: Float? = nil) {
+        self.label = label
+        self.confidence = confidence
+    }
+}
+
+// MARK: - Internal FFI conversions for ClassificationLabel
+internal extension ClassificationLabel {
+    init(_ rb: RustBridge.ClassificationLabelRef) throws {
+        self.label = rb.label().toString()
+        self.confidence = rb.confidence()
+    }
+    func intoRust() throws -> RustBridge.ClassificationLabel {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.classificationLabelFromJson(json)
     }
 }
 
@@ -2060,6 +2490,44 @@ internal extension TextAnnotation {
         let data = try JSONEncoder().encode(self)
         let json = String(data: data, encoding: .utf8) ?? "{}"
         return try RustBridge.textAnnotationFromJson(json)
+    }
+}
+
+/// A single named entity detected in the extracted text.
+public struct Entity: Codable, Sendable, Hashable {
+    /// Canonical category the entity belongs to (PERSON, ORG, LOCATION, etc.).
+    public let category: EntityCategory
+    /// Raw mention text exactly as it appeared in the source.
+    public let text: String
+    /// Byte-offset span in `ExtractionResult::content` where the mention starts.
+    public let start: UInt32
+    /// Byte-offset span in `ExtractionResult::content` where the mention ends (exclusive).
+    public let end: UInt32
+    /// Backend-reported confidence in `[0.0, 1.0]`. `None` when the backend does not
+    /// expose confidence scores.
+    public let confidence: Float?
+    public init(category: EntityCategory, text: String, start: UInt32, end: UInt32, confidence: Float? = nil) {
+        self.category = category
+        self.text = text
+        self.start = start
+        self.end = end
+        self.confidence = confidence
+    }
+}
+
+// MARK: - Internal FFI conversions for Entity
+internal extension Entity {
+    init(_ rb: RustBridge.EntityRef) throws {
+        self.category = try JSONDecoder().decode(EntityCategory.self, from: ((rb.category().toString()).data(using: .utf8) ?? Data("null".utf8)))
+        self.text = rb.text().toString()
+        self.start = rb.start()
+        self.end = rb.end()
+        self.confidence = rb.confidence()
+    }
+    func intoRust() throws -> RustBridge.Entity {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.entityFromJson(json)
     }
 }
 
@@ -4415,6 +4883,145 @@ internal extension HierarchicalBlock {
     }
 }
 
+/// One QR code decoded from an extracted image.
+public struct QrCode: Codable, Sendable, Hashable {
+    /// Decoded payload (text, URL, vCard string, …).
+    public let payload: String
+    /// Detector-reported confidence in `[0.0, 1.0]`. `None` when the decoder
+    /// does not expose confidence (the default `rqrr` backend always reports
+    /// `Some` because successful decode implies high confidence).
+    public let confidence: Float?
+    /// Bounding box of the QR code inside the source image, in pixel coordinates
+    /// (`x`, `y` of the top-left corner; `width`, `height` of the rectangle).
+    /// `None` if the decoder did not report a bounding box.
+    public let bbox: QrBoundingBox?
+    public init(payload: String, confidence: Float? = nil, bbox: QrBoundingBox? = nil) {
+        self.payload = payload
+        self.confidence = confidence
+        self.bbox = bbox
+    }
+}
+
+// MARK: - Internal FFI conversions for QrCode
+internal extension QrCode {
+    init(_ rb: RustBridge.QrCodeRef) throws {
+        self.payload = rb.payload().toString()
+        self.confidence = rb.confidence()
+        self.bbox = try rb.bbox().map { try QrBoundingBox($0) }
+    }
+    func intoRust() throws -> RustBridge.QrCode {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.qrCodeFromJson(json)
+    }
+}
+
+/// Pixel-space bounding box of a QR code inside its source image.
+public struct QrBoundingBox: Codable, Sendable, Hashable {
+    public let x: UInt32
+    public let y: UInt32
+    public let width: UInt32
+    public let height: UInt32
+    public init(x: UInt32, y: UInt32, width: UInt32, height: UInt32) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+}
+
+// MARK: - Internal FFI conversions for QrBoundingBox
+internal extension QrBoundingBox {
+    init(_ rb: RustBridge.QrBoundingBoxRef) throws {
+        self.x = rb.x()
+        self.y = rb.y()
+        self.width = rb.width()
+        self.height = rb.height()
+    }
+    func intoRust() throws -> RustBridge.QrBoundingBox {
+        return RustBridge.QrBoundingBox(self.x, self.y, self.width, self.height)
+    }
+}
+
+/// Audit report describing what the redaction processor found and how it replaced it.
+///
+/// The redactor returns this alongside the rewritten content so compliance, replay, and
+/// audit-log consumers can see exactly what fired. Offsets are relative to the *original*
+/// pre-redaction `content` and are intended for audit reconstruction only — the original
+/// bytes are dropped at the end of the pipeline.
+public struct RedactionReport: Codable, Sendable, Hashable {
+    /// Individual redaction findings in original-source byte order.
+    public let findings: [RedactionFinding]
+    /// Total number of redactions applied across the document.
+    public let totalRedacted: UInt32
+    public init(findings: [RedactionFinding], totalRedacted: UInt32) {
+        self.findings = findings
+        self.totalRedacted = totalRedacted
+    }
+    private enum CodingKeys: String, CodingKey {
+        case findings = "findings"
+        case totalRedacted = "total_redacted"
+    }
+}
+
+// MARK: - Internal FFI conversions for RedactionReport
+internal extension RedactionReport {
+    init(_ rb: RustBridge.RedactionReportRef) throws {
+        self.findings = try rb.findings().map { try RedactionFinding($0) }
+        self.totalRedacted = rb.totalRedacted()
+    }
+    func intoRust() throws -> RustBridge.RedactionReport {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.redactionReportFromJson(json)
+    }
+}
+
+/// One redaction event: which span was rewritten, why, and with what.
+public struct RedactionFinding: Codable, Sendable, Hashable {
+    /// Byte-offset start in the original (pre-redaction) `ExtractionResult::content`.
+    public let start: UInt32
+    /// Byte-offset end (exclusive) in the original `ExtractionResult::content`.
+    public let end: UInt32
+    /// PII category that fired this redaction.
+    public let category: PiiCategory
+    /// Strategy applied to this finding (mask, hash, token-replace, drop).
+    public let strategy: RedactionStrategy
+    /// String that replaced the original mention. Always present; for `Drop` the
+    /// replacement is the empty string.
+    public let replacementToken: String
+    public init(start: UInt32, end: UInt32, category: PiiCategory, strategy: RedactionStrategy, replacementToken: String) {
+        self.start = start
+        self.end = end
+        self.category = category
+        self.strategy = strategy
+        self.replacementToken = replacementToken
+    }
+    private enum CodingKeys: String, CodingKey {
+        case start = "start"
+        case end = "end"
+        case category = "category"
+        case strategy = "strategy"
+        case replacementToken = "replacement_token"
+    }
+}
+
+// MARK: - Internal FFI conversions for RedactionFinding
+internal extension RedactionFinding {
+    init(_ rb: RustBridge.RedactionFindingRef) throws {
+        self.start = rb.start()
+        self.end = rb.end()
+        self.category = try JSONDecoder().decode(PiiCategory.self, from: ((rb.category().toString()).data(using: .utf8) ?? Data("null".utf8)))
+        self.strategy = RedactionStrategy(rawValue: rb.strategy().toString()) ?? { fatalError("Unknown RedactionStrategy: \(rb.strategy().toString())") }()
+        self.replacementToken = rb.replacementToken().toString()
+    }
+    func intoRust() throws -> RustBridge.RedactionFinding {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.redactionFindingFromJson(json)
+    }
+}
+
 /// A single changed cell within a table.
 ///
 /// Defined here (rather than only in `crate::diff`) so `RevisionDelta` can
@@ -4560,6 +5167,40 @@ internal extension RevisionDelta {
     }
 }
 
+/// Summary of an extracted document.
+public struct DocumentSummary: Codable, Sendable, Hashable {
+    /// Summary text (plain prose).
+    public let text: String
+    /// Strategy that produced this summary.
+    public let strategy: SummaryStrategy
+    /// Approximate token count of the summary, when known.
+    public let tokenCount: UInt32?
+    public init(text: String, strategy: SummaryStrategy, tokenCount: UInt32? = nil) {
+        self.text = text
+        self.strategy = strategy
+        self.tokenCount = tokenCount
+    }
+    private enum CodingKeys: String, CodingKey {
+        case text = "text"
+        case strategy = "strategy"
+        case tokenCount = "token_count"
+    }
+}
+
+// MARK: - Internal FFI conversions for DocumentSummary
+internal extension DocumentSummary {
+    init(_ rb: RustBridge.DocumentSummaryRef) throws {
+        self.text = rb.text().toString()
+        self.strategy = SummaryStrategy(rawValue: rb.strategy().toString()) ?? { fatalError("Unknown SummaryStrategy: \(rb.strategy().toString())") }()
+        self.tokenCount = rb.tokenCount()
+    }
+    func intoRust() throws -> RustBridge.DocumentSummary {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.documentSummaryFromJson(json)
+    }
+}
+
 /// Extracted table structure.
 ///
 /// Represents a table detected and extracted from a document (PDF, image, etc.).
@@ -4656,6 +5297,51 @@ internal extension TableCell {
     }
 }
 
+/// Translation of the extracted content.
+///
+/// Holds the translated rendition of `ExtractionResult::content` and (when
+/// `preserve_markup` was requested) the translated `formatted_content`. Chunks
+/// are translated in place inside `ExtractionResult::chunks[*].content` rather
+/// than duplicated here.
+public struct Translation: Codable, Sendable, Hashable {
+    /// BCP-47 language tag the translation was produced into (e.g. `"de"`, `"fr-CA"`).
+    public let targetLang: String
+    /// BCP-47 source language. `None` when the translation backend was asked to detect.
+    public let sourceLang: String?
+    /// Translated plain-text body. Matches the shape of `ExtractionResult::content`.
+    public let content: String
+    /// Translated markup body (Markdown / HTML / etc.) when `preserve_markup` was
+    /// enabled on the config. `None` otherwise.
+    public let formattedContent: String?
+    public init(targetLang: String, sourceLang: String? = nil, content: String, formattedContent: String? = nil) {
+        self.targetLang = targetLang
+        self.sourceLang = sourceLang
+        self.content = content
+        self.formattedContent = formattedContent
+    }
+    private enum CodingKeys: String, CodingKey {
+        case targetLang = "target_lang"
+        case sourceLang = "source_lang"
+        case content = "content"
+        case formattedContent = "formatted_content"
+    }
+}
+
+// MARK: - Internal FFI conversions for Translation
+internal extension Translation {
+    init(_ rb: RustBridge.TranslationRef) throws {
+        self.targetLang = rb.targetLang().toString()
+        self.sourceLang = rb.sourceLang()?.toString()
+        self.content = rb.content().toString()
+        self.formattedContent = rb.formattedContent()?.toString()
+    }
+    func intoRust() throws -> RustBridge.Translation {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+        return try RustBridge.translationFromJson(json)
+    }
+}
+
 /// A URI extracted from a document.
 ///
 /// Represents any link, reference, or resource pointer found during extraction.
@@ -4721,6 +5407,9 @@ internal extension DetectResponse {
         return try RustBridge.detectResponseFromJson(json)
     }
 }
+
+/// A text segment with its byte offset in the original document.
+public typealias Segment = RustBridge.Segment
 
 /// Options controlling how two `ExtractionResult` values are compared.
 public struct DiffOptions: Codable, Sendable, Hashable {
@@ -4849,66 +5538,6 @@ public typealias EmbeddedChanges = RustBridge.EmbeddedChanges
 
 /// Diff for a single embedded archive entry that appears in both results.
 public typealias EmbeddedDiff = RustBridge.EmbeddedDiff
-
-/// Preset configurations for common RAG use cases.
-///
-/// Each preset combines chunk size, overlap, and embedding model
-/// to provide an optimized configuration for specific scenarios.
-///
-/// All string fields are owned `String` for FFI compatibility — instances
-/// are safe to clone and pass across language boundaries.
-public struct EmbeddingPreset: Codable, Sendable, Hashable {
-    public let name: String
-    public let chunkSize: UInt
-    public let overlap: UInt
-    /// HuggingFace repository name for the model.
-    public let modelRepo: String
-    /// Pooling strategy: "cls" or "mean".
-    public let pooling: String
-    /// Path to the ONNX model file within the repo.
-    public let modelFile: String
-    public let dimensions: UInt
-    public let description: String
-    public init(name: String, chunkSize: UInt, overlap: UInt, modelRepo: String, pooling: String, modelFile: String, dimensions: UInt, description: String) {
-        self.name = name
-        self.chunkSize = chunkSize
-        self.overlap = overlap
-        self.modelRepo = modelRepo
-        self.pooling = pooling
-        self.modelFile = modelFile
-        self.dimensions = dimensions
-        self.description = description
-    }
-    private enum CodingKeys: String, CodingKey {
-        case name = "name"
-        case chunkSize = "chunk_size"
-        case overlap = "overlap"
-        case modelRepo = "model_repo"
-        case pooling = "pooling"
-        case modelFile = "model_file"
-        case dimensions = "dimensions"
-        case description = "description"
-    }
-}
-
-// MARK: - Internal FFI conversions for EmbeddingPreset
-internal extension EmbeddingPreset {
-    init(_ rb: RustBridge.EmbeddingPresetRef) throws {
-        self.name = rb.name().toString()
-        self.chunkSize = rb.chunkSize()
-        self.overlap = rb.overlap()
-        self.modelRepo = rb.modelRepo().toString()
-        self.pooling = rb.pooling().toString()
-        self.modelFile = rb.modelFile().toString()
-        self.dimensions = rb.dimensions()
-        self.description = rb.description().toString()
-    }
-    func intoRust() throws -> RustBridge.EmbeddingPreset {
-        let data = try JSONEncoder().encode(self)
-        let json = String(data: data, encoding: .utf8) ?? "{}"
-        return try RustBridge.embeddingPresetFromJson(json)
-    }
-}
 
 /// YAKE-specific parameters.
 public struct YakeParams: Codable, Sendable, Hashable {
@@ -5421,6 +6050,120 @@ extension TableModel {
         let data = try JSONEncoder().encode(self)
         let json = String(data: data, encoding: .utf8) ?? "null"
         return try RustBridge.tableModelFromJson(json)
+    }
+}
+
+/// NER backend selector.
+public enum NerBackendKind: String, Codable, Sendable, Hashable {
+    /// gline-rs ONNX inference. Requires `ner-onnx` feature. Models download lazily from
+    /// HuggingFace via `model_download::hf_download`.
+    case onnx
+    /// liter-llm zero-shot NER via structured-output prompts. Requires `ner-llm`
+    /// feature. Useful when domain-specific categories outstrip the ONNX taxonomy.
+    case llm
+}
+extension NerBackendKind {
+    func intoRust() throws -> RustBridge.NerBackendKind {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.nerBackendKindFromJson(json)
+    }
+}
+
+/// Policy controlling when VLM (Vision Language Model) OCR is used as a fallback.
+///
+/// This knob is syntactic sugar over the explicit [`OcrPipelineConfig`] stage
+/// ordering. When `vlm_fallback` is set and `pipeline` is `None`, an equivalent
+/// pipeline is synthesised at extraction time:
+///
+/// - [`VlmFallbackPolicy::Disabled`] — no synthesis; single-backend mode (default).
+/// - [`VlmFallbackPolicy::OnLowQuality`] — tries the classical backend first; if the
+///   result scores below `quality_threshold`, tries VLM.
+/// - [`VlmFallbackPolicy::Always`] — skips the classical backend and sends every page
+///   to the VLM.
+///
+/// When [`OcrConfig::pipeline`] is explicitly set, `vlm_fallback` is ignored — the
+/// explicit pipeline takes precedence.
+///
+/// # Errors
+///
+/// Both `OnLowQuality` and `Always` require [`OcrConfig::vlm_config`] to be `Some`.
+/// Constructing an [`OcrConfig`] with one of these policies but no `vlm_config` is
+/// detected by [`OcrConfig::validate`] and will surface as a
+/// `Validation` error at extraction time, not a panic.
+///
+/// # Example
+///
+/// ```rust
+/// use kreuzberg::{OcrConfig, VlmFallbackPolicy, LlmConfig};
+///
+/// let config = OcrConfig {
+///     vlm_fallback: VlmFallbackPolicy::OnLowQuality { quality_threshold: 0.6 },
+///     vlm_config: Some(LlmConfig {
+///         model: "openai/gpt-4o-mini".to_string(),
+///         ..Default::default()
+///     }),
+///     ..Default::default()
+/// };
+///
+/// // Threshold calibration is deferred to the Stage 0 benchmark harness.
+/// assert!(matches!(config.vlm_fallback, VlmFallbackPolicy::OnLowQuality { .. }));
+/// ```
+public enum VlmFallbackPolicy: Codable, Sendable, Hashable {
+    /// No VLM fallback (default). Behaves identically to the pre-policy single-backend mode.
+    case disabled
+    /// Try the classical OCR backend first. If the quality score is below
+    /// `quality_threshold`, send the page to the VLM.
+    ///
+    /// `quality_threshold` is in the `[0.0, 1.0]` range produced by
+    /// `calculate_quality_score`. A value of `0.5` is a
+    /// reasonable starting point; calibrate with the Stage 0 benchmark harness.
+    case onLowQuality(qualityThreshold: Double)
+    /// Skip the classical OCR backend entirely. Every page is sent to the VLM.
+    case always
+
+    private enum CodingKeys: String, CodingKey {
+        case mode
+        case qualityThreshold = "quality_threshold"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .mode)
+        switch type {
+        case "disabled":
+            self = .disabled
+        case "on_low_quality":
+            self = .onLowQuality(qualityThreshold: try container.decode(Double.self, forKey: .qualityThreshold))
+        case "always":
+            self = .always
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .mode,
+                in: container,
+                debugDescription: "Unknown VlmFallbackPolicy type: \(type)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .disabled:
+            try container.encode("disabled", forKey: .mode)
+        case .onLowQuality(let qualityThreshold):
+            try container.encode("on_low_quality", forKey: .mode)
+            try container.encode(qualityThreshold, forKey: .qualityThreshold)
+        case .always:
+            try container.encode("always", forKey: .mode)
+        }
+    }
+}
+extension VlmFallbackPolicy {
+    func intoRust() throws -> RustBridge.VlmFallbackPolicy {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.vlmFallbackPolicyFromJson(json)
     }
 }
 
@@ -6138,6 +6881,31 @@ extension AnnotationKind {
     }
 }
 
+/// Standard entity categories produced by built-in NER backends.
+///
+/// The `Custom(String)` variant lets caller-supplied categories (e.g. LLM
+/// schemas) flow through without losing fidelity to the consumer.
+public enum EntityCategory: Codable, Sendable, Hashable {
+    case person
+    case organization
+    case location
+    case date
+    case time
+    case money
+    case percent
+    case email
+    case phone
+    case url
+    case custom(field0: String)
+}
+extension EntityCategory {
+    func intoRust() throws -> RustBridge.EntityCategory {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.entityCategoryFromJson(json)
+    }
+}
+
 /// How the extracted text was produced.
 public enum ExtractionMethod: String, Codable, Sendable, Hashable {
     case native
@@ -6468,6 +7236,63 @@ extension PageUnitType {
     }
 }
 
+/// Strategy applied when a PII match is rewritten.
+public enum RedactionStrategy: String, Codable, Sendable, Hashable {
+    /// Replace the matched span with a fixed mask token (default `"[REDACTED]"`).
+    case mask
+    /// Replace with a SHA-256 hash of the original value (truncated to 16 hex chars).
+    /// Lets downstream consumers do equality joins without recovering the source.
+    case hash
+    /// Replace with a per-category running token (`"[PERSON_1]"`, `"[PERSON_2]"`, …)
+    /// so the same person referenced twice gets the same token within the document.
+    case tokenReplace = "token_replace"
+    /// Delete the matched span entirely.
+    case drop
+}
+extension RedactionStrategy {
+    func intoRust() throws -> RustBridge.RedactionStrategy {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.redactionStrategyFromJson(json)
+    }
+}
+
+/// PII categories the pattern engine recognises.
+public enum PiiCategory: Codable, Sendable, Hashable {
+    case email
+    case phone
+    case ssn
+    case creditCard
+    case postalCode
+    case ipAddress
+    case iban
+    case swiftBic
+    case dateOfBirth
+    /// Person name, surfaced by the optional NER backend.
+    case person
+    /// Organization name, surfaced by the optional NER backend.
+    case organization
+    /// Location, surfaced by the optional NER backend.
+    case location
+    /// Caller-supplied custom category (e.g. internal employee IDs).
+    ///
+    /// Surfaced by the redaction engine when a hit comes from
+    /// [`RedactionConfig::custom_terms`](crate::core::config::redaction::RedactionConfig::custom_terms)
+    /// or [`RedactionConfig::custom_patterns`](crate::core::config::redaction::RedactionConfig::custom_patterns).
+    /// The string is the label passed alongside the term/pattern. Use those
+    /// fields rather than constructing `Custom` directly via the
+    /// `categories` filter — the pattern engine cannot detect arbitrary text
+    /// from a category name alone.
+    case custom(field0: String)
+}
+extension PiiCategory {
+    func intoRust() throws -> RustBridge.PiiCategory {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.piiCategoryFromJson(json)
+    }
+}
+
 /// A single line in a unified-diff hunk.
 ///
 /// Defined here (rather than only in `crate::diff`) so `RevisionDelta` can
@@ -6624,6 +7449,24 @@ extension RevisionAnchor {
     }
 }
 
+/// Summarisation strategy.
+public enum SummaryStrategy: String, Codable, Sendable, Hashable {
+    /// Pure-Rust extractive summary (TextRank over the chunk graph). Deterministic,
+    /// fast, no external service required.
+    case extractive
+    /// Abstractive summary produced by liter-llm. Requires `liter-llm` feature and
+    /// a configured `LlmConfig`. Token usage is captured in
+    /// [`ExtractionResult::llm_usage`](super::extraction::ExtractionResult::llm_usage).
+    case abstractive
+}
+extension SummaryStrategy {
+    func intoRust() throws -> RustBridge.SummaryStrategy {
+        let data = try JSONEncoder().encode(self)
+        let json = String(data: data, encoding: .utf8) ?? "null"
+        return try RustBridge.summaryStrategyFromJson(json)
+    }
+}
+
 /// Semantic classification of an extracted URI.
 public enum UriKind: String, Codable, Sendable, Hashable {
     /// A clickable hyperlink (web URL, file link).
@@ -6646,6 +7489,13 @@ extension UriKind {
         return try RustBridge.uriKindFromJson(json)
     }
 }
+
+/// Classification of a detected layout region that warrants VLM extraction.
+///
+/// Each variant maps to a specific prompt optimised for that content type.
+/// The mapping is intentionally narrow — only region kinds for which VLM
+/// extraction provides a clear quality benefit over classical suppression.
+public typealias RegionKind = RustBridge.RegionKind
 
 /// Keyword algorithm selection.
 public enum KeywordAlgorithm: String, Codable, Sendable, Hashable {
@@ -6924,6 +7774,41 @@ public func batchExtractBytes(_ items: [BatchBytesItem], _ configJson: String) a
     return try await batchExtractBytes(items: items, config: config)
 }
 
+public func classifyPages(_ configJson: String, _ config: PageClassificationConfig) async throws -> Void {
+    let config = try extractionResultFromJson(configJson)
+    return try await classifyPages(result: config, config: config)
+}
+
+public func classifyPages(_ result: ExtractionResult, _ configJson: String) async throws -> Void {
+    let config = try pageClassificationConfigFromJson(configJson)
+    return try await classifyPages(result: result, config: config)
+}
+
+public func redact(_ configJson: String, _ config: RedactionConfig) async throws -> Void {
+    let config = try extractionResultFromJson(configJson)
+    return try await redact(result: config, config: config)
+}
+
+public func redact(_ result: ExtractionResult, _ configJson: String) async throws -> Void {
+    let config = try redactionConfigFromJson(configJson)
+    return try await redact(result: result, config: config)
+}
+
+public func summarizeWithLlm(_ text: String, _ configJson: String, _ maxTokens: UInt32?) async throws -> String {
+    let config = try llmConfigFromJson(configJson)
+    return try await summarizeWithLlm(text: text, llmConfig: config, maxTokens: maxTokens)
+}
+
+public func translateResult(_ configJson: String, _ config: TranslationConfig) async throws -> Void {
+    let config = try extractionResultFromJson(configJson)
+    return try await translateResult(result: config, config: config)
+}
+
+public func translateResult(_ result: ExtractionResult, _ configJson: String) async throws -> Void {
+    let config = try translationConfigFromJson(configJson)
+    return try await translateResult(result: result, config: config)
+}
+
 public func compare(_ configJson: String, _ b: ExtractionResult, _ opts: DiffOptions) throws -> ExtractionDiff {
     let config = try extractionResultFromJson(configJson)
     return try compare(a: config, b: b, opts: opts)
@@ -6937,6 +7822,26 @@ public func compare(_ a: ExtractionResult, _ configJson: String, _ opts: DiffOpt
 public func compare(_ a: ExtractionResult, _ b: ExtractionResult, _ configJson: String) throws -> ExtractionDiff {
     let config = try diffOptionsFromJson(configJson)
     return try compare(a: a, b: b, opts: config)
+}
+
+public func extractRegionWithVlm(_ imageBytes: [UInt8], _ imageMime: String, _ regionKind: RegionKind, _ configJson: String, _ customPrompt: String?) async throws -> String {
+    let config = try llmConfigFromJson(configJson)
+    return try await extractRegionWithVlm(imageBytes: imageBytes, imageMime: imageMime, regionKind: regionKind, llmConfig: config, customPrompt: customPrompt)
+}
+
+public func extractRegionWithVlmUsage(_ imageBytes: [UInt8], _ imageMime: String, _ regionKind: RegionKind, _ configJson: String, _ customPrompt: String?) async throws -> String {
+    let config = try llmConfigFromJson(configJson)
+    return try await extractRegionWithVlmUsage(imageBytes: imageBytes, imageMime: imageMime, regionKind: regionKind, llmConfig: config, customPrompt: customPrompt)
+}
+
+public func completeWithJsonSchema(_ configJson: String, _ prompt: String, _ schemaName: String, _ schema: String, _ source: String) async throws -> String {
+    let config = try llmConfigFromJson(configJson)
+    return try await completeWithJsonSchema(llmConfig: config, prompt: prompt, schemaName: schemaName, schema: schema, source: source)
+}
+
+public func completeText(_ configJson: String, _ prompt: String, _ source: String) async throws -> String {
+    let config = try llmConfigFromJson(configJson)
+    return try await completeText(llmConfig: config, prompt: prompt, source: source)
 }
 
 public func embedTextsAsync(_ texts: [String], _ configJson: String) async throws -> [[Float]] {
@@ -6962,6 +7867,16 @@ public func cacheStatsFromJson(_ json: String) throws -> CacheStats {
 public func accelerationConfigFromJson(_ json: String) throws -> AccelerationConfig {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(AccelerationConfig.self, from: data)
+}
+
+public func captioningConfigFromJson(_ json: String) throws -> CaptioningConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(CaptioningConfig.self, from: data)
+}
+
+public func pageClassificationConfigFromJson(_ json: String) throws -> PageClassificationConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(PageClassificationConfig.self, from: data)
 }
 
 public func contentFilterConfigFromJson(_ json: String) throws -> ContentFilterConfig {
@@ -7023,6 +7938,11 @@ public func structuredExtractionConfigFromJson(_ json: String) throws -> Structu
     return try RustBridge.structuredExtractionConfigFromJson(json)
 }
 
+public func nerConfigFromJson(_ json: String) throws -> NerConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(NerConfig.self, from: data)
+}
+
 public func ocrQualityThresholdsFromJson(_ json: String) throws -> OcrQualityThresholds {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(OcrQualityThresholds.self, from: data)
@@ -7066,6 +7986,31 @@ public func chunkingConfigFromJson(_ json: String) throws -> ChunkingConfig {
 
 public func embeddingConfigFromJson(_ json: String) throws -> EmbeddingConfig {
     return try RustBridge.embeddingConfigFromJson(json)
+}
+
+public func redactionConfigFromJson(_ json: String) throws -> RedactionConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionConfig.self, from: data)
+}
+
+public func redactionTermFromJson(_ json: String) throws -> RedactionTerm {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionTerm.self, from: data)
+}
+
+public func redactionPatternFromJson(_ json: String) throws -> RedactionPattern {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionPattern.self, from: data)
+}
+
+public func summarizationConfigFromJson(_ json: String) throws -> SummarizationConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(SummarizationConfig.self, from: data)
+}
+
+public func translationConfigFromJson(_ json: String) throws -> TranslationConfig {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(TranslationConfig.self, from: data)
 }
 
 public func treeSitterConfigFromJson(_ json: String) throws -> TreeSitterConfig {
@@ -7125,6 +8070,16 @@ public func pdfAnnotationFromJson(_ json: String) throws -> PdfAnnotation {
     return try JSONDecoder().decode(PdfAnnotation.self, from: data)
 }
 
+public func pageClassificationFromJson(_ json: String) throws -> PageClassification {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(PageClassification.self, from: data)
+}
+
+public func classificationLabelFromJson(_ json: String) throws -> ClassificationLabel {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(ClassificationLabel.self, from: data)
+}
+
 public func djotContentFromJson(_ json: String) throws -> DjotContent {
     return try RustBridge.djotContentFromJson(json)
 }
@@ -7177,6 +8132,11 @@ public func gridCellFromJson(_ json: String) throws -> GridCell {
 public func textAnnotationFromJson(_ json: String) throws -> TextAnnotation {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(TextAnnotation.self, from: data)
+}
+
+public func entityFromJson(_ json: String) throws -> Entity {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(Entity.self, from: data)
 }
 
 public func extractionResultFromJson(_ json: String) throws -> ExtractionResult {
@@ -7477,6 +8437,26 @@ public func hierarchicalBlockFromJson(_ json: String) throws -> HierarchicalBloc
     return try JSONDecoder().decode(HierarchicalBlock.self, from: data)
 }
 
+public func qrCodeFromJson(_ json: String) throws -> QrCode {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(QrCode.self, from: data)
+}
+
+public func qrBoundingBoxFromJson(_ json: String) throws -> QrBoundingBox {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(QrBoundingBox.self, from: data)
+}
+
+public func redactionReportFromJson(_ json: String) throws -> RedactionReport {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionReport.self, from: data)
+}
+
+public func redactionFindingFromJson(_ json: String) throws -> RedactionFinding {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionFinding.self, from: data)
+}
+
 public func cellChangeFromJson(_ json: String) throws -> CellChange {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(CellChange.self, from: data)
@@ -7492,6 +8472,11 @@ public func revisionDeltaFromJson(_ json: String) throws -> RevisionDelta {
     return try JSONDecoder().decode(RevisionDelta.self, from: data)
 }
 
+public func documentSummaryFromJson(_ json: String) throws -> DocumentSummary {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(DocumentSummary.self, from: data)
+}
+
 public func tableFromJson(_ json: String) throws -> Table {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(Table.self, from: data)
@@ -7500,6 +8485,11 @@ public func tableFromJson(_ json: String) throws -> Table {
 public func tableCellFromJson(_ json: String) throws -> TableCell {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(TableCell.self, from: data)
+}
+
+public func translationFromJson(_ json: String) throws -> Translation {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(Translation.self, from: data)
 }
 
 public func extractedUriFromJson(_ json: String) throws -> ExtractedUri {
@@ -7537,11 +8527,6 @@ public func embeddedChangesFromJson(_ json: String) throws -> EmbeddedChanges {
 
 public func embeddedDiffFromJson(_ json: String) throws -> EmbeddedDiff {
     return try RustBridge.embeddedDiffFromJson(json)
-}
-
-public func embeddingPresetFromJson(_ json: String) throws -> EmbeddingPreset {
-    let data = json.data(using: .utf8) ?? Data()
-    return try JSONDecoder().decode(EmbeddingPreset.self, from: data)
 }
 
 public func yakeParamsFromJson(_ json: String) throws -> YakeParams {
@@ -7626,6 +8611,16 @@ public func tableModelFromJson(_ json: String) throws -> TableModel {
     return try JSONDecoder().decode(TableModel.self, from: data)
 }
 
+public func nerBackendKindFromJson(_ json: String) throws -> NerBackendKind {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(NerBackendKind.self, from: data)
+}
+
+public func vlmFallbackPolicyFromJson(_ json: String) throws -> VlmFallbackPolicy {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(VlmFallbackPolicy.self, from: data)
+}
+
 public func chunkerTypeFromJson(_ json: String) throws -> ChunkerType {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(ChunkerType.self, from: data)
@@ -7696,6 +8691,11 @@ public func annotationKindFromJson(_ json: String) throws -> AnnotationKind {
     return try JSONDecoder().decode(AnnotationKind.self, from: data)
 }
 
+public func entityCategoryFromJson(_ json: String) throws -> EntityCategory {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(EntityCategory.self, from: data)
+}
+
 public func extractionMethodFromJson(_ json: String) throws -> ExtractionMethod {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(ExtractionMethod.self, from: data)
@@ -7760,6 +8760,16 @@ public func pageUnitTypeFromJson(_ json: String) throws -> PageUnitType {
     return try JSONDecoder().decode(PageUnitType.self, from: data)
 }
 
+public func redactionStrategyFromJson(_ json: String) throws -> RedactionStrategy {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(RedactionStrategy.self, from: data)
+}
+
+public func piiCategoryFromJson(_ json: String) throws -> PiiCategory {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(PiiCategory.self, from: data)
+}
+
 public func diffLineFromJson(_ json: String) throws -> DiffLine {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(DiffLine.self, from: data)
@@ -7773,6 +8783,11 @@ public func revisionKindFromJson(_ json: String) throws -> RevisionKind {
 public func revisionAnchorFromJson(_ json: String) throws -> RevisionAnchor {
     let data = json.data(using: .utf8) ?? Data()
     return try JSONDecoder().decode(RevisionAnchor.self, from: data)
+}
+
+public func summaryStrategyFromJson(_ json: String) throws -> SummaryStrategy {
+    let data = json.data(using: .utf8) ?? Data()
+    return try JSONDecoder().decode(SummaryStrategy.self, from: data)
 }
 
 public func uriKindFromJson(_ json: String) throws -> UriKind {
@@ -8106,6 +9121,29 @@ public func getExtensionsForMime(mimeType: String) throws -> [String] {
     return try RustBridge.getExtensionsForMime(mimeType).map { $0.as_str().toString() }
 }
 
+/// Detect QR codes in the bytes of an [`ExtractedImage`].
+///
+/// `format_hint` is currently unused — the `image` crate auto-detects the
+/// container format from magic bytes — but the parameter is retained so future
+/// backends (e.g. a WebP-via-`webp-decoder` variant) can use it without an API
+/// break.
+///
+/// Returns an empty vector on any of:
+///
+/// - Empty input.
+/// - Image-decode failure.
+/// - No QR grids detected.
+/// - All detected grids fail to decode.
+///
+/// Successfully decoded QR codes carry their payload, a confidence of `1.0`
+/// (rqrr does not expose per-grid confidence; a successful decode is treated
+/// as high-confidence by convention), and the pixel-space bounding box derived
+/// from the four corner points of the grid.
+public func detectQrCodes(imageBytes: [UInt8], formatHint: String?) -> [QrCode] {
+    let _rb_imageBytes: RustVec<UInt8> = { let v = RustVec<UInt8>(); for b in imageBytes { v.push(value: b) }; return v }()
+    return RustBridge.detectQrCodes(_rb_imageBytes, formatHint).map { ref in var item = try QrCode(ref); item.isOwned = false; return item }
+}
+
 /// List the names of all registered embedding backends.
 ///
 /// Used by `kreuzberg-cli`, the api/mcp endpoints, and generated language
@@ -8139,6 +9177,17 @@ public func listDocumentExtractors() throws -> [String] {
 /// ```
 public func listOcrBackends() throws -> [String] {
     return try RustBridge.listOcrBackends().map { $0.as_str().toString() }
+}
+
+/// Register every built-in post-processor enabled by the active feature set.
+///
+/// This is the single entry point that callers (including
+/// `register_default_post_processors`) use to populate the global
+/// post-processor registry with the in-tree built-ins. Each submodule's own
+/// `register` function is gated by its feature flag so this aggregate stays
+/// safe to call on any target.
+public func registerBuiltin() throws {
+    return try RustBridge.registerBuiltin()
 }
 
 /// List all registered post-processor names.
@@ -8179,6 +9228,129 @@ public func listValidators() throws -> [String] {
     return try RustBridge.listValidators().map { $0.as_str().toString() }
 }
 
+/// Run page classification against an extraction result.
+///
+/// Mutates `result.page_classifications` with one entry per non-empty page and
+/// appends every LLM call's usage to `result.llm_usage`.
+///
+/// # Errors
+///
+/// Returns the first error encountered when rendering the prompt or calling the
+/// LLM. Partially produced classifications are discarded so callers do not see
+/// a half-populated vector.
+public func classifyPages(result: ExtractionResult, config: PageClassificationConfig) async throws {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_config = try config.intoRust()
+        let result = try RustBridge.classifyPages(result, _rb_config)
+        return result
+    }.value
+}
+
+/// Eagerly download a NER model into the kreuzberg cache.
+///
+/// `name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
+/// CLI flag `kreuzberg warm --ner` delegates here.
+public func downloadModel(name: String, cacheDir: String?) throws -> String {
+    return try RustBridge.downloadModel(name, cacheDir)
+}
+
+/// Pinned default NER model identifier.
+public func defaultModelName() -> String {
+    return RustBridge.defaultModelName()
+}
+
+/// All NER models kreuzberg knows about (used by `--all-ner-models`).
+public func knownModels() -> [String] {
+    return RustBridge.knownModels().map { $0.as_str().toString() }
+}
+
+/// Run pattern redaction (and optional NER-driven redaction) over `result` and
+/// rewrite every textual field. Populates `result.redaction_report`.
+public func redact(result: ExtractionResult, config: RedactionConfig) async throws {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_config = try config.intoRust()
+        let result = try RustBridge.redact(result, _rb_config)
+        return result
+    }.value
+}
+
+public func findAll(text: String) -> [PatternMatch] {
+    return RustBridge.findAll(text).map { ref in var item = try RustBridge.PatternMatch(ptr: ref.ptr); item.isOwned = false; return item }
+}
+
+/// Scan `text` for every PII category in `categories` and return all matches
+/// in source-byte order.
+///
+/// When `categories` is empty every supported regex-detectable category fires.
+/// Person / Organization / Location are *not* covered by the pattern engine —
+/// they must be supplied by a NER backend through the redaction engine.
+public func scanText(text: String, categories: [PiiCategory]) throws -> [PatternMatch] {
+    let _rb_categories: RustVec<RustString> = try ({ () throws -> RustVec<RustString> in let v = RustVec<RustString>(); for item in categories { let data = try JSONEncoder().encode(item); let json = String(data: data, encoding: .utf8) ?? "null"; v.push(value: RustString(json)) }; return v }())
+    return RustBridge.scanText(text, _rb_categories).map { ref in var item = try RustBridge.PatternMatch(ptr: ref.ptr); item.isOwned = false; return item }
+}
+
+/// Apply `strategy` to `original` for `category` and return the replacement token.
+///
+/// The optional `counter` is required for [`RedactionStrategy::TokenReplace`];
+/// other strategies ignore it.
+public func applyStrategy(strategy: RedactionStrategy, original: String, category: PiiCategory, counter: TokenCounter) throws -> String {
+    let _rb_strategy = try strategy.intoRust()
+    let _rb_category = try category.intoRust()
+    return RustBridge.applyStrategy(_rb_strategy, original, _rb_category, counter)
+}
+
+/// Score and return the top-N sentences from `text`, joined in original order.
+///
+/// `language` is an ISO 639 (or locale) code used to pick a stopword list;
+/// pass `None` (or an unknown code) to fall back to English.
+/// `max_tokens` bounds the summary length by whitespace-separated tokens;
+/// `None` falls back to [`DEFAULT_MAX_TOKENS`].
+public func summarize(text: String, language: String?, maxTokens: UInt32?) -> String? {
+    let _rb_json = RustBridge.summarize(text, language, maxTokens).toString()
+    let _rb_data = _rb_json.data(using: .utf8) ?? Data()
+    return (try? JSONDecoder().decode(String?.self, from: _rb_data)) ?? nil
+}
+
+/// Count whitespace-separated tokens (used for token-budget bookkeeping by
+/// callers).
+public func tokenCount(text: String) -> UInt32 {
+    return RustBridge.tokenCount(text)
+}
+
+/// Run abstractive summarisation against the configured LLM.
+///
+/// `text` is the document content to summarise (already extracted by the
+/// pipeline). `max_tokens` softly bounds the requested summary length in
+/// natural-language tokens; `None` uses [`DEFAULT_MAX_TOKENS`].
+///
+/// Returns the summary string and the (optional) usage record.
+///
+/// # Errors
+///
+/// Propagates any LLM client / request error returned by
+/// `complete_text`.
+public func summarizeWithLlm(text: String, llmConfig: LlmConfig, maxTokens: UInt32?) async throws -> String {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_llmConfig = try llmConfig.intoRust()
+        let result = try RustBridge.summarizeWithLlm(RustString(text), _rb_llmConfig, maxTokens)
+        return result
+    }.value
+}
+
+/// Translate the extraction result in place.
+///
+/// Populates `result.translation` with the translated `content`, optionally the
+/// translated `formatted_content` (when `preserve_markup = true`), and rewrites
+/// every chunk's `content` field. Every LLM call's usage is appended to
+/// `result.llm_usage`.
+public func translateResult(result: ExtractionResult, config: TranslationConfig) async throws {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_config = try config.intoRust()
+        let result = try RustBridge.translateResult(result, _rb_config)
+        return result
+    }.value
+}
+
 /// Compare two extraction results and return a structured diff.
 ///
 /// The comparison is purely structural — no I/O, no side effects. All fields
@@ -8206,6 +9378,129 @@ public func listValidators() throws -> [String] {
 public func compare(a: ExtractionResult, b: ExtractionResult, opts: DiffOptions) throws -> ExtractionDiff {
     let _rb_opts = try opts.intoRust()
     return RustBridge.compare(a, b, _rb_opts)
+}
+
+/// Extract content from a pre-cropped image region using a VLM.
+///
+/// The caller is responsible for cropping the page image to the region's bounding
+/// box before calling this function. The `image_bytes` parameter must contain the
+/// raw bytes of the **cropped** region image (JPEG, PNG, WebP, etc.).
+///
+/// # Arguments
+///
+/// * `image_bytes` — Raw bytes of the **pre-cropped** region image.
+/// * `image_mime` — MIME type of the image (`"image/png"`, `"image/jpeg"`, etc.).
+/// * `region_kind` — Content type of the region, used to select the default prompt.
+/// * `llm_config` — LLM provider and model configuration.
+/// * `custom_prompt` — Optional override for the default per-region prompt template.
+///
+/// # Returns
+///
+/// Extracted Markdown text from the VLM, or an error if the VLM call fails.
+///
+/// # Errors
+///
+/// - `Ocr` if the VLM call fails or returns no content.
+/// - `MissingDependency` if the liter-llm client cannot
+///   be initialised.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use kreuzberg::llm::region_extractor::{RegionKind, extract_region_with_vlm};
+/// use kreuzberg::LlmConfig;
+///
+/// let image_bytes: Vec<u8> = std::fs::read("cropped_figure.png")?;
+/// let config = LlmConfig {
+///     model: "openai/gpt-4o-mini".to_string(),
+///     base_url: Some("http://localhost:9999".to_string()),
+///     ..Default::default()
+/// };
+/// let markdown = extract_region_with_vlm(
+///     &image_bytes,
+///     "image/png",
+///     RegionKind::Figure,
+///     &config,
+///     None,
+/// )
+/// .await?;
+/// println!("Extracted: {markdown}");
+/// ```
+public func extractRegionWithVlm(imageBytes: [UInt8], imageMime: String, regionKind: RegionKind, llmConfig: LlmConfig, customPrompt: String?) async throws -> String {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_imageBytes: RustVec<UInt8> = { let v = RustVec<UInt8>(); for b in imageBytes { v.push(value: b) }; return v }()
+        let _rb_llmConfig = try llmConfig.intoRust()
+        let result = try RustBridge.extractRegionWithVlm(_rb_imageBytes, RustString(imageMime), regionKind, _rb_llmConfig, customPrompt)
+        return result
+    }.value
+}
+
+/// Same as [`extract_region_with_vlm`], but also returns the [`LlmUsage`] data captured
+/// from the underlying VLM call.
+///
+/// Callers that need to track token / cost data per call (for example the captioning
+/// post-processor, which appends every call's usage to
+/// [`ExtractionResult::llm_usage`](crate::types::ExtractionResult::llm_usage)) should
+/// prefer this variant. The plain [`extract_region_with_vlm`] is kept for callers that
+/// only care about the markdown output (PDF region splicing).
+///
+/// # Errors
+///
+/// Same as [`extract_region_with_vlm`].
+public func extractRegionWithVlmUsage(imageBytes: [UInt8], imageMime: String, regionKind: RegionKind, llmConfig: LlmConfig, customPrompt: String?) async throws -> String {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_imageBytes: RustVec<UInt8> = { let v = RustVec<UInt8>(); for b in imageBytes { v.push(value: b) }; return v }()
+        let _rb_llmConfig = try llmConfig.intoRust()
+        let result = try RustBridge.extractRegionWithVlmUsage(_rb_imageBytes, RustString(imageMime), regionKind, _rb_llmConfig, customPrompt)
+        return result
+    }.value
+}
+
+/// Send a free-form prompt to the configured LLM with a JSON-schema response
+/// constraint and return the parsed JSON value plus captured usage.
+///
+/// This is the shared helper used by LLM-backed post-processors (page
+/// classification, LLM-driven NER, etc.) that need structured output but do not
+/// want to depend on [`StructuredExtractionConfig`]'s schema/prompt machinery.
+///
+/// # Arguments
+///
+/// * `llm_config` — provider/model configuration.
+/// * `prompt` — fully-rendered user prompt (no Jinja substitution performed).
+/// * `schema_name` — name for the JSON schema (passed to providers that
+///   distinguish multiple structured outputs).
+/// * `schema` — the JSON schema the LLM is required to obey.
+/// * `source` — label used for the returned [`LlmUsage`] entry.
+///
+/// # Errors
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// the response contains no content, or the response is not parseable JSON.
+public func completeWithJsonSchema(llmConfig: LlmConfig, prompt: String, schemaName: String, schema: String, source: String) async throws -> String {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_llmConfig = try llmConfig.intoRust()
+        let result = try RustBridge.completeWithJsonSchema(_rb_llmConfig, RustString(prompt), RustString(schemaName), schema, RustString(source))
+        return result
+    }.value
+}
+
+/// Send a single user prompt to the configured LLM and return the response text
+/// along with the captured usage metadata.
+///
+/// The `source` argument labels the [`LlmUsage`] entry that is returned so
+/// callers can aggregate per-feature spend (`"translation"`, `"summarisation"`,
+/// etc.). The helper performs a single non-streaming chat completion request.
+///
+/// # Errors
+///
+/// Returns an error if the LLM client cannot be constructed, the request fails,
+/// or the response does not contain assistant content.
+public func completeText(llmConfig: LlmConfig, prompt: String, source: String) async throws -> String {
+    return try await Task.detached(priority: .userInitiated) {
+        let _rb_llmConfig = try llmConfig.intoRust()
+        let result = try RustBridge.completeText(_rb_llmConfig, RustString(prompt), RustString(source))
+        return result
+    }.value
 }
 
 /// Generate embeddings asynchronously for a list of text strings.
@@ -8289,8 +9584,8 @@ public func embedTexts(texts: [String], config: EmbeddingConfig) throws -> [[Flo
 ///
 /// Returns `None` if no preset with the given name exists. Returns an owned
 /// clone so the value is safe to pass across FFI boundaries.
-public func getEmbeddingPreset(name: String) throws -> EmbeddingPreset? {
-    return try RustBridge.getEmbeddingPreset(name).map { try EmbeddingPreset($0) }
+public func getEmbeddingPreset(name: String) -> EmbeddingPreset? {
+    return RustBridge.getEmbeddingPreset(name)
 }
 
 /// List the names of all available embedding presets.
@@ -8418,6 +9713,10 @@ extension RustBridge.CacheStats: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.AccelerationConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.CaptioningConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.PageClassificationConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.ContentFilterConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.EmailConfig: @unchecked Sendable {}
@@ -8444,6 +9743,8 @@ extension RustBridge.LlmConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.StructuredExtractionConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.NerConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.OcrQualityThresholds: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.OcrPipelineStage: @unchecked Sendable {}
@@ -8463,6 +9764,16 @@ extension RustBridge.PostProcessorConfig: @unchecked Sendable {}
 extension RustBridge.ChunkingConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.EmbeddingConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.RedactionConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.RedactionTerm: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.RedactionPattern: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.SummarizationConfig: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.TranslationConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.TreeSitterConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
@@ -8486,7 +9797,19 @@ extension RustBridge.SecurityLimits: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.TokenReductionConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.GlineBackend: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.LlmBackend: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.PatternMatch: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.TokenCounter: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.PdfAnnotation: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.PageClassification: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.ClassificationLabel: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DjotContent: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
@@ -8511,6 +9834,8 @@ extension RustBridge.TableGrid: @unchecked Sendable {}
 extension RustBridge.GridCell: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.TextAnnotation: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.Entity: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.ExtractionResult: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
@@ -8638,19 +9963,33 @@ extension RustBridge.PageHierarchy: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.HierarchicalBlock: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.QrCode: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.QrBoundingBox: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.RedactionReport: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.RedactionFinding: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.CellChange: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DocumentRevision: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.RevisionDelta: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.DocumentSummary: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.Table: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.TableCell: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.Translation: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.ExtractedUri: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DetectResponse: @unchecked Sendable {}
+// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
+extension RustBridge.Segment: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DiffOptions: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
@@ -8663,8 +10002,6 @@ extension RustBridge.TableDiff: @unchecked Sendable {}
 extension RustBridge.EmbeddedChanges: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.EmbeddedDiff: @unchecked Sendable {}
-// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
-extension RustBridge.EmbeddingPreset: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.YakeParams: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.

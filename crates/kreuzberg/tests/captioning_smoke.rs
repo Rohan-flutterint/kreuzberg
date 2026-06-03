@@ -70,7 +70,9 @@ async fn run_captioning_against_pdf(model: &str, api_key: String) {
         .await
         .expect("extraction failed");
     let Some(images) = result.images.as_ref() else {
-        eprintln!("SKIP: extractor did not populate result.images for {IMAGES_PDF} — captioning has nothing to caption");
+        eprintln!(
+            "SKIP: extractor did not populate result.images for {IMAGES_PDF} — captioning has nothing to caption"
+        );
         return;
     };
     if images.is_empty() {

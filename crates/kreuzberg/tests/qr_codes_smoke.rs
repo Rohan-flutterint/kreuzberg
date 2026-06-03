@@ -56,7 +56,10 @@ fn detect_qr_codes_returns_empty_for_non_image_bytes() {
     use kreuzberg::extractors::qr::detect_qr_codes;
 
     let result = detect_qr_codes(b"not an image", None);
-    assert!(result.is_empty(), "expected empty result for non-image input, got {result:?}");
+    assert!(
+        result.is_empty(),
+        "expected empty result for non-image input, got {result:?}"
+    );
 }
 
 #[test]

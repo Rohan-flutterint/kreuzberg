@@ -212,6 +212,42 @@ data class ExtractionResult(
      */
     val llmUsage: List<LlmUsage>? = null,
     /**
+     * Named entities detected in `content` by the NER post-processor.
+     *
+     * `null` when no NER backend is configured. Populated by the gline-rs ONNX
+     * backend or the LLM-driven backend (see `crates/kreuzberg/src/text/ner/`).
+     */
+    val entities: List<Entity>? = null,
+    /**
+     * Summary of `content` produced by the summarisation post-processor.
+     *
+     * `null` when summarisation is not configured. Populated by the TextRank
+     * extractive backend (deterministic, no external service) or by the
+     * liter-llm-driven abstractive backend.
+     */
+    val summary: DocumentSummary? = null,
+    /**
+     * Translation of `content` produced by the translation post-processor.
+     *
+     * `null` when translation is not configured.
+     */
+    val translation: Translation? = null,
+    /**
+     * Per-page classifications produced by the page-classification post-processor.
+     *
+     * `null` when classification is not configured.
+     */
+    val pageClassifications: List<PageClassification>? = null,
+    /**
+     * Audit report of redactions applied by the redaction post-processor.
+     *
+     * The redaction processor rewrites `content`, `formatted_content`, every
+     * chunk's text, and the textual fields of `entities` / `summary` / `translation` /
+     * `page_classifications` in place. This report describes what was found and how it
+     * was replaced. `null` when redaction is not configured.
+     */
+    val redactionReport: RedactionReport? = null,
+    /**
      * Pre-rendered content in the requested output format.
      *
      * Populated during `derive_extraction_result` before tree derivation consumes

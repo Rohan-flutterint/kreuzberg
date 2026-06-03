@@ -33,7 +33,9 @@ fn run(content: &str, strategy: RedactionStrategy) -> ExtractionResult {
         .enable_all()
         .build()
         .expect("tokio runtime");
-    runtime.block_on(processor.process(&mut result, &cfg)).expect("processor ok");
+    runtime
+        .block_on(processor.process(&mut result, &cfg))
+        .expect("processor ok");
     result
 }
 
@@ -106,7 +108,9 @@ fn skips_invalid_luhn_credit_card() {
         .enable_all()
         .build()
         .expect("tokio runtime");
-    runtime.block_on(processor.process(&mut result, &cfg)).expect("processor ok");
+    runtime
+        .block_on(processor.process(&mut result, &cfg))
+        .expect("processor ok");
     assert!(!result.content.contains("[REDACTED]"));
 }
 
@@ -197,7 +201,9 @@ fn run_with_config(content: &str, redaction: RedactionConfig) -> ExtractionResul
         .enable_all()
         .build()
         .expect("tokio runtime");
-    runtime.block_on(processor.process(&mut result, &cfg)).expect("processor ok");
+    runtime
+        .block_on(processor.process(&mut result, &cfg))
+        .expect("processor ok");
     result
 }
 
@@ -216,10 +222,12 @@ fn redacts_user_supplied_literal_term_case_insensitive() {
     assert!(!result.content.contains("APOLLO"));
     let report = result.redaction_report.expect("report");
     assert_eq!(report.total_redacted, 2);
-    assert!(report
-        .findings
-        .iter()
-        .all(|f| f.category == PiiCategory::Custom("project".to_string())));
+    assert!(
+        report
+            .findings
+            .iter()
+            .all(|f| f.category == PiiCategory::Custom("project".to_string()))
+    );
 }
 
 #[test]
@@ -260,10 +268,12 @@ fn redacts_user_supplied_regex_pattern() {
     assert!(!result.content.contains("project-5678"));
     let report = result.redaction_report.expect("report");
     assert_eq!(report.total_redacted, 2);
-    assert!(report
-        .findings
-        .iter()
-        .all(|f| f.category == PiiCategory::Custom("project_id".to_string())));
+    assert!(
+        report
+            .findings
+            .iter()
+            .all(|f| f.category == PiiCategory::Custom("project_id".to_string()))
+    );
 }
 
 #[test]
