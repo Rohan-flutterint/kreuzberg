@@ -176,7 +176,35 @@ pub use text::ner::llm::LlmBackend;
 #[cfg(all(not(feature = "ner-llm"), all(target_os = "android", target_arch = "x86_64")))]
 #[derive(Clone, Debug)]
 pub struct LlmBackend {
-    pub model_id: String,
+    _config: LlmConfig,
+}
+
+#[cfg(all(not(feature = "ner-llm"), all(target_os = "android", target_arch = "x86_64")))]
+impl LlmBackend {
+    pub fn new(config: LlmConfig) -> Self {
+        Self { _config: config }
+    }
+
+    pub async fn detect(
+        &self,
+        _text: &str,
+        _categories: &[crate::EntityCategory],
+    ) -> Result<Vec<crate::Entity>> {
+        Err(crate::KreuzbergError::Other(
+            "ner-llm feature not available on this target".into(),
+        ))
+    }
+
+    pub async fn detect_with_custom(
+        &self,
+        _text: &str,
+        _categories: &[crate::EntityCategory],
+        _custom_labels: &[String],
+    ) -> Result<Vec<crate::Entity>> {
+        Err(crate::KreuzbergError::Other(
+            "ner-llm feature not available on this target".into(),
+        ))
+    }
 }
 
 // GlineBackend (GLiNER ONNX NER) and RegionKind (per-region VLM extraction) are
@@ -190,8 +218,8 @@ pub use text::ner::gline::GlineBackend;
 #[cfg(all(not(feature = "ner-onnx"), all(target_os = "android", target_arch = "x86_64")))]
 pub struct GlineBackend {
     pub repo_id: String,
-    pub model_path: String,
-    pub tokenizer_path: String,
+    pub model_path: std::path::PathBuf,
+    pub tokenizer_path: std::path::PathBuf,
 }
 
 #[cfg(all(feature = "liter-llm", not(target_os = "windows")))]

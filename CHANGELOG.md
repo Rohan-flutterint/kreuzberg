@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **fix(redaction)**: SWIFT BIC detector no longer case-folds the entire input before matching. Real BICs are always written in uppercase; the previous `to_ascii_uppercase()` conversion caused every 8-letter lowercase English word (e.g. `launches`, `codename`) to be reported as a false-positive SWIFT BIC match.
 
-- **fix(ci)**: Android x86_64 emulator cargo check failure in kreuzberg-dart. Added stub implementations of `LlmBackend`, `GlineBackend`, `text::ner::{download_model, default_model_name, known_models}`, `text::classification::classify_pages`, and `text::translation::translate_result` in the core library when their features are disabled. Alef-generated Dart bindings reference these types unconditionally; stubs allow compilation on android-target (which excludes ner, ner-llm, classification, translation due to missing ORT prebuilts).
+- **fix(ci)**: Android x86_64 emulator cargo check failure in kreuzberg-dart. Added stub implementations of `LlmBackend` (with `new`, `detect`, `detect_with_custom` methods), `GlineBackend` (with PathBuf-typed `model_path`/`tokenizer_path` to match the real struct), `text::ner::{download_model, default_model_name, known_models}` (gated stubs for when `ner-onnx` is off but `ner` is on), `text::classification::classify_pages`, and `text::translation::translate_result` in the core library when their features are disabled. Alef-generated Dart bindings reference these types and methods unconditionally; stubs allow compilation on android-target (which excludes ner-onnx, ner-llm, classification, translation due to missing ORT prebuilts).
 
 ### Fixed
 
