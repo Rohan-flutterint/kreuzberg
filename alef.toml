@@ -574,6 +574,18 @@ types = [
   "kreuzberg::extraction::docx::parser::HeaderFooter",
   "kreuzberg::extraction::docx::parser::Note",
   "kreuzberg::extraction::hwp::model::Section",
+
+  # GlineBackend has a private Arc<Mutex<GLiNER<SpanMode>>> field and a pub
+  # fn new() constructor; alef v0.23.2 strict-construction validation cannot
+  # auto-generate From<JsGlineBackend>/From<GlineBackend> without all fields.
+  # The type is not a direct API parameter in any binding function — NER is
+  # invoked via detect_entities()/redact() which accept NerConfig/RedactionConfig.
+  "GlineBackend",
+
+  # Segment<'a> is an internal semantic-chunking type with a lifetime-bound
+  # &'a str field. Alef cannot generate a From impl for lifetime-parameterised
+  # types without a matching static constructor. Not part of the public API.
+  "kreuzberg::chunking::semantic::merge::Segment",
 ]
 methods = [
   # From<T> trait impls — auto-emitted by derive/trait-bridge
@@ -601,6 +613,22 @@ methods = [
   "ModelCache.new",
   "MetricsLayer.layer",
   "MultipartApi.from_request",
+
+  # next_token takes &PiiCategory (a reference) and &mut self; alef v0.23.2
+  # strict-construction validation cannot auto-delegate methods with borrowed
+  # params that differ from the opaque-handle receiver. Callers use apply_strategy
+  # (a free function) to consume a TokenCounter, making this method internal.
+  "TokenCounter.next_token",
+]
+
+functions = [
+  # apply_strategy takes &mut TokenCounter; alef v0.23.2 wraps TokenCounter in
+  # Arc<Mutex<T>> in binding types and generates &counter.inner instead of
+  # &mut *counter.inner.lock().unwrap(). The higher-level redact() function
+  # covers all practical use cases. Also: the Swift backend emits
+  # &category.0 (newtype syntax) for PiiCategory mapped to String.
+  # Excluded globally until upstream fixes &mut-through-Arc delegation.
+  "apply_strategy",
 ]
 
 [crates.lint.python]

@@ -631,14 +631,6 @@ typedef struct KREUZBERGFormatMetadata KREUZBERGFormatMetadata;
  */
 typedef struct KREUZBERGFormattedBlock KREUZBERGFormattedBlock;
 /**
- * kreuzberg-gliner-rs ONNX backend wrapper.
- *
- * Holds an initialised [`GLiNER<SpanMode>`] behind an `Arc<Mutex<...>>` so the
- * model can be safely shared across async tasks (inference is synchronous and
- * serialised internally by the mutex).
- */
-typedef struct KREUZBERGGlineBackend KREUZBERGGlineBackend;
-/**
  * Individual grid cell with position and span metadata.
  */
 typedef struct KREUZBERGGridCell KREUZBERGGridCell;
@@ -1433,10 +1425,6 @@ typedef struct KREUZBERGRevisionKind KREUZBERGRevisionKind;
  * while still supporting legitimate documents.
  */
 typedef struct KREUZBERGSecurityLimits KREUZBERGSecurityLimits;
-/**
- * A text segment with its byte offset in the original document.
- */
-typedef struct KREUZBERGSegment KREUZBERGSegment;
 /**
  * API server configuration.
  *
@@ -6166,63 +6154,6 @@ int32_t kreuzberg_token_reduction_config_enable_semantic_clustering(const KREUZB
 KREUZBERGTokenReductionConfig *kreuzberg_token_reduction_config_default(void);
 
 /**
- * Free a `GlineBackend` handle.
- * # Safety
- * Pointer must have been returned by this library, or be null.
- */
-void kreuzberg_gline_backend_free(KREUZBERGGlineBackend *ptr);
-
-/**
- * Get the `repo_id` field from a `GlineBackend`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_gline_backend_repo_id(const KREUZBERGGlineBackend *ptr);
-
-/**
- * Get the `model_path` field from a `GlineBackend`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_gline_backend_model_path(const KREUZBERGGlineBackend *ptr);
-
-/**
- * Get the `tokenizer_path` field from a `GlineBackend`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_gline_backend_tokenizer_path(const KREUZBERGGlineBackend *ptr);
-
-/**
- * Build a backend for `repo_id` (or the default model if `None`).
- *
- * Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
- * After this returns, inference is available without further I/O.
- * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
- * freed with the appropriate free function.
- */
-KREUZBERGGlineBackend *kreuzberg_gline_backend_new(const char *repo_id);
-
-/**
- * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
- * freed with the appropriate free function.
- */
-char *kreuzberg_gline_backend_detect(const KREUZBERGGlineBackend *this_,
-                                     const char *text,
-                                     const char *categories);
-
-/**
- * Native zero-shot multi-label inference: passes the union of `categories`
- * (as label strings) and `custom_labels` to a single GLiNER inference call.
- * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
- * freed with the appropriate free function.
- */
-char *kreuzberg_gline_backend_detect_with_custom(const KREUZBERGGlineBackend *this_,
-                                                 const char *text,
-                                                 const char *categories,
-                                                 const char *custom_labels);
-
-/**
  * Free a `LlmBackend` handle.
  * # Safety
  * Pointer must have been returned by this library, or be null.
@@ -6307,16 +6238,6 @@ char *kreuzberg_pattern_match_text(const KREUZBERGPatternMatch *ptr);
 void kreuzberg_token_counter_free(KREUZBERGTokenCounter *ptr);
 
 KREUZBERGTokenCounter *kreuzberg_token_counter_new(void);
-
-/**
- * Allocate the next token for `category` and `original`. If the original
- * has been seen before in this category, the same token is reused.
- * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
- * freed with the appropriate free function.
- */
-char *kreuzberg_token_counter_next_token(KREUZBERGTokenCounter *this_,
-                                         const KREUZBERGPiiCategory *category,
-                                         const char *original);
 
 /**
  * Create a `PdfAnnotation` from a JSON string. Returns null on failure.
@@ -11856,27 +11777,6 @@ char *kreuzberg_detect_response_mime_type(const KREUZBERGDetectResponse *ptr);
 char *kreuzberg_detect_response_filename(const KREUZBERGDetectResponse *ptr);
 
 /**
- * Free a `Segment` handle.
- * # Safety
- * Pointer must have been returned by this library, or be null.
- */
-void kreuzberg_segment_free(KREUZBERGSegment *ptr);
-
-/**
- * Get the `text` field from a `Segment`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-char *kreuzberg_segment_text(const KREUZBERGSegment *ptr);
-
-/**
- * Get the `byte_start` field from a `Segment`.
- * # Safety
- * Pointer must be a valid handle returned by this library.
- */
-uintptr_t kreuzberg_segment_byte_start(const KREUZBERGSegment *ptr);
-
-/**
  * Create a `DiffOptions` from a JSON string. Returns null on failure.
  * # Safety
  * JSON string must be valid UTF-8 and null-terminated.
@@ -14600,14 +14500,6 @@ char *kreuzberg_redaction_strategy_to_json(const KREUZBERGRedactionStrategy *ptr
 char *kreuzberg_redaction_strategy_to_string(const KREUZBERGRedactionStrategy *ptr);
 
 /**
- * Create a `RedactionStrategy` from a JSON string. Returns null on failure.
- * # Safety
- * JSON string must be valid UTF-8 and null-terminated.
- * Returned handle must be freed with `kreuzberg_redaction_strategy_free`.
- */
-KREUZBERGRedactionStrategy *kreuzberg_redaction_strategy_from_json(const char *json);
-
-/**
  * Free a heap-allocated `PiiCategory` returned by a pointer-returning FFI function.
  * # Safety
  * Pointer must have been returned by this library, or be null.
@@ -14631,14 +14523,6 @@ char *kreuzberg_pii_category_to_json(const KREUZBERGPiiCategory *ptr);
  * The returned string must be freed with `kreuzberg_free_string`.
  */
 char *kreuzberg_pii_category_to_string(const KREUZBERGPiiCategory *ptr);
-
-/**
- * Create a `PiiCategory` from a JSON string. Returns null on failure.
- * # Safety
- * JSON string must be valid UTF-8 and null-terminated.
- * Returned handle must be freed with `kreuzberg_pii_category_free`.
- */
-KREUZBERGPiiCategory *kreuzberg_pii_category_from_json(const char *json);
 
 /**
  * Free a heap-allocated `RevisionKind` returned by a pointer-returning FFI function.
@@ -15413,31 +15297,6 @@ uintptr_t kreuzberg_known_models_len(void);
  */
 int32_t kreuzberg_redact(KREUZBERGExtractionResult *result,
                          const KREUZBERGRedactionConfig *config);
-
-/**
- * Apply `strategy` to `original` for `category` and return the replacement token.
- *
- * The optional `counter` is required for [`RedactionStrategy::TokenReplace`];
- * other strategies ignore it.
- * \note SAFETY: Caller must ensure all pointer arguments are valid or null. Returned pointers must be
- * freed with the appropriate free function.
- */
-char *kreuzberg_apply_strategy(int32_t strategy,
-                               const char *original,
-                               const KREUZBERGPiiCategory *category,
-                               KREUZBERGTokenCounter *counter);
-
-/**
- * Return the byte length of the C string most recently returned by `kreuzberg_apply_strategy` on this
- * thread. Returns 0 when the primary call returned null or failed before producing a string. Enables
- * safe slice construction in Zig and Java FFM Panama without a NUL-scan.
- * \note SAFETY: Pointer arguments are ignored and are present only to keep the companion ABI aligned
- * with `kreuzberg_apply_strategy`.
- */
-uintptr_t kreuzberg_apply_strategy_len(int32_t _strategy,
-                                       const char *_original,
-                                       const KREUZBERGPiiCategory *_category,
-                                       const KREUZBERGTokenCounter *_counter);
 
 /**
  * Score and return the top-N sentences from `text`, joined in original order.

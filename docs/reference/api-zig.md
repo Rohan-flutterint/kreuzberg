@@ -794,32 +794,6 @@ pub fn scan_text(text: [:0]const u8, categories: []const PiiCategory) []const Pa
 
 ---
 
-#### applyStrategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```zig
-pub fn apply_strategy(strategy: RedactionStrategy, original: [:0]const u8, category: PiiCategory, counter: TokenCounter) [:0]const u8
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `[:0]const u8` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `[:0]const u8`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +986,6 @@ pub fn detect_mime_type(path: [:0]const u8, check_exists: bool) Error![:0]const 
 | `checkExists` | `bool` | Yes | The check exists |
 
 **Returns:** `[:0]const u8`
-**Errors:** Throws `Error`.
-
----
-
-#### embedTexts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```zig
-pub fn embed_texts(texts: []const [:0]const u8, config: EmbeddingConfig) Error![]const []const f32
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `texts` | `[]const [:0]const u8` | Yes | The texts |
-| `config` | `EmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `[]const []const f32`
 **Errors:** Throws `Error`.
 
 ---
@@ -2510,56 +2460,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `[:0]const u8?` | `null` | Language identifier for code blocks |
 | `code` | `[:0]const u8?` | `null` | Raw code content for code blocks |
 | `children` | `[]const FormattedBlock` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repoId` | `[:0]const u8` | — | Repo id |
-| `modelPath` | `[:0]const u8` | — | Model path |
-| `tokenizerPath` | `[:0]const u8` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `null`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```zig
-pub fn new(repo_id: ?[:0]const u8) Error!GlineBackend
-```
-
-#### detect()
-
-**Signature:**
-
-```zig
-pub fn detect(self: *const GlineBackend, text: [:0]const u8, categories: []const EntityCategory) Error![]const Entity
-```
-
-#### detectWithCustom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```zig
-pub fn detectWithCustom(self: *const GlineBackend, text: [:0]const u8, categories: []const EntityCategory, custom_labels: []const [:0]const u8) Error![]const Entity
-```
 
 ---
 
@@ -4562,17 +4462,6 @@ pub fn default() SecurityLimits
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `[:0]const u8` | — | Text |
-| `byteStart` | `u64` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4786,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```zig
 pub fn new() TokenCounter
-```
-
-#### nextToken()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```zig
-pub fn nextToken(self: *const TokenCounter, category: PiiCategory, original: [:0]const u8) [:0]const u8
 ```
 
 ---

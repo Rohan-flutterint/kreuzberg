@@ -750,76 +750,6 @@ void kreuzberg_redact(KreuzbergExtractionResult result, KreuzbergRedactionConfig
 
 ---
 
-#### kreuzberg_find_all()
-
-**Signature:**
-
-```c
-KreuzbergPatternMatch* kreuzberg_find_all(const char* text);
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `const char*` | Yes | The text |
-
-**Returns:** `KreuzbergPatternMatch*`
-
----
-
-#### kreuzberg_scan_text()
-
-Scan `text` for every PII category in `categories` and return all matches
-in source-byte order.
-
-When `categories` is empty every supported regex-detectable category fires.
-Person / Organization / Location are *not* covered by the pattern engine —
-they must be supplied by a NER backend through the redaction engine.
-
-**Signature:**
-
-```c
-KreuzbergPatternMatch* kreuzberg_scan_text(const char* text, KreuzbergPiiCategory* categories);
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `const char*` | Yes | The text |
-| `categories` | `KreuzbergPiiCategory*` | Yes | The categories |
-
-**Returns:** `KreuzbergPatternMatch*`
-
----
-
-#### kreuzberg_apply_strategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```c
-const char* kreuzberg_apply_strategy(KreuzbergRedactionStrategy strategy, const char* original, KreuzbergPiiCategory category, KreuzbergTokenCounter counter);
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `KreuzbergRedactionStrategy` | Yes | The redaction strategy |
-| `original` | `const char*` | Yes | The original |
-| `category` | `KreuzbergPiiCategory` | Yes | The pii category |
-| `counter` | `KreuzbergTokenCounter` | Yes | The token counter |
-
-**Returns:** `const char*`
-
----
-
 #### kreuzberg_summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +942,6 @@ const char* kreuzberg_detect_mime_type(const char* path, bool check_exists);
 | `check_exists` | `bool` | Yes | The check exists |
 
 **Returns:** `const char*`
-**Errors:** Returns `NULL` on error.
-
----
-
-#### kreuzberg_embed_texts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```c
-float** kreuzberg_embed_texts(const char** texts, KreuzbergEmbeddingConfig config);
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `texts` | `const char**` | Yes | The texts |
-| `config` | `KreuzbergEmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `float**`
 **Errors:** Returns `NULL` on error.
 
 ---
@@ -2510,56 +2416,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `const char**` | `NULL` | Language identifier for code blocks |
 | `code` | `const char**` | `NULL` | Raw code content for code blocks |
 | `children` | `KreuzbergFormattedBlock*` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### KreuzbergGlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_id` | `const char*` | — | Repo id |
-| `model_path` | `const char*` | — | Model path |
-| `tokenizer_path` | `const char*` | — | Tokenizer path |
-
-### Methods
-
-#### kreuzberg_new()
-
-Build a backend for `repo_id` (or the default model if `NULL`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```c
-KreuzbergGlineBackend kreuzberg_new(const char* repo_id);
-```
-
-#### kreuzberg_detect()
-
-**Signature:**
-
-```c
-KreuzbergEntity* kreuzberg_detect(const char* text, KreuzbergEntityCategory* categories);
-```
-
-#### kreuzberg_detect_with_custom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```c
-KreuzbergEntity* kreuzberg_detect_with_custom(const char* text, KreuzbergEntityCategory* categories, const char** custom_labels);
-```
 
 ---
 
@@ -4562,17 +4418,6 @@ KreuzbergSecurityLimits kreuzberg_default();
 
 ---
 
-#### KreuzbergSegment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `const char*` | — | Text |
-| `byte_start` | `uintptr_t` | — | Byte start |
-
----
-
 #### KreuzbergServerConfig
 
 API server configuration.
@@ -4897,17 +4742,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```c
 KreuzbergTokenCounter kreuzberg_new();
-```
-
-#### kreuzberg_next_token()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```c
-const char* kreuzberg_next_token(KreuzbergPiiCategory category, const char* original);
 ```
 
 ---

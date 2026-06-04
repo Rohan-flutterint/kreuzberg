@@ -794,32 +794,6 @@ def scan_text(text: str, categories: list[PiiCategory]) -> list[PatternMatch]
 
 ---
 
-#### apply_strategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```python
-def apply_strategy(strategy: RedactionStrategy, original: str, category: PiiCategory, counter: TokenCounter) -> str
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `str` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `str`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +986,6 @@ def detect_mime_type(path: str, check_exists: bool) -> str
 | `check_exists` | `bool` | Yes | The check exists |
 
 **Returns:** `str`
-**Errors:** Raises `Error`.
-
----
-
-#### embed_texts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```python
-def embed_texts(texts: list[str], config: EmbeddingConfig) -> list[list[float]]
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `texts` | `list[str]` | Yes | The texts |
-| `config` | `EmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `list[list[float]]`
 **Errors:** Raises `Error`.
 
 ---
@@ -2517,57 +2467,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `str \| None` | `None` | Language identifier for code blocks |
 | `code` | `str \| None` | `None` | Raw code content for code blocks |
 | `children` | `list[FormattedBlock]` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_id` | `str` | — | Repo id |
-| `model_path` | `str` | — | Model path |
-| `tokenizer_path` | `str` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `None`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```python
-@staticmethod
-def new(repo_id: str) -> GlineBackend
-```
-
-#### detect()
-
-**Signature:**
-
-```python
-def detect(self, text: str, categories: list[EntityCategory]) -> list[Entity]
-```
-
-#### detect_with_custom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```python
-def detect_with_custom(self, text: str, categories: list[EntityCategory], custom_labels: list[str]) -> list[Entity]
-```
 
 ---
 
@@ -4590,17 +4489,6 @@ def default() -> SecurityLimits
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `str` | — | Text |
-| `byte_start` | `int` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4928,17 +4816,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 ```python
 @staticmethod
 def new() -> TokenCounter
-```
-
-#### next_token()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```python
-def next_token(self, category: PiiCategory, original: str) -> str
 ```
 
 ---

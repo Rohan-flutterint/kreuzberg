@@ -750,76 +750,6 @@ public static void redact(ExtractionResult result, RedactionConfig config) throw
 
 ---
 
-#### findAll()
-
-**Signature:**
-
-```java
-public static List<PatternMatch> findAll(String text)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `String` | Yes | The text |
-
-**Returns:** `List<PatternMatch>`
-
----
-
-#### scanText()
-
-Scan `text` for every PII category in `categories` and return all matches
-in source-byte order.
-
-When `categories` is empty every supported regex-detectable category fires.
-Person / Organization / Location are *not* covered by the pattern engine —
-they must be supplied by a NER backend through the redaction engine.
-
-**Signature:**
-
-```java
-public static List<PatternMatch> scanText(String text, List<PiiCategory> categories)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `String` | Yes | The text |
-| `categories` | `List<PiiCategory>` | Yes | The categories |
-
-**Returns:** `List<PatternMatch>`
-
----
-
-#### applyStrategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```java
-public static String applyStrategy(RedactionStrategy strategy, String original, PiiCategory category, TokenCounter counter)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `String` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `String`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +942,6 @@ public static String detectMimeType(String path, boolean checkExists) throws Err
 | `checkExists` | `boolean` | Yes | The check exists |
 
 **Returns:** `String`
-**Errors:** Throws `ErrorException`.
-
----
-
-#### embedTexts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```java
-public static List<List<Float>> embedTexts(List<String> texts, EmbeddingConfig config) throws Error
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `texts` | `List<String>` | Yes | The texts |
-| `config` | `EmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `List<List<Float>>`
 **Errors:** Throws `ErrorException`.
 
 ---
@@ -2510,56 +2416,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `Optional<String>` | `null` | Language identifier for code blocks |
 | `code` | `Optional<String>` | `null` | Raw code content for code blocks |
 | `children` | `List<FormattedBlock>` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repoId` | `String` | — | Repo id |
-| `modelPath` | `String` | — | Model path |
-| `tokenizerPath` | `String` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `null`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```java
-public static GlineBackend new(String repoId) throws Error
-```
-
-#### detect()
-
-**Signature:**
-
-```java
-public List<Entity> detect(String text, List<EntityCategory> categories) throws Error
-```
-
-#### detectWithCustom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```java
-public List<Entity> detectWithCustom(String text, List<EntityCategory> categories, List<String> customLabels) throws Error
-```
 
 ---
 
@@ -4562,17 +4418,6 @@ public static SecurityLimits defaultOptions()
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `String` | — | Text |
-| `byteStart` | `long` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4742,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```java
 public static TokenCounter new()
-```
-
-#### nextToken()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```java
-public String nextToken(PiiCategory category, String original)
 ```
 
 ---

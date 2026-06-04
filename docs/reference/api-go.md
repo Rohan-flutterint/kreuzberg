@@ -750,76 +750,6 @@ func Redact(result ExtractionResult, config RedactionConfig) error
 
 ---
 
-#### FindAll()
-
-**Signature:**
-
-```go
-func FindAll(text string) []PatternMatch
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `Text` | `string` | Yes | The text |
-
-**Returns:** `[]PatternMatch`
-
----
-
-#### ScanText()
-
-Scan `text` for every PII category in `categories` and return all matches
-in source-byte order.
-
-When `categories` is empty every supported regex-detectable category fires.
-Person / Organization / Location are *not* covered by the pattern engine —
-they must be supplied by a NER backend through the redaction engine.
-
-**Signature:**
-
-```go
-func ScanText(text string, categories []PiiCategory) []PatternMatch
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `Text` | `string` | Yes | The text |
-| `Categories` | `[]PiiCategory` | Yes | The categories |
-
-**Returns:** `[]PatternMatch`
-
----
-
-#### ApplyStrategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```go
-func ApplyStrategy(strategy RedactionStrategy, original string, category PiiCategory, counter TokenCounter) string
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `Strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `Original` | `string` | Yes | The original |
-| `Category` | `PiiCategory` | Yes | The pii category |
-| `Counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `string`
-
----
-
 #### Summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +942,6 @@ func DetectMimeType(path string, checkExists bool) (string, error)
 | `CheckExists` | `bool` | Yes | The check exists |
 
 **Returns:** `string`
-**Errors:** Returns `error`.
-
----
-
-#### EmbedTexts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```go
-func EmbedTexts(texts []string, config EmbeddingConfig) ([][]float32, error)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `Texts` | `[]string` | Yes | The texts |
-| `Config` | `EmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `[][]float32`
 **Errors:** Returns `error`.
 
 ---
@@ -2510,56 +2416,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `Language` | `*string` | `nil` | Language identifier for code blocks |
 | `Code` | `*string` | `nil` | Raw code content for code blocks |
 | `Children` | `[]FormattedBlock` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `RepoId` | `string` | — | Repo id |
-| `ModelPath` | `string` | — | Model path |
-| `TokenizerPath` | `string` | — | Tokenizer path |
-
-### Methods
-
-#### New()
-
-Build a backend for `repo_id` (or the default model if `nil`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```go
-func (o *GlineBackend) New(repoId string) (GlineBackend, error)
-```
-
-#### Detect()
-
-**Signature:**
-
-```go
-func (o *GlineBackend) Detect(text string, categories []EntityCategory) ([]Entity, error)
-```
-
-#### DetectWithCustom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```go
-func (o *GlineBackend) DetectWithCustom(text string, categories []EntityCategory, customLabels []string) ([]Entity, error)
-```
 
 ---
 
@@ -4562,17 +4418,6 @@ func (o *SecurityLimits) Default() SecurityLimits
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `Text` | `string` | — | Text |
-| `ByteStart` | `int` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4742,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```go
 func (o *TokenCounter) New() TokenCounter
-```
-
-#### NextToken()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```go
-func (o *TokenCounter) NextToken(category PiiCategory, original string) string
 ```
 
 ---

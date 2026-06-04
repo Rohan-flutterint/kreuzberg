@@ -275,17 +275,6 @@ find_all <- function(text) .Call("wrap__find_all", text, PACKAGE = "kreuzberg")
 #' @return List of patternmatch object (list with class attribute).
 #' @export
 scan_text <- function(text, categories) .Call("wrap__scan_text", text, categories, PACKAGE = "kreuzberg")
-#' Apply `strategy` to `original` for `category` and return the replacement token
-#'
-#' The optional `counter` is required for [`RedactionStrategy::TokenReplace`];
-#' other strategies ignore it.
-#' @param strategy RedactionStrategy object (list with class attribute).
-#' @param original Character string.
-#' @param category PiiCategory object (list with class attribute).
-#' @param counter TokenCounter object (list with class attribute).
-#' @return Character string.
-#' @export
-apply_strategy <- function(strategy, original, category, counter = TokenCounter$default()) .Call("wrap__apply_strategy", strategy, original, category, counter, PACKAGE = "kreuzberg")
 #' Score and return the top-N sentences from `text`, joined in original order
 #'
 #' `language` is an ISO 639 (or locale) code used to pick a stopword list;
@@ -1702,34 +1691,6 @@ TokenReductionConfig$from_json <- function(json) {
 }
 #' @export
 `[[.TokenReductionConfig` <- `$.TokenReductionConfig`
-#' Kreuzberg-gliner-rs ONNX backend wrapper
-#'
-#' Holds an initialised [`GLiNER<SpanMode>`] behind an `Arc<Mutex<...>>` so the
-#' model can be safely shared across async tasks (inference is synchronous and
-#' serialised internally by the mutex).
-#' @field repo_id repo_id
-#' @field model_path model_path
-#' @field tokenizer_path tokenizer_path
-#' @export
-GlineBackend <- new.env(parent = emptyenv())
-GlineBackend$new <- function(repo_id) .Call("wrap__GlineBackend__new", repo_id, PACKAGE = "kreuzberg")
-GlineBackend$detect <- function(self, text, categories) .Call("wrap__GlineBackend__detect", self, text, categories, PACKAGE = "kreuzberg")
-GlineBackend$detect_with_custom <- function(self, text, categories, custom_labels) .Call("wrap__GlineBackend__detect_with_custom", self, text, categories, custom_labels, PACKAGE = "kreuzberg")
-#' @export
-`$.GlineBackend` <- function(self, name) {
-  func <- GlineBackend[[name]]
-  if (identical(names(formals(func))[1], "self")) {
-    function(...) func(self, ...)
-  } else {
-    func
-  }
-}
-#' @export
-`[[.GlineBackend` <- `$.GlineBackend`
-#' @export
-detect.GlineBackend <- function(x, ...) x$detect(...)
-#' @export
-detect_with_custom.GlineBackend <- function(x, ...) x$detect_with_custom(...)
 #' Liter-llm-backed NER backend
 #' @export
 LlmBackend <- new.env(parent = emptyenv())
@@ -3132,22 +3093,6 @@ DetectResponse <- new.env(parent = emptyenv())
 }
 #' @export
 `[[.DetectResponse` <- `$.DetectResponse`
-#' A text segment with its byte offset in the original document
-#' @field text text
-#' @field byte_start byte_start
-#' @export
-Segment <- new.env(parent = emptyenv())
-#' @export
-`$.Segment` <- function(self, name) {
-  func <- Segment[[name]]
-  if (identical(names(formals(func))[1], "self")) {
-    function(...) func(self, ...)
-  } else {
-    func
-  }
-}
-#' @export
-`[[.Segment` <- `$.Segment`
 #' Options controlling how two `ExtractionResult` values are compared
 #' @field include_metadata Include metadata changes in the diff. Default: `true`.
 #' @field include_embedded Include embedded-children changes in the diff. Default: `true`.

@@ -5367,9 +5367,6 @@ internal extension DetectResponse {
     }
 }
 
-/// A text segment with its byte offset in the original document.
-public typealias Segment = RustBridge.Segment
-
 /// Options controlling how two `ExtractionResult` values are compared.
 public struct DiffOptions: Codable, Sendable, Hashable {
     /// Include metadata changes in the diff. Default: `true`.
@@ -9223,16 +9220,6 @@ public func scanText(text: String, categories: [PiiCategory]) throws -> [Pattern
     return RustBridge.scanText(text, _rb_categories).map { ref in var item = try PatternMatch(ref); item.isOwned = false; return item }
 }
 
-/// Apply `strategy` to `original` for `category` and return the replacement token.
-///
-/// The optional `counter` is required for [`RedactionStrategy::TokenReplace`];
-/// other strategies ignore it.
-public func applyStrategy(strategy: RedactionStrategy, original: String, category: PiiCategory, counter: TokenCounter) throws -> String {
-    let _rb_strategy = try strategy.intoRust()
-    let _rb_category = try category.intoRust()
-    return RustBridge.applyStrategy(_rb_strategy, original, _rb_category, counter)
-}
-
 /// Score and return the top-N sentences from `text`, joined in original order.
 ///
 /// `language` is an ISO 639 (or locale) code used to pick a stopword list;
@@ -9604,8 +9591,6 @@ extension RustBridge.SecurityLimits: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.TokenReductionConfig: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
-extension RustBridge.GlineBackend: @unchecked Sendable {}
-// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.LlmBackend: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.PatternMatch: @unchecked Sendable {}
@@ -9795,8 +9780,6 @@ extension RustBridge.Translation: @unchecked Sendable {}
 extension RustBridge.ExtractedUri: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DetectResponse: @unchecked Sendable {}
-// swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
-extension RustBridge.Segment: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.
 extension RustBridge.DiffOptions: @unchecked Sendable {}
 // swift-bridge opaque type used across Task.detached boundaries — Rust type is Send + Sync.

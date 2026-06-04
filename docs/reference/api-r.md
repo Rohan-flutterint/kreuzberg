@@ -794,32 +794,6 @@ scan_text(text, categories)
 
 ---
 
-#### apply_strategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```r
-apply_strategy(strategy, original, category, counter)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `character` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `character`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -2510,56 +2484,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `character or NULL` | `NULL` | Language identifier for code blocks |
 | `code` | `character or NULL` | `NULL` | Raw code content for code blocks |
 | `children` | `list` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_id` | `character` | — | Repo id |
-| `model_path` | `character` | — | Model path |
-| `tokenizer_path` | `character` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `NULL`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```r
-new(repo_id)
-```
-
-#### detect()
-
-**Signature:**
-
-```r
-detect(text, categories)
-```
-
-#### detect_with_custom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```r
-detect_with_custom(text, categories, custom_labels)
-```
 
 ---
 
@@ -4562,17 +4486,6 @@ default()
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `character` | — | Text |
-| `byte_start` | `integer` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4810,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```r
 new()
-```
-
-#### next_token()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```r
-next_token(category, original)
 ```
 
 ---

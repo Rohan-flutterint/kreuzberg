@@ -541,14 +541,6 @@ class KreuzbergBridge {
     return await rust_bridge.scanText(text: text, categories: categories);
   }
 
-  /// Apply `strategy` to `original` for `category` and return the replacement token.
-  ///
-  /// The optional `counter` is required for [`RedactionStrategy::TokenReplace`];
-  /// other strategies ignore it.
-  static Future<String> applyStrategy(RedactionStrategy strategy, String original, PiiCategory category, TokenCounter counter) async {
-    return await rust_bridge.applyStrategy(strategy: strategy, original: original, category: category, counter: counter);
-  }
-
   /// Score and return the top-N sentences from `text`, joined in original order.
   ///
   /// `language` is an ISO 639 (or locale) code used to pick a stopword list;

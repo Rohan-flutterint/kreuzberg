@@ -5141,24 +5141,6 @@ pub fn redact(result: []const u8, config: []const u8) KreuzbergError!void {
     return;
 }
 
-/// Apply `strategy` to `original` for `category` and return the replacement token.
-///
-/// The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-/// other strategies ignore it.
-pub fn apply_strategy(strategy: RedactionStrategy, original: []const u8, category: PiiCategory, counter: TokenCounter) error{OutOfMemory}![]u8 {
-    const original_z = try std.fmt.allocPrintSentinel(
-        std.heap.c_allocator, "{s}", .{original}, 0);
-    defer std.heap.c_allocator.free(original_z);
-    const _result = c.kreuzberg_apply_strategy(strategy, original_z, category, counter);
-    const _result_len = c.kreuzberg_apply_strategy_len(strategy, original_z, category, counter);
-    return blk: {
-        const slice = _result[0.._result_len];
-        const owned = try std.heap.c_allocator.dupe(u8, slice);
-        _free_string(_result);
-        break :blk owned;
-    };
-}
-
 /// Score and return the top-N sentences from `text`, joined in original order.
 ///
 /// `language` is an ISO 639 (or locale) code used to pick a stopword list;
@@ -5639,7 +5621,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -5658,7 +5640,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -5720,7 +5702,7 @@ pub fn make_ocr_backend_vtable(comptime T: type, instance: *T) IOcrBackend {
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -6439,7 +6421,7 @@ pub fn make_embedding_backend_vtable(comptime T: type, instance: *T) IEmbeddingB
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -6662,7 +6644,7 @@ pub fn make_document_extractor_vtable(comptime T: type, instance: *T) IDocumentE
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -6681,7 +6663,7 @@ pub fn make_document_extractor_vtable(comptime T: type, instance: *T) IDocumentE
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -6860,7 +6842,7 @@ pub fn make_renderer_vtable(comptime T: type, instance: *T) IRenderer {
                     // Complex return type: serialize to JSON and return as *u8 (NUL-terminated C string).
                     // The caller owns the returned pointer; they must free it via the C API.
                     // For now, return null to indicate the method is not yet implemented.
-                    // TODO: implement JSON serialization for this complex return type.
+                    // Unsupported: JSON serialization for this complex return type.
                     _ = value;
                     if (out_result) |ptr| ptr.* = null;
                     return 0;
@@ -6884,70 +6866,6 @@ pub fn make_renderer_vtable(comptime T: type, instance: *T) IRenderer {
         }.thunk,
     };
 }
-
-/// Build a backend for `repo_id` (or the default model if `null`).
-///
-/// Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-/// After this returns, inference is available without further I/O.
-pub fn new_gline_backend(repo_id: ?[]const u8) error{OutOfMemory}!GlineBackend {
-    const repo_id_z = try std.heap.c_allocator.dupeZ(u8, repo_id);
-    defer std.heap.c_allocator.free(repo_id_z);
-    const _handle = c.kreuzberg_gline_backend_new(repo_id_z.ptr);
-    if (_handle == null) return _first_error(anyerror);
-    return .{ ._handle = @as(*c.KREUZBERGGlineBackend, @ptrCast(_handle.?)) };
-}
-
-/// kreuzberg-gliner-rs ONNX backend wrapper.
-///
-/// Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-/// model can be safely shared across async tasks (inference is synchronous and
-/// serialised internally by the mutex).
-pub const GlineBackend = struct {
-    _handle: *anyopaque,
-
-    pub fn detect(self: *GlineBackend, text: []const u8, categories: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
-        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
-        defer std.heap.c_allocator.free(text_z);
-        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
-        defer std.heap.c_allocator.free(categories_z);
-        const _result = c.kreuzberg_gline_backend_detect(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)), text_z, categories_z);
-        if (c.kreuzberg_last_error_code() != 0) {
-            return _first_error(KreuzbergError);
-        }
-        return blk: {
-            const slice = std.mem.span(_result);
-            const owned = try std.heap.c_allocator.dupe(u8, slice);
-            c.kreuzberg_free_string(_result);
-            break :blk owned;
-        };
-    }
-
-    /// Native zero-shot multi-label inference: passes the union of `categories`
-    /// (as label strings) and `custom_labels` to a single GLiNER inference call.
-    pub fn detect_with_custom(self: *GlineBackend, text: []const u8, categories: []const u8, custom_labels: []const u8) (KreuzbergError||error{OutOfMemory})![]u8 {
-        const text_z = try std.heap.c_allocator.dupeZ(u8, text);
-        defer std.heap.c_allocator.free(text_z);
-        const categories_z = try std.heap.c_allocator.dupeZ(u8, categories);
-        defer std.heap.c_allocator.free(categories_z);
-        const custom_labels_z = try std.heap.c_allocator.dupeZ(u8, custom_labels);
-        defer std.heap.c_allocator.free(custom_labels_z);
-        const _result = c.kreuzberg_gline_backend_detect_with_custom(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)), text_z, categories_z, custom_labels_z);
-        if (c.kreuzberg_last_error_code() != 0) {
-            return _first_error(KreuzbergError);
-        }
-        return blk: {
-            const slice = std.mem.span(_result);
-            const owned = try std.heap.c_allocator.dupe(u8, slice);
-            c.kreuzberg_free_string(_result);
-            break :blk owned;
-        };
-    }
-
-    /// Release the underlying FFI handle. Safe to call once per instance.
-    pub fn free(self: *GlineBackend) void {
-        c.kreuzberg_gline_backend_free(@as(*c.KREUZBERGGlineBackend, @ptrCast(self._handle)));
-    }
-};
 
 pub fn new_llm_backend(config: []const u8) error{OutOfMemory,InvalidJson}!LlmBackend {
     const config_z = try std.heap.c_allocator.dupeZ(u8, config);
@@ -7016,33 +6934,8 @@ pub fn new_token_counter() TokenCounter {
 pub const TokenCounter = struct {
     _handle: *anyopaque,
 
-    /// Allocate the next token for `category` and `original`. If the original
-    /// has been seen before in this category, the same token is reused.
-    pub fn next_token(self: *TokenCounter, category: PiiCategory, original: []const u8) error{OutOfMemory}![]u8 {
-        const category_i32: i32 = @intFromEnum(category);
-        const original_z = try std.heap.c_allocator.dupeZ(u8, original);
-        defer std.heap.c_allocator.free(original_z);
-        const _result = c.kreuzberg_token_counter_next_token(@as(*c.KREUZBERGTokenCounter, @ptrCast(self._handle)), category_i32, original_z);
-        return blk: {
-            const slice = std.mem.span(_result);
-            const owned = try std.heap.c_allocator.dupe(u8, slice);
-            c.kreuzberg_free_string(_result);
-            break :blk owned;
-        };
-    }
-
     /// Release the underlying FFI handle. Safe to call once per instance.
     pub fn free(self: *TokenCounter) void {
         c.kreuzberg_token_counter_free(@as(*c.KREUZBERGTokenCounter, @ptrCast(self._handle)));
-    }
-};
-
-/// A text segment with its byte offset in the original document.
-pub const Segment = struct {
-    _handle: *anyopaque,
-
-    /// Release the underlying FFI handle. Safe to call once per instance.
-    pub fn free(self: *Segment) void {
-        c.kreuzberg_segment_free(@as(*c.KREUZBERGSegment, @ptrCast(self._handle)));
     }
 };

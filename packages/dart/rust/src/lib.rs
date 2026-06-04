@@ -1503,18 +1503,6 @@ pub struct TokenReductionConfig {
     pub enable_semantic_clustering: bool,
 }
 
-/// kreuzberg-gliner-rs ONNX backend wrapper.
-///
-/// Holds an initialised [`GLiNER<SpanMode>`] behind an `Arc<Mutex<...>>` so the
-/// model can be safely shared across async tasks (inference is synchronous and
-/// serialised internally by the mutex).
-#[frb(mirror(GlineBackend))]
-pub struct GlineBackend {
-    pub repo_id: String,
-    pub model_path: String,
-    pub tokenizer_path: String,
-}
-
 /// liter-llm-backed NER backend.
 #[frb(opaque)]
 pub struct LlmBackend {
@@ -3453,13 +3441,6 @@ pub struct DetectResponse {
     pub filename: Option<String>,
 }
 
-/// A text segment with its byte offset in the original document.
-#[frb(mirror(Segment))]
-pub struct Segment {
-    pub text: String,
-    pub byte_start: i64,
-}
-
 /// Options controlling how two `ExtractionResult` values are compared.
 #[frb(mirror(DiffOptions))]
 pub struct DiffOptions {
@@ -3837,13 +3818,6 @@ impl TokenCounter {
     #[frb]
     pub fn new() -> TokenCounter {
         (|v| TokenCounter::from(v))(kreuzberg::TokenCounter::new())
-    }
-    #[frb]
-    pub fn next_token(&mut self, category: PiiCategory, original: String) -> String {
-        self.inner.next_token(
-            unsafe { ::std::mem::transmute::<&PiiCategory, &kreuzberg::PiiCategory>(&category) },
-            &original,
-        )
     }
 }
 
@@ -5598,16 +5572,6 @@ impl From<kreuzberg::TokenReductionConfig> for TokenReductionConfig {
     }
 }
 
-impl From<kreuzberg::GlineBackend> for GlineBackend {
-    fn from(v: kreuzberg::GlineBackend) -> Self {
-        GlineBackend {
-            repo_id: v.repo_id.into(),
-            model_path: v.model_path.to_string_lossy().into_owned(),
-            tokenizer_path: v.tokenizer_path.to_string_lossy().into_owned(),
-        }
-    }
-}
-
 impl From<kreuzberg::text::redaction::patterns::PatternMatch> for PatternMatch {
     fn from(v: kreuzberg::text::redaction::patterns::PatternMatch) -> Self {
         PatternMatch {
@@ -6847,15 +6811,6 @@ impl From<kreuzberg::api::DetectResponse> for DetectResponse {
         DetectResponse {
             mime_type: v.mime_type.into(),
             filename: v.filename.map(|s| s.into()),
-        }
-    }
-}
-
-impl From<kreuzberg::chunking::semantic::merge::Segment<'_>> for Segment {
-    fn from(v: kreuzberg::chunking::semantic::merge::Segment<'_>) -> Self {
-        Segment {
-            text: v.text.into(),
-            byte_start: v.byte_start as _,
         }
     }
 }
@@ -10500,25 +10455,6 @@ pub fn scan_text(text: String, categories: Vec<PiiCategory>) -> Vec<PatternMatch
             )
         }),
     )
-}
-
-/// Apply `strategy` to `original` for `category` and return the replacement token.
-///
-/// The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-/// other strategies ignore it.
-pub fn apply_strategy(
-    strategy: RedactionStrategy,
-    original: String,
-    category: PiiCategory,
-    mut counter: TokenCounter,
-) -> String {
-    kreuzberg::text::redaction::strategy::apply_strategy(
-        unsafe { std::mem::transmute::<RedactionStrategy, kreuzberg::RedactionStrategy>(strategy) },
-        &original,
-        unsafe { std::mem::transmute::<&PiiCategory, &kreuzberg::PiiCategory>(&category) },
-        &mut counter.inner,
-    )
-    .to_string()
 }
 
 /// Score and return the top-N sentences from `text`, joined in original order.

@@ -1103,16 +1103,6 @@ mod ffi {
     }
 
     extern "Rust" {
-        type GlineBackend;
-        #[swift_bridge(swift_name = "repoId")]
-        fn repo_id(&self) -> String;
-        #[swift_bridge(swift_name = "modelPath")]
-        fn model_path(&self) -> String;
-        #[swift_bridge(swift_name = "tokenizerPath")]
-        fn tokenizer_path(&self) -> String;
-    }
-
-    extern "Rust" {
         type LlmBackend;
     }
 
@@ -1142,11 +1132,6 @@ mod ffi {
 
     extern "Rust" {
         type TokenCounter;
-    }
-
-    extern "Rust" {
-        #[swift_bridge(swift_name = "tokenCounterNextToken")]
-        fn token_counter_next_token(client: &mut TokenCounter, category: String, original: String) -> String;
     }
 
     extern "Rust" {
@@ -2511,13 +2496,6 @@ mod ffi {
     }
 
     extern "Rust" {
-        type Segment;
-        fn text(&self) -> String;
-        #[swift_bridge(swift_name = "byteStart")]
-        fn byte_start(&self) -> usize;
-    }
-
-    extern "Rust" {
         type DiffOptions;
         #[swift_bridge(init)]
         fn new(include_metadata: bool, include_embedded: bool, max_content_chars: Option<usize>) -> DiffOptions;
@@ -3082,8 +3060,6 @@ mod ffi {
         #[swift_bridge(swift_name = "knownModels")]
         fn known_models() -> Vec<String>;
         fn redact(result: ExtractionResult, config: RedactionConfig) -> Result<(), String>;
-        #[swift_bridge(swift_name = "applyStrategy")]
-        fn apply_strategy(strategy: String, original: String, category: String, counter: TokenCounter) -> String;
         fn summarize(text: String, language: Option<String>, max_tokens: Option<u32>) -> String;
         #[swift_bridge(swift_name = "tokenCount")]
         fn token_count(text: String) -> u32;
@@ -6758,19 +6734,6 @@ impl TokenReductionConfig {
     }
 }
 
-pub struct GlineBackend(pub kreuzberg::GlineBackend);
-impl GlineBackend {
-    pub fn repo_id(&self) -> String {
-        format!("{:?}", &self.0.repo_id)
-    }
-    pub fn model_path(&self) -> String {
-        format!("{:?}", &self.0.model_path)
-    }
-    pub fn tokenizer_path(&self) -> String {
-        format!("{:?}", &self.0.tokenizer_path)
-    }
-}
-
 pub struct LlmBackend(pub kreuzberg::LlmBackend);
 
 #[allow(unused_imports)]
@@ -6838,16 +6801,6 @@ impl PatternMatch {
 }
 
 pub struct TokenCounter(pub kreuzberg::TokenCounter);
-
-pub fn token_counter_next_token(client: &mut TokenCounter, category: String, original: String) -> String {
-    client
-        .0
-        .next_token(
-            &<kreuzberg::PiiCategory as ::std::convert::From<String>>::from(category),
-            &original,
-        )
-        .to_string()
-}
 
 pub struct PdfAnnotation(pub kreuzberg::PdfAnnotation);
 impl PdfAnnotation {
@@ -10770,16 +10723,6 @@ impl DetectResponse {
     }
 }
 
-pub struct Segment(pub kreuzberg::chunking::semantic::merge::Segment<'static>);
-impl Segment {
-    pub fn text(&self) -> String {
-        format!("{:?}", &self.0.text)
-    }
-    pub fn byte_start(&self) -> usize {
-        self.0.byte_start.clone()
-    }
-}
-
 pub struct DiffOptions(pub kreuzberg::DiffOptions);
 impl DiffOptions {
     pub fn new(include_metadata: bool, include_embedded: bool, max_content_chars: Option<usize>) -> DiffOptions {
@@ -13349,16 +13292,6 @@ pub fn redact(mut result: ExtractionResult, config: RedactionConfig) -> Result<(
             .await
             .map_err(|e| e.to_string())
     })
-}
-
-pub fn apply_strategy(strategy: String, original: String, category: String, mut counter: TokenCounter) -> String {
-    kreuzberg::text::redaction::strategy::apply_strategy(
-        <kreuzberg::RedactionStrategy as ::std::convert::From<String>>::from(strategy),
-        &original,
-        &category.0,
-        &mut counter.0,
-    )
-    .to_string()
 }
 
 pub fn summarize(text: String, language: Option<String>, max_tokens: Option<u32>) -> String {

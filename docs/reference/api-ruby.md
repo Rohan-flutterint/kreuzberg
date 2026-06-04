@@ -794,32 +794,6 @@ def self.scan_text(text, categories)
 
 ---
 
-#### apply_strategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```ruby
-def self.apply_strategy(strategy, original, category, counter)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `String` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `String`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -1012,30 +986,6 @@ def self.detect_mime_type(path, check_exists)
 | `check_exists` | `Boolean` | Yes | The check exists |
 
 **Returns:** `String`
-**Errors:** Raises `Error`.
-
----
-
-#### embed_texts()
-
-Embed a list of texts using the configured embedding model.
-
-Returns a 2D vector where each inner vector is the embedding for the corresponding text.
-
-**Signature:**
-
-```ruby
-def self.embed_texts(texts, config)
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `texts` | `Array<String>` | Yes | The texts |
-| `config` | `EmbeddingConfig` | Yes | The configuration options |
-
-**Returns:** `Array<Array<Float>>`
 **Errors:** Raises `Error`.
 
 ---
@@ -2510,56 +2460,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `String?` | `nil` | Language identifier for code blocks |
 | `code` | `String?` | `nil` | Raw code content for code blocks |
 | `children` | `Array<FormattedBlock>` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_id` | `String` | — | Repo id |
-| `model_path` | `String` | — | Model path |
-| `tokenizer_path` | `String` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `nil`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```ruby
-def self.new(repo_id)
-```
-
-#### detect()
-
-**Signature:**
-
-```ruby
-def detect(text, categories)
-```
-
-#### detect_with_custom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```ruby
-def detect_with_custom(text, categories, custom_labels)
-```
 
 ---
 
@@ -4562,17 +4462,6 @@ def self.default()
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `String` | — | Text |
-| `byte_start` | `Integer` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4786,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```ruby
 def self.new()
-```
-
-#### next_token()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```ruby
-def next_token(category, original)
 ```
 
 ---

@@ -794,32 +794,6 @@ pub fn scan_text(text: &str, categories: Vec<PiiCategory>) -> Vec<PatternMatch>
 
 ---
 
-#### apply_strategy()
-
-Apply `strategy` to `original` for `category` and return the replacement token.
-
-The optional `counter` is required for `RedactionStrategy.TokenReplace`;
-other strategies ignore it.
-
-**Signature:**
-
-```rust
-pub fn apply_strategy(strategy: RedactionStrategy, original: &str, category: PiiCategory, counter: TokenCounter) -> String
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `strategy` | `RedactionStrategy` | Yes | The redaction strategy |
-| `original` | `String` | Yes | The original |
-| `category` | `PiiCategory` | Yes | The pii category |
-| `counter` | `TokenCounter` | Yes | The token counter |
-
-**Returns:** `String`
-
----
-
 #### summarize()
 
 Score and return the top-N sentences from `text`, joined in original order.
@@ -2510,56 +2484,6 @@ Represents structural elements like headings, paragraphs, lists, code blocks, et
 | `language` | `Option<String>` | `None` | Language identifier for code blocks |
 | `code` | `Option<String>` | `None` | Raw code content for code blocks |
 | `children` | `Vec<FormattedBlock>` | `/* serde(default) */` | Nested blocks for containers (blockquotes, list items, divs) |
-
----
-
-#### GlineBackend
-
-kreuzberg-gliner-rs ONNX backend wrapper.
-
-Holds an initialised `GLiNER<SpanMode>` behind an `Arc<Mutex<...>>` so the
-model can be safely shared across async tasks (inference is synchronous and
-serialised internally by the mutex).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `repo_id` | `String` | — | Repo id |
-| `model_path` | `PathBuf` | — | Model path |
-| `tokenizer_path` | `PathBuf` | — | Tokenizer path |
-
-### Methods
-
-#### new()
-
-Build a backend for `repo_id` (or the default model if `None`).
-
-Downloads the ONNX weights and tokenizer via `hf-hub` on first call.
-After this returns, inference is available without further I/O.
-
-**Signature:**
-
-```rust
-pub fn new(repo_id: Option<String>) -> GlineBackend
-```
-
-#### detect()
-
-**Signature:**
-
-```rust
-pub fn detect(&self, text: &str, categories: Vec<EntityCategory>) -> Vec<Entity>
-```
-
-#### detect_with_custom()
-
-Native zero-shot multi-label inference: passes the union of `categories`
-(as label strings) and `custom_labels` to a single GLiNER inference call.
-
-**Signature:**
-
-```rust
-pub fn detect_with_custom(&self, text: &str, categories: Vec<EntityCategory>, custom_labels: Vec<String>) -> Vec<Entity>
-```
 
 ---
 
@@ -4562,17 +4486,6 @@ pub fn default() -> SecurityLimits
 
 ---
 
-#### Segment
-
-A text segment with its byte offset in the original document.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `text` | `String` | — | Text |
-| `byte_start` | `usize` | — | Byte start |
-
----
-
 #### ServerConfig
 
 API server configuration.
@@ -4897,17 +4810,6 @@ Per-category running counter for `RedactionStrategy.TokenReplace`.
 
 ```rust
 pub fn new() -> TokenCounter
-```
-
-#### next_token()
-
-Allocate the next token for `category` and `original`. If the original
-has been seen before in this category, the same token is reused.
-
-**Signature:**
-
-```rust
-pub fn next_token(&self, category: PiiCategory, original: &str) -> String
 ```
 
 ---
