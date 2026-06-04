@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **fix(ocr/layout_assembly)**: preserve PageBreak tokens and whitespace anchors during paragraph assembly to prevent content loss in layout-assisted OCR extraction. Enhanced test coverage for `ocr_doc_to_paragraphs` to verify whitespace-only lines within elements are preserved in full text but filtered from the lines array (fixing TF1 regressions where layout detection was losing 1.6% for Tesseract and 3.6% for PaddleOCR). Additionally fixed missing `rotation_degrees` field in `pdf_oxide::layout::TextSpan` test construction, allowing compilation against updated pdf-oxide API.
+
 - **fix(api)**: relax stale Windows cfg gates on `extract_structured_handler` / `extract_structured_impl` / structured-extraction fallback. Five sites in `api/handlers.rs`, `core/pipeline/mod.rs`, `embeddings/mod.rs`, `mcp/server.rs` had `cfg(any(not(feature = "liter-llm"), target_os = "windows", target_arch = "wasm32"))` stubs created when liter-llm did not build on Windows. With liter-llm now active on Windows, the stub overlapped the real implementation, producing E0428 duplicate definitions and E0119 conflicting trait impls. Dropped the redundant `target_os = "windows"` clause from each stub cfg so they only activate when liter-llm is absent or the target is wasm32.
 
 - **fix(test)**: remove dead local bindings `line_height`/`base_y` in `pdf/structure/adapters.rs` test (kept `expected_line_height` which is referenced). Resolves CI Lint `cargo clippy -D warnings` failure.
