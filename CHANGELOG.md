@@ -11,433 +11,157 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **fix(clippy)**: extend Dart FRB binding (`packages/dart/rust/src/lib.rs`) file-level allow block with `clippy::redundant_closure_call` and `clippy::into_iter_on_ref`. After removing the workspace clippy `--exclude` list in I1.3, latent clippy 1.95 violations in alef-emitted Dart FRB code surfaced (4× redundant closure call wrapper around `Vec`→`Vec` conversions, 1× `.into_iter()` on `&[T]`). The allows are scoped to the alef-generated file only; planned alef upstream fix tracked.
-- **fix(ci)**: widen `ci-rust.yaml` push/PR path filter to include alef-generated workspace Rust crates under `packages/{dart,swift,elixir,r,ruby}/{rust,native,ext}/**`. Without this, changes to those workspace members do not trigger CI Rust even though `cargo clippy --workspace` covers them, so clippy-only fixes (like the dart-FRB allow extension) ship without CI verification.
-- **chore(deny)**: add `symphonia-common` to MPL-2.0 license exceptions. After `cargo upgrade --incompatible` pulled `symphonia-common 0.6.0` as a new sub-crate transitive of the transcription extractor, `cargo-deny` rejected the MPL-2.0 license and `CI Lint` failed. `symphonia-common` is a file-scoped copyleft sub-crate identical in legal posture to the already-allowlisted `symphonia`/`symphonia-core` siblings; using it imposes no share-alike on kreuzberg.
-- **chore(jni)**: remove stale comment in `crates/kreuzberg-jni/Cargo.toml` claiming the dependency is pinned to `0.21` — the actual pin is `0.22` after the Phase A1 port.
+- **bindings**: `embed_texts_async` is the supported entry-point for embedding in all 12 language bindings. Use `embed_texts_async` rather than the sync `embed_texts` variant.
 
-### Added
+- **dart**: enable `batchExtractBytes` / `batchExtractBytesSync` in Dart FRB bridge to match the four-method batch API surface.
 
-- **feat(taskfile)**: add `e2e:lang` dispatcher task for uniform e2e invocation by language. Enables CI workflows to call `task e2e:lang LANG=<language>` instead of per-language if-gates. All 15 language e2e targets now available: `{rust,python,go,node,ruby,php,java,csharp,elixir,wasm,r,dart,kotlin-android,swift,zig}:e2e`.
+- **go**: refresh bundled C header to resolve cgo "could not determine what C.X refers to" errors for `LlmBackend` and `TokenCounter` types.
 
-### Changed
+- **ruby**: published `kreuzberg` gem now installs in frozen mode.
 
-- **chore(benchmarks)**: skip mineru plaintext shard 1/3 — recurring framework-env failure (see project_benchmark_status.md).
-- **chore(alef)**: pin to alef v0.23.7 + regenerate all bindings. Picks up 24 upstream codegen fixes since v0.23.6: pyo3 `exclude_functions` propagation to `api.py`/`__init__.py`/`.pyi`; e2e/python `BatchFileItem`/`BatchBytesItem` constructor emission via `element_type`; napi register accepts camelCase + snake_case method names; swift Codable value-struct ownership marshalling (`PatternMatch` no longer emits `isOwned`); swift `extractRegionWithVlm` RustBridge export via enum-param filter relaxation; extendr async function format-string parameters complete; java trait-bridge vtable wrap + constructor extracted to `initializeStubs()` helper (clears 7 checkstyle violations); java Panama FFM service initialization; dart FRB `Vec<String>→&[&str]` conversion for free functions; dart FRB handler-vs-class-field rewrite distinction; e2e/go double-free removal; e2e/wasm exclude_types + App-class fallback; e2e/ruby Magnus config exposure; e2e/swift harness binary path; e2e/napi excluded entrypoint skip; e2e/elixir harness syntax + App.config exclusion; e2e/csharp streaming aggregator locals; swift optional-parameter `= nil` defaults; php tail-optional check; sync-versions zig hash refresh.
+- **pdf**: per-page OCR fallback now targets only the specific pages that fail the native-text quality check instead of falling back to full-document OCR on the first failing page. This prevents abnormal memory growth when processing PDF pipelines containing a single scanned page.
 
-### Fixed
+- **ffi/windows**: expose `LlmBackend` via new `ner-llm-types` type-only feature for Windows FFI bindings so structured extraction compiles on Windows.
 
-- **fix(e2e)**: redirect `embed_texts` e2e fixture to `embed_texts_async` for all 12 languages that exclude the sync variant (python, ruby, php, elixir, dart, csharp, swift, go, java, zig, r, node). Adds `function = "<async>"` overrides under `[crates.e2e.calls.embed_texts.overrides.<lang>]` with per-language name mangling (snake_case, camelCase, PascalCase). Tests now `await embed_texts_async(...)` instead of calling the missing sync wrapper.
+- **ocr**: preserve vertical spacing in paragraph baselines when filtering blank lines from OCR elements. This fixes 1.6% TF1 loss for Tesseract and 3.6% for PaddleOCR on OCR-extracted documents.
 
-- **fix(dart)**: enable `batchExtractBytes` / `batchExtractBytesSync` in Dart FRB bridge. Removed `stub_methods` declaration that prevented FRB code generation for batch extraction functions. The hand-authored Dart wrapper in `kreuzberg.dart` calls all four batch methods (`batchExtractBytes`, `batchExtractBytesSync`, `batchExtractFiles`, `batchExtractFilesSync`) via the bridge, so all four must be included in the FRB-generated bridge.
+- **ocr**: prevent low-confidence `PageHeader`/`PageFooter` classification from suppressing body content on OCR-rendered pages.
 
-- **fix(go)**: refresh bundled C header `packages/go/v5/include/kreuzberg.h` against canonical `crates/kreuzberg-ffi/include/kreuzberg.h`. The bundled copy was stale (predated `KREUZBERGLlmBackend`/`KREUZBERGTokenCounter` opaque-typedef additions) because `build.rs` skipped its post-cbindgen copy step when no Rust sources changed. Direct sync resolves cgo "could not determine what C.X refers to" errors.
+- **ocr**: prevent low-confidence layout model from misclassifying body text as list items on OCR-rendered pages.
 
-- **fix(ruby)**: refresh `packages/ruby/Gemfile.lock` against regenerated path-gem contents. Same recurring pattern as previous regen cycles — gemspec glob `lib/**/*` matches alef-regenerated files, invalidating frozen-mode lockfile at CI time.
+- **ocr**: validate TATR cell grid sanity before using table structure to prevent cell content garbling and duplication.
 
-### Changed
+- **ocr**: implement actual input-order fallback for inconsistent layout sort to preserve layout integrity on OCR-rendered pages.
 
-- **chore(alef)**: pin to alef v0.23.0 + post-release fixes. Pulls v0.22.33→v0.23.0 (input DTO sequence collect target-inference, opaque-type wrapper re-emission, AsRef<str/Path/[u8]> monomorphisation, per-language scaffold fixes for php/ruby/zig/swift/kotlin) plus the post-0.23.0 unreleased fixes (php Vec<Named> let-binding, swift From<String> enum params + mut bindings + excluded-variant wildcard, wasm Vec→HashSet conv, FFI opaque allocators, swift name-shadow in shims, swift+wasm unreachable_patterns allow, swift hoisted Vec ref binding, wasm Option<Vec<T>> Some-wrap).
-- **feat(core)**: expose `LlmBackend` (gated on `ner-llm`, non-Windows, non-WASM) and `TokenCounter` (gated on `redaction`) at crate root for binding re-use.
-- **feat(windows)**: re-include liter-llm in Windows FFI feature set — VLM extraction now compiles on Windows after upstream aws-lc-sys MSVC fix.
+- **redaction**: SWIFT BIC detector no longer case-folds input before matching, preventing false-positive SWIFT BIC matches on lowercase English words.
 
-### Fixed
+- **python (#937)**: `ExtractionConfig(cancel_token=…)` now accepts the kwarg at construction.
 
-- **fix(pdf)**: per-page OCR fallback now targets only the specific pages that fail the native-text quality check instead of falling back to full-document OCR on the first failing page. A new `OcrGateOutcome::RunFallbackOnPages(Vec<u32>)` variant routes hybrid PDFs (good text pages + scanned pages) through `extract_mixed_ocr_native`, producing `ExtractionMethod::Mixed` instead of `ExtractionMethod::Ocr`. Documents where every page fails still produce a full OCR pass (`RunFallback`). This prevents the abnormal memory growth previously seen when processing PDF pipelines containing a single scanned page.
-- **fix(ffi/windows)**: expose `LlmBackend` via new `ner-llm-types` type-only feature for Windows FFI bindings. Windows FFI lacks `ner-llm` (LLM inference is not available on Windows when ORT is unavailable), but alef-generated FFI bindings unconditionally reference `LlmBackend`. Added stub implementation gated on `ner-llm-types` (which `ner` implies) so Windows FFI can provide type stubs without requiring full LLM functionality. Updated Windows target feature list in `alef.toml` to include `ner`, `ner-llm-types`.
+- **php (#940)**: `composer require kreuzberg-dev/kreuzberg` now downloads the prebuilt binary instead of attempting to build from source.
 
-- **chore(alef)**: bump to alef v0.23.2 (stricter generic-function validation, improved e2e fixture validation). Alef v0.23.2 requires generic public functions to be explicitly excluded or annotated for binding generation. Applied `#[doc(hidden)]` to `embeddings::embed_texts<T>` (generic wrapper; public API is the monomorphic lib.rs variant), added serde derives to `PatternMatch` struct (FFI marshalling), marked problematic e2e fixture as skipped for all languages pending refactor, and updated JNI to use `embed_texts_async` instead of removed sync variant.
-- **fix(alef.toml)**: clear alef v0.23.2 strict-construction validation errors for `TokenCounter`, `GlineBackend`, and `Segment`. `TokenCounter.next_token` excluded globally (takes `&PiiCategory` reference; alef cannot auto-delegate `&mut self` methods with borrowed params through Arc<Mutex<T>> wrappers). `GlineBackend` excluded from all binding types (has private `Arc<Mutex<GLiNER<SpanMode>>>` field; no From impl possible; NER accessed via `detect_entities`/`redact`). `chunking::semantic::merge::Segment` excluded (lifetime-bound `&'a str` field; not part of public API). `apply_strategy` excluded globally (takes `&mut TokenCounter`; alef v0.23.2 generates `&counter.inner` instead of `&mut *counter.inner.lock().unwrap()`; callers use `redact()`). `docs/reference/types.md` and `docs/reference/configuration.md` updated by rumdl auto-fix (trailing spaces in code spans).
-- **fix(dead_code)**: gate `is_sort_visually_consistent` helper with `#[cfg(test)]` — the function is used only in unit tests but was defined unconditionally, triggering `-D warnings` clippy failure on CI.
+- **node (#1013)**: PDF chunks now carry `firstPage`/`lastPage` metadata.
 
-- **fix(ocr)**: preserve vertical spacing in paragraph baselines when filtering blank lines from OCR elements. When OCR elements contained blank lines (e.g., "Line1\n\nLine3"), the vertical positioning (`baseline_y`) was calculated using filtered array indices instead of original indices, causing incorrect line heights and thus incorrect vertical sorting during paragraph assembly with layout detection. This affected layout-based classification and the structured document metadata, resulting in 1.6% TF1 loss for Tesseract and 3.6% for PaddleOCR. Fixed by using `filter_map` to preserve original line indices and enhanced test coverage for `ocr_doc_to_paragraphs` to verify whitespace-only lines within elements are preserved in full text but filtered from the lines array. Additionally fixed missing `rotation_degrees` field in `pdf_oxide::layout::TextSpan` test construction for pdf-oxide compatibility.
+- **java (#1055)**: `UnsatisfiedLinkError` for embedding functions at JVM startup is resolved.
 
-- **fix(api)**: relax stale Windows cfg gates on `extract_structured_handler` / `extract_structured_impl` / structured-extraction fallback. Five sites in `api/handlers.rs`, `core/pipeline/mod.rs`, `embeddings/mod.rs`, `mcp/server.rs` had `cfg(any(not(feature = "liter-llm"), target_os = "windows", target_arch = "wasm32"))` stubs created when liter-llm did not build on Windows. With liter-llm now active on Windows, the stub overlapped the real implementation, producing E0428 duplicate definitions and E0119 conflicting trait impls. Dropped the redundant `target_os = "windows"` clause from each stub cfg so they only activate when liter-llm is absent or the target is wasm32.
+- **api (#1071)**: Explicit `ocr.backend: paddle-ocr` in config no longer silently falls through to Tesseract.
 
-- **fix(test)**: remove dead local bindings `line_height`/`base_y` in `pdf/structure/adapters.rs` test (kept `expected_line_height` which is referenced). Resolves CI Lint `cargo clippy -D warnings` failure.
+- **ocr/image**: `ImageExtractor` now registers when only `liter-llm` is enabled (no `ocr` feature), enabling VLM extraction on images.
 
-- **fix(ocr)**: add unit tests to verify OCR elements with mixed content and blank lines preserve all text during paragraph conversion. Tests confirm whitespace-only elements are correctly filtered, blank lines within elements don't drop content (full text preserved in `PdfParagraph.text`), and word counts are accurate. This ensures quality metrics (TF1) don't degrade when layout detection is applied to OCR-extracted documents.
-- **fix(types)**: feature-gate `CodeMetadataInner` (tree-sitter wrapper) with `#[cfg(feature = "tree-sitter")]`. The enum variant `FormatMetadata::Code` was already gated, but the inner struct referenced `tree_sitter_language_pack::ProcessResult` unconditionally, breaking `cargo check -p kreuzberg --no-default-features` which CI Rust runs as a separate step after tests. This was the persistent CI Rust failure previously mis-classified as "infra flake".
-- **fix(deps)**: switch `liter-llm` to git source (`kreuzberg-dev/liter-llm` `main`) — restores Windows build path now that the `aws-lc-sys` MSVC fix is applied upstream. Removes the temporary Windows `llm` stub module from `lib.rs` and unwinds all `not(target_os = "windows")` cfg gates introduced in `312b75e2d2`.
+- **ocr/pdf**: VLM fallback policies now work correctly with `--features "liter-llm,pdf"`.
 
-- **fix(redaction)**: SWIFT BIC detector no longer case-folds the entire input before matching. Real BICs are always written in uppercase; the previous `to_ascii_uppercase()` conversion caused every 8-letter lowercase English word (e.g. `launches`, `codename`) to be reported as a false-positive SWIFT BIC match.
+- **python**: unskipped `ExtractionResult` and `ExtractionDiff` return-type annotations so type checkers can validate return values.
 
-- **fix(ocr)**: prevent low-confidence `PageHeader`/`PageFooter` classification from suppressing body content on OCR-rendered pages. When layout detection marked OCR paragraphs as page furniture, the rendering pipeline filtered them to non-body layers (Header/Footer), causing total output loss. On OCR pages where furniture detection is inherently unreliable, only mark regions as furniture if layout model confidence ≥ 0.8. This fixes category B (total output failure) and category D (PageHeader suppression) from the Paddle quality regression audit, preventing valid body text from being classified as non-renderable headers/footers.
+- **api**: `NodeContent::MetadataBlock` entries now emit as arrays, fixing JSON schema codegen compatibility.
 
-- **fix(ocr)**: prevent low-confidence layout model from misclassifying body text as list items. When layout detection marks paragraphs as `ListItem` with low confidence (< 0.8), the classification is suppressed on OCR-rendered pages, preventing marker-digit truncation and content loss. This fixes category E (ListItem misclassification) from the Paddle quality regression audit. Added unit tests to verify confidence gating for ListItem hints.
+- **java**: fixed JVM SIGSEGV in trait-bridge vtable alignment and null pointer dereference.
 
-- **fix(ocr)**: validate TATR cell grid sanity before using table structure. When TATR (Table Transformer) produces malformed output on OCR pages (e.g., > 30% empty cells, degenerate grids with < 2 rows or columns), the table recognition is skipped entirely, preventing cell content garbling and duplication. This fixes category C (table garbling) from the Paddle quality regression audit. Added validation function `is_cell_grid_valid` that detects and rejects low-confidence table structures.
+- **wasm**: `getrandom` transitive dependency now resolves with `js` feature for wasm32 builds.
 
-- **fix(ocr)**: implement actual input-order fallback for inconsistent layout sort. The previous Y-position sort fallback was a no-op: `a.0.total_cmp(&b.0).reverse()` is mathematically identical to `b.0.total_cmp(&a.0)` (both descending), so the sort didn't actually change when inconsistency was detected. Fixed by index-tagging elements during collection, sorting by Y-position descending, and on inconsistency, restoring input order via insertion-index sort. This preserves layout integrity on OCR-rendered pages and fixes category F (layout reordering) from the Paddle quality regression audit. Added unit test `test_indexed_sort_fallback_restores_input_order` to verify fallback actually changes order.
+- **wasm**: JSON deserialization in trait-bridge methods now surfaces decode failures instead of silently returning defaults.
 
-- **fix(ci)**: Android x86_64 emulator cargo check failure in kreuzberg-dart. Added stub implementations of `LlmBackend` (with `new`, `detect`, `detect_with_custom` methods), `GlineBackend` (with PathBuf-typed `model_path`/`tokenizer_path` to match the real struct), `text::ner::{download_model, default_model_name, known_models}` (gated stubs for when `ner-onnx` is off but `ner` is on), `text::classification::classify_pages`, and `text::translation::translate_result` in the core library when their features are disabled. Alef-generated Dart bindings reference these types and methods unconditionally; stubs allow compilation on android-target (which excludes ner-onnx, ner-llm, classification, translation due to missing ORT prebuilts).
+- **excel**: sheet names with markdown-significant characters no longer break heading rendering.
 
-### Fixed
+- **core/extractor**: fix type-checking error when `tree-sitter` feature is disabled.
 
-- **pipeline(chunking)**: `chunks[].content` now matches `output_format` — when `output_format` is Markdown, Djot, HTML, or a custom format, chunks are split from the pre-rendered `formatted_content` instead of plain text, so `chunks[].content` carries the same formatted representation as the top-level `content` field. Previously `chunks[].content` was always plain text regardless of `output_format`. Page metadata (`first_page`/`last_page`) is not populated for non-plain chunks (byte offsets from plain text are invalid for the formatted string; tracked in #1074). Fixes #1073.
-- **ci(ruby)**: Refreshed `packages/ruby/Gemfile.lock` to match current gemspec. The `kreuzberg.gemspec` constraint for `rb_sys` changed from `~> 0.9` to `>= 0.9`, but the lock file was stale and conflicted with frozen mode in CI. Bundle install now succeeds in frozen mode.
-- **chore(alef)**: pin to alef v0.22.16 with cumulative Dart FRB codegen fixes (slice/Vec borrow guards, typed `|v: Vec<_>|` closure annotations, `vec_inner_is_ref` guard for `&[String]` vs `&[&str]`, exhaustive `unreachable!()` arms for variant-level `binding_excluded` variants, mut-receiver propagation, napi `ThreadsafeFunction` generics, sync-versions zig hash substitution, kotlin android JDK 21 toolchain, Elixir harness deps) and v0.22.16 visitor codegen hardening, PHP optionality preservation, napi Value mapping, and rustler hex constraint flexibility.
-- **chore(deps)**: allow `MIT-0` license (transitive via `borrow-or-share` → `fluent-uri` → `referencing` → `jsonschema`); add `kreuzberg-gliner-rs` and `kreuzberg-orp` to cargo-machete ignored list (forks whose package names don't match their lib names `gliner` / `orp`).
-- **fix(tests)**: wrap `FormatMetadata::Code` test fixture in `CodeMetadataInner` to match the v5 variant signature (`crates/kreuzberg/tests/api_consistency.rs`).
-- **fix(jni)**: port to jni 0.22 EnvUnowned/Env split. Updated five call sites in `crates/kreuzberg-jni/src/lib.rs` (`throw_exception`, `throw_exception_void`, `jstring_to_string`, `string_to_jstring`, `byte_array_from_slice`) to use `env.with_env(|env| { ... })` wrapper to access `Env` methods from `EnvUnowned<'local>`.
-- **ci(android)**: Exclude `ner::llm` on Android x86_64 emulator target (`cfg(all(target_os = "android", target_arch = "x86_64"))`). ORT has no prebuilt for that triple (same policy as Windows). Extended the `not(target_os = "windows")` guards in `ner/mod.rs`, `redaction/engine.rs`, `plugins/processor/builtin/ner.rs`, and the `LlmBackend` re-export in `lib.rs` to also exclude `all(target_os = "android", target_arch = "x86_64")`.
-- **ci(windows)**: Stub `kreuzberg::llm::region_extractor::extract_region_with_vlm` on Windows so the alef-generated `kreuzberg_extract_region_with_vlm` FFI wrapper compiles. The real `llm` module is gated off on Windows (no `liter-llm` in the Windows feature set); the stub returns a `MissingDependency` error at runtime.
-- **ci(windows)**: Fixed Windows FFI build failure where NER LLM backend compilation was not guarded by platform check. The `ner::llm` submodule is only available on non-Windows targets, but `crates/kreuzberg/src/text/redaction/engine.rs` was attempting to access it without the `not(target_os = "windows")` cfg guard. Updated both the availability branch and the error fallback to match the platform constraint used in `crates/kreuzberg/src/plugins/processor/builtin/ner.rs`.
-- **ci(ruby)**: Work around bundler 2.6 `--frozen` flag removal in `ruby/setup-ruby@v1` action. Set `bundler-cache: false` and explicitly run `bundle config set frozen true && bundle install --jobs 4` in affected workflows (`ci-lint`, `ci-e2e`). Bundler 2.6+ requires runtime configuration instead of the deprecated flag.
-- **clippy**: `RedactionStrategy` now derives `Default` via `#[default]` on the `Mask` variant instead of a hand-written `impl Default` (`clippy::derivable_impls`). NER LLM request construction in `crates/kreuzberg/src/text/ner/llm.rs` now uses struct-literal syntax with `..Default::default()` instead of `let mut request = X::default(); request.field = …` (`clippy::field_reassign_with_default`, scope changed in rust-1.95 so the prior `#[allow]` no longer applied).
-- **docs**: dropped broken `types.md#name` anchor refs from `guides/qr-codes.md`, `guides/layout-detection.md`, `concepts/plugin-system.md`, `migration/v4.0-html-metadata.md`. The reference page has no anchors for trait/type names that live in source-only docs (`LayoutRegion`, `ExtractedImage`, `DocumentExtractor`, `OcrBackend`, `PostProcessor`, `Validator`, `Plugin`, `HtmlMetadata`); zensical's `--strict` mode aborts on the first missing anchor.
-- **alef.toml**: bumped `alef_version` to `0.22.1` and regenerated bindings against alef HEAD (post-`2d4b39e76`). Picks up alef codegen fixes across two phases. **Phase 1** (alef `baa20d445`): WASM `Vec::<T>::from(result)` turbofish; Dart FRB bridge `is_mut` propagation for Named / opaque / `Vec<Named>` (translate_result, apply_strategy); Dart `Vec<Named>` is_ref slice-from-raw-parts; Dart `collect::<Vec<_>>()` turbofish (E0282); Dart `Vec<PathBuf>` cast via `.to_string_lossy().into_owned()`; FFI `is_mut` Named-param conversion template + call-sites; FFI stubs for `Vec<Named>` / `Map<*,Named>` returns when Named lacks `serde::Serialize`. **Phase 2** (alef `2d4b39e76`): FFI `*const T` → `*mut T` pointer-type upgrade for is_mut Named params; FFI call-site no longer double-`&mut`-borrows (`&mut &mut T` → `&mut T`); FFI enum-i32 local naming derived from source param (`strategy` → `strategy_rs`, not `redaction_strategy_rs`); FFI `&[String]` call-sites pass `&rs` directly (Vec→slice coerce, drops the `Vec<&str>` intermediate); FFI opaque static-constructor owned-Named fallthrough emits `unsafe { &*ptr }.clone()`. `cargo check --workspace --lib` passes; `prek run --all-files` clean.
-- **ci(e2e)**: `Validate PR` and `Validate Issues` workflows no longer fail with `startup_failure`. Both reusable callers now declare the `permissions:` block (`contents: read, pull-requests: read` for the PR validator; `issues: write, repository-projects: write` for the issue validator) that the reusable workflows in `kreuzberg-dev/actions@v1` require.
-- **ci(e2e/kotlin_android)**: `setup-android@v3` no longer fails with `sdkmanager exit 1`. Replaced the deprecated `api-level` / `build-tools-version` inputs (which the action ignored with a workflow warning and which forced the legacy `sdkmanager tools` install path that Google removed) with the modern `packages: "platforms;android-35 build-tools;35.0.0"` input.
-- **alef.toml**: `fields_method_calls` is now an empty list. The Rust e2e codegen consults this set to decide whether to emit `result.<field>()` vs `result.<field>` — kreuzberg's `ExtractionResult` exposes every result item as a `pub <field>:` struct field, so the previous list of 26 entries caused `error[E0599]: no method named 'content' found` and similar errors in the regenerated `e2e/rust/tests/*` suite. Java / Kotlin / Swift / C# / Zig e2e codegens emit their own accessor shape via per-language backend conventions and do not consult this set.
+- **email (RTF)**: `decompress_rtf_compressed` no longer pre-allocates 4 GiB on attacker-controlled input; now capped at 16 MiB.
 
-### Added
+- **table**: `detect_rows` sort comparator no longer panics on NaN y-center values.
 
-- **ner-onnx**: switched the `ner-onnx` Cargo feature from the upstream `gline-rs` (pinned to `ort = "=2.0.0-rc.9"`) to the published `kreuzberg-gliner-rs` fork (pinned to `ort = "=2.0.0-rc.12"`). The ONNX NER backend is now functional and coexists with the workspace ORT version. The default model (`urchade/gliner_multi-v2.1`) downloads lazily on first use via `hf-hub`.
+- **chunking (pptx)**: skip malformed `<pic>` elements instead of aborting slide extraction.
 
-### Known Issues
+- **pdf/chunking**: populate `first_page`/`last_page` on every chunk from multi-page PDFs.
 
-- **PDF quality gate**: two ground-truth documents regress after the OSS v5 post-processor wiring landed and are temporarily added to `PDFIUM_KNOWN_REGRESSIONS` in `crates/kreuzberg/tests/pdf_markdown_regression.rs`: `nics-background-checks-2015-11-rotated` (md / djot F1 0.996 → 0.724 against the 0.92 floor) and `issue-1181` (plain F1 tipped over exactly at the 0.50 floor; 24-word GT already flagged as volatile). Restore the entries to the gate once the offending Late-stage processor is identified — do not lower the thresholds.
+- **chunking (yaml/json)**: populate `first_page`/`last_page` on YAML/JSON section chunks.
 
-- **types**: Result-shape scaffolding for the OSS v5 follow-up roadmap. New optional
-  fields land on `ExtractionResult` (`entities`, `summary`, `translation`,
-  `page_classifications`, `redaction_report`) and `ExtractedImage` (`caption`,
-  `qr_codes`), each with `#[serde(skip_serializing_if = "Option::is_none", default)]`
-  so existing serialised payloads are unchanged. Each field has a dedicated module under
-  `crates/kreuzberg/src/types/` (`entity`, `summary`, `translation`, `classification`,
-  `redaction`, `qr`) with `Entity`, `EntityCategory`, `DocumentSummary`, `SummaryStrategy`,
-  `Translation`, `PageClassification`, `ClassificationLabel`, `RedactionReport`,
-  `RedactionFinding`, `RedactionStrategy`, `PiiCategory`, `QrCode`, `QrBoundingBox`. The
-  fields are populated in subsequent commits by the per-feature post-processors (NER,
-  redaction, summarisation, translation, page classification, VLM captions, QR detection).
-- **types**: `ExtractedImage` now derives `Default`.
+- **html/chunking**: nested mixed lists no longer duplicate content and chunker no longer panics on malformed output.
 
-- **benchmark-harness**: Dataset loaders for public structured-extraction corpora (CORD, SROIE, FUNSD, DocILE, VRDU) with manifest-based discovery and JSON-Schema validation via `datasets` module.
-- **benchmark-harness**: JSON-extraction quality metrics (`json_quality` module) including schema validity rate, field-level precision/recall/F1, type correctness, numeric tolerance matching, and exact-match comparison.
+- **kotlin-android**: JNI now uses typed `kreuzberg-ffi` paths instead of void pointers, catching and fixing three signature-drift bugs in the embedding and PDF rendering APIs.
 
-### Security
-
-- **config**: `ExtractionConfig::extraction_timeout_secs` now defaults to `Some(60)` instead
-  of `None`. Pathological inputs (deeply nested archives, sheets with millions of cells,
-  adversarial PDFs) would otherwise run indefinitely. The 60 s limit is enforced via
-  `tokio::time::timeout` in `extract_bytes`. Set to `None` to disable for trusted input.
-
-- **config**: New `ExtractionConfig::max_embedded_file_bytes` field (default `Some(52_428_800)`,
-  50 MiB) caps the uncompressed size of any single embedded file before recursive extraction
-  is attempted. Applies to OOXML embedded objects (DOCX/PPTX) and email attachments. Files
-  exceeding the cap are skipped with a `ProcessingWarning`. Set to `None` to disable.
-
-- **security**: Component-based path traversal detection. The DOCX image extractor
-  previously rejected archive paths with a string search (`!target.contains("..")`),
-  which can be bypassed with normalised paths on some platforms. A new
-  `has_path_traversal(path_str)` helper in `extractors::security` uses
-  `std::path::Path::components()` and checks for `Component::ParentDir`, which is
-  always correct regardless of path encoding or OS conventions. The docx extractor
-  now calls this helper, and the `"1..2"` false-positive in the list-numbering
-  check is correctly untouched (it never dealt with file-system paths).
-
-- **pdf/email**: `SecurityBudget` wired into the PDF extractor and the email extractor.
-  Both extractors now enforce `SecurityLimits.max_content_size` (default 100 MiB) on
-  the total accumulated element text after extraction. A crafted document that produces
-  more than the limit via repeated/synthetic content streams returns
-  `KreuzbergError::Security` instead of silently exhausting heap. The check uses the
-  same `From<SecurityError>` conversion used by every other budget-aware extractor so
-  bindings observe a unified `Security` error variant.
-
-- **pdf**: Decompression ratio guard for PDF embedded file streams. lopdf's
-  `decompressed_content()` was called unconditionally on embedded-file streams in
-  `pdf/embedded_files.rs`, allowing a crafted PDF with a highly-compressed stream to
-  expand to gigabytes of data in memory. The fix records `compressed_size` before
-  decompression and checks the ratio against `SecurityLimits.max_compression_ratio`
-  (default 100×) in `extract_and_process_embedded_files`. Streams exceeding the limit
-  are skipped with a `ProcessingWarning`. The `max_embedded_file_bytes` cap (default
-  50 MiB) is also enforced for PDF embedded files on the same code path.
-
-- **excel**: DDE / external-call formula scanner. `ExcelExtractor` now scans every cell
-  for formula strings matching `=DDE(`, `=WEBSERVICE(`, `=HYPERLINK(`, and `=cmd|`
-  (case-insensitive, anchored). Each match produces a `ProcessingWarning` on the returned
-  `InternalDocument` carrying the sheet name, cell coordinate (R*C* notation), and the
-  classified formula kind. Warnings are capped at 100 per document to bound output on
-  adversarial sheets. Calamine resolves most formulas to their cached result, so the
-  scanner only fires when the raw formula string is stored verbatim — but that is exactly
-  the case for the highest-risk DDE injection payloads.
-
-### Fixed
-
-- **python (#937)**: `ExtractionConfig(cancel_token=…)` now accepts the kwarg at
-  construction. The PyO3 `__new__` signature was missing the field while the type
-  stub already declared it, causing a runtime `TypeError` on every kwarg-style
-  instantiation. The v5 binding regenerates the constructor from the Rust core
-  surface, so the kwarg is present and matches the stub.
-
-- **php (#940)**: `composer require kreuzberg-dev/kreuzberg` no longer dead-ends in
-  PIE-without-source. The Packagist manifest carries the PIE `binary.url-template`
-  pointing at the GitHub release asset for the host PHP version / arch / libc /
-  TS-mode combination, and the `php-ext.download-url-method` array prefers the
-  pre-packaged binary over composer-default. PIE downloads the prebuilt `.so`
-  instead of trying to `phpize` a missing `config.m4`.
-
-- **node (#1013)**: PDF chunks now carry `firstPage`/`lastPage` metadata. The
-  chunking pipeline plumbs `page_boundaries` from `result.metadata.pages.boundaries`
-  through `chunk_text_with_heading_source`, and the chunker maps each chunk's
-  character offset back to the source page range. Covered by
-  `test_chunking_populates_page_numbers_for_pdf`.
-
-- **java (#1055)**: `UnsatisfiedLinkError` for `kreuzberg_list_embedding_presets`,
-  `kreuzberg_get_embedding_preset`, and `kreuzberg_embed` at JVM startup is
-  resolved. All three symbols are re-exported from `kreuzberg-ffi` and resolved
-  in `dev.kreuzberg.NativeLib`; the v5 native bundles ship them in every build
-  matrix variant.
-
-- **api (#1071)**: Explicit `ocr.backend: paddle-ocr` (or any non-default backend)
-  in the Docker API config no longer silently falls through to Tesseract.
-  `OcrConfig::effective_pipeline_classical` now short-circuits and returns
-  `None` whenever `self.backend != "tesseract"`, so single-backend mode runs
-  the user-chosen backend directly. The default-tesseract case keeps the
-  `[tesseract @ 100, paddleocr @ 50]` auto-pipeline, but explicit selections
-  are honored as-is rather than masked.
-
-- **ocr/image**: `UnsupportedFormat("image/png")` when calling `extract_file` on a PNG/JPEG
-  image with `OcrConfig { backend: "vlm", .. }` and `--features "liter-llm,pdf"` (no `ocr`
-  feature). `ImageExtractor` was gated on `#[cfg(any(feature = "ocr", feature = "ocr-wasm"))]`
-  and therefore not registered in the extractor registry under the `liter-llm`-only feature
-  set. Fixed by introducing a new `ocr-pipeline` Cargo marker feature — implied by both
-  `liter-llm` and `ocr`/`ocr-wasm` — that gates the shared OCR pipeline infrastructure
-  (image extractor registration, quality scoring, page rendering) without requiring the
-  Tesseract binary.
-
-- **ocr/pdf**: `VlmFallbackPolicy::Always` and `VlmFallbackPolicy::OnLowQuality` produced
-  empty content when processing PDFs with `--features "liter-llm,pdf"`. The entire OCR
-  dispatch path in `extract_core_oxide` was gated on `#[cfg(feature = "ocr")]`; without
-  it the native-text fallback always ran and no VLM call was made. All affected cfg gates
-  in `pdf/mod.rs` and `pdf/ocr.rs` now include `feature = "ocr-pipeline"`. Integration
-  tests increased `extraction_timeout_secs` to 300 for multi-page scanned PDFs sent to VLM.
+- **mime**: accept legacy `application/docx` MIME type for compatibility with existing integrations.
 
 ### Changed
 
-- **api/openapi**: Tuple-typed fields that derive `ToSchema` now emit codegen-compatible
-  schemas. Fields previously emitted as OpenAPI 3.1 `prefixItems` arrays with
-  `items: false` (which crashes openapi-python-client 0.28/0.29 and swagger_parser 1.43)
-  now emit as fixed-length homogeneous arrays (`[String; 2]`, `[f64; 2]`, etc.).
-  Affected types: `Attributes.key_values`, `TextMetadata.links`, `TextMetadata.code_blocks`,
-  `LinkMetadata.attributes`, `ImageMetadataType.attributes/dimensions`,
-  `PageInfo.dimensions`, `HierarchicalBlock.bbox`,
-  `ImagePreprocessingMetadata.original_dimensions/original_dpi/new_dimensions`, and
-  `OcrBoundingGeometry::Quadrilateral.points`. The `DjotContent.attributes` field
-  (heterogeneous tuple `(String, Attributes)`) now emits as `serde_json::Value`.
-  Wire format is unchanged.
+- **core**: expose `LlmBackend` (gated on `ner-llm`, non-Windows, non-WASM) and `TokenCounter` (gated on `redaction`) at crate root for binding re-use.
 
-- **api/openapi**: `FormatMetadata` discriminated union now emits a flat `oneOf` with
-  direct `$ref` items and a `discriminator` object (property `format_type`, with
-  per-variant mapping). Previously emitted as `oneOf` of `allOf[$ref + inline property]`
-  wrappers, which openapi-python-client rejected with "Invalid property in union". The
-  change requires a manual `PartialSchema + ToSchema` impl in place of the derived one.
-  Wire format and serde behavior are unchanged.
+- **windows**: re-include liter-llm — VLM extraction now compiles on Windows after upstream aws-lc-sys MSVC fix.
 
-- **kotlin-android (e2e)**: added trait-bridge e2e test generation. alef.toml now includes `class` field overrides for register/unregister/clear trait-bridge calls (e.g., `class = "OcrBackendBridge"`) to properly route e2e tests through the Bridge object methods instead of the Kreuzberg main class. kotlin_android e2e test count increased from 21 to 22 files (PluginApiTest.kt added).
+- **api/openapi**: Tuple-typed fields now emit codegen-compatible fixed-length schemas instead of prefixItems arrays (fixes crashes in openapi-python-client 0.28/0.29 and swagger_parser 1.43).
 
-- **rust**: `Uri` struct renamed to `ExtractedUri` to avoid collision with `dart:core.Uri` in Dart bindings. This is a breaking change for Rust consumers who reference `kreuzberg::Uri` directly; import `use kreuzberg::ExtractedUri` instead. All language bindings (`dart`, `python`, `node`, `ruby`, `php`, `go`, `java`, `csharp`, `kotlin`, `swift`, `r`, `elixir`, `zig`) automatically inherit the new struct name.
+- **api/openapi**: `FormatMetadata` discriminated union now emits a flat `oneOf` with direct `$ref` items and discriminator object, fixing deserialization failures in code generators.
 
-- **kreuzberg-ffi**: crate-types extended with `rlib` so downstream Rust crates (e.g. `kreuzberg-jni`) can take an in-process Rust dep on it without re-exporting the C ABI through a separate dylib.
+- **rust**: `Uri` struct renamed to `ExtractedUri` to avoid collision with `dart:core.Uri`. This is a breaking change; use `use kreuzberg::ExtractedUri` instead. All language bindings automatically inherit the new name.
 
-- **deps**: bump alef pin v0.19.14 → v0.19.20. v0.19.15-v0.19.20 ship generator fixes addressing the systemic trait-bridge stub regressions surfaced by v5.0.0-rc.3 CI E2E (11 of 14 lang jobs failing on plugin_api stubs missing super-trait methods, wrong return types, internal type leakage, missing PHP interface emission, etc.) — plus the v0.19.20 hotfix that registers the new PHP interface Jinja templates in alef's embedded `TEMPLATES` array. Affects every binding (`crates/kreuzberg-{node,wasm,ffi}`, `packages/*`) and every e2e suite under `e2e/`.
+- **kreuzberg-ffi**: crate-types extended with `rlib` so downstream Rust crates can depend on it directly.
 
-- **deps**: bump `html-to-markdown-rs` from `3.4.1` to `3.5.2` — adopts the upstream fix for nested mixed-list (`ul > li > ul > li > ol`) content duplication (kreuzberg-dev/html-to-markdown#385).
+- **deps**: bump alef — fixes systemic trait-bridge stub regressions across all bindings (missing super-trait methods, wrong return types, missing PHP interface emission).
 
-- **deps/features**: drop `liter-llm` and `hwpx` from `no-ort-target` feature set to eliminate wasm build blocker (rustls/socks socket dependencies + lzma-sys native C). Both re-enabled in `android-target` for full ABI support. `chunking-tokenizers` `http` feature is now target-gated to non-wasm. `getrandom` (0.2/0.3/0.4 all majors) forced to `wasm_js` feature on wasm32. `sevenz-rust2` release profile dropped from opt-level=2 to opt-level=1 (workspace root) to prevent macOS arm64 SIGBUS on zip extraction.
+- **deps**: bump `html-to-markdown-rs` — fixes nested mixed-list content duplication.
+
+- **deps/features**: drop `liter-llm` and `hwpx` from `no-ort-target` to eliminate WASM build blocker. Both re-enabled in `android-target`.
 
 ### Added
 
-- **config**: new `VlmFallbackPolicy` enum (`Disabled` | `OnLowQuality { quality_threshold }` | `Always`)
-  and matching `vlm_fallback` field on `OcrConfig`. When set to anything other than `Disabled` and
-  `OcrConfig::pipeline` is `None`, a multi-stage pipeline is synthesised automatically:
-  `OnLowQuality` → `[classical_stage @ priority 100, vlm_stage @ priority 50]` with the threshold
-  mapped onto `OcrQualityThresholds::pipeline_min_quality`; `Always` → `[vlm_stage @ priority 100]`
-  only. Requires `vlm_config` to be `Some` — missing config surfaces as `KreuzbergError::Validation`
-  from `OcrConfig::validate`, not a panic. Explicit `pipeline` always wins over `vlm_fallback`.
-  Threshold calibration is deferred to the Stage 0 benchmark harness.
+- **ner-onnx**: switched to `kreuzberg-gliner-rs` fork with ONNX Runtime 2.0.0-rc.12. NER backend is now functional and coexists with workspace ORT version.
 
-- **pdf/vlm**: per-region VLM extraction for figure regions (`liter-llm` + `layout-detection`
-  features, non-Windows). New `llm::region_extractor` module with `RegionKind` enum (`Figure`,
-  `DenseTable`, `ComplexLayout`) and `extract_region_with_vlm` async function that crops a pre-detected
-  layout region and sends it to the VLM with a per-kind prompt. New
-  `extractors::pdf::region_vlm::extract_vlm_regions` wires this into the PDF pipeline: when
-  `vlm_fallback != Disabled` and layout detection found `Picture` regions, each region is cropped from
-  the page raster, PNG-encoded, and sent to the VLM. Results are injected into the assembled
-  `InternalDocument`. VLM failures per region are suppressed with `tracing::warn` — one bad crop
-  cannot abort the whole extraction. Regions below 60% confidence or 1 000 px² area are skipped.
+- **config**: new `VlmFallbackPolicy` enum for multi-stage OCR pipelines with explicit classical and VLM stages.
 
-- **tools/generate_test_fixtures**: Python-based, deterministic fixture-generation
-  toolkit at `tools/generate_test_fixtures/` that produces real on-disk DOCX,
-  ODT, XLSX, PPTX, and PDF documents exercising track-changes, revisions,
-  comments, incremental-update, diff, and security paths. Each binary fixture
-  ships with a `<stem>.gt.json` ground-truth sidecar consumed by the new
-  integration-test scaffold under `crates/kreuzberg/tests/`. Driven via
-  `task fixtures:generate` / `task fixtures:test`.
+- **pdf/vlm**: per-region VLM extraction for figure regions (`liter-llm` + `layout-detection` features, non-Windows). Crops detected layout regions and sends to VLM with per-kind prompts.
 
-- **odt/revisions**: ODT extraction now surfaces internal track-changes in
-  `ExtractionResult.revisions` — insertions, deletions, and format changes from
-  `<text:tracked-changes>`. Author + timestamp captured from `<office:change-info>`.
-  Anchor is `RevisionAnchor::Paragraph { index }` matching DOCX ergonomics. Extracted
-  text follows the accepted-changes view (insertions live, deletions removed). Orphan
-  body markers referencing unknown change-ids are logged and skipped, not fatal.
+- **tools/generate_test_fixtures**: Python toolkit that produces deterministic DOCX, ODT, XLSX, PPTX, and PDF test documents exercising track-changes, revisions, comments, and security paths.
 
-- **pptx/revisions**: PPTX extraction now surfaces slide comments in
-  `ExtractionResult.revisions` — one `DocumentRevision { kind: Comment }` per `<p:cm>` element
-  with author (resolved via `commentAuthors.xml`), timestamp, and slide-index anchor.
-  The pre-existing document-level revision counter stays in `metadata.additional["revision"]`;
-  this adds the per-comment structured surface. `revisions` is `None` when no
-  `ppt/comments/comment{N}.xml` parts exist.
+- **odt/revisions**: ODT extraction now surfaces track-changes (insertions, deletions, format changes) in `ExtractionResult.revisions` with author, timestamp, and paragraph anchor.
 
-- **excel/revisions**: Excel extraction now parses `xl/revisions/revisionHeaders.xml` when
-  present (legacy shared-workbook collaborative-edit headers) and surfaces each `<header>` as a
-  `DocumentRevision` with guid, author, and timestamp. Modern xlsx files without
-  `xl/revisions/` continue to produce `revisions = None`. Per-cell change extraction from
-  `revisionLog*.xml` is deferred to a follow-up.
+- **pptx/revisions**: PPTX extraction now surfaces slide comments in `ExtractionResult.revisions`.
 
-- **pdf/revisions**: PDF extraction now exposes incremental-update history in
-  `ExtractionResult.revisions`. Each historical `xref` section in the file's xref chain becomes one
-  `DocumentRevision` carrying the byte offset as `revision_id` (`xref-offset-<N>`), and (when
-  present) the `/Info` dictionary's author and creation/modification timestamps. The `/Prev` chain
-  is walked from the final xref backwards through raw bytes using the already-loaded `lopdf::Document`
-  as the chain anchor. Single-save PDFs (no `/Prev`) yield `revisions = None`. Per-revision content
-  extraction is deferred — `RevisionDelta` is empty for now; `RevisionKind::Insertion` is used as a
-  placeholder (the enum is not `#[non_exhaustive]`, so a typed `Snapshot` variant is a future
-  breaking-change candidate).
+- **excel/revisions**: Excel extraction now parses legacy shared-workbook collaboration headers in `ExtractionResult.revisions`.
 
-- **docx/revisions**: DOCX extraction now populates `ExtractionResult.revisions` from OOXML
-  track-changes markup. `w:ins` elements produce `RevisionKind::Insertion` with the inserted text
-  in `RevisionDelta.content` as `DiffLine::Added`; `w:del` / `w:delText` produce
-  `RevisionKind::Deletion` with `DiffLine::Removed`; `w:rPrChange` produces
-  `RevisionKind::FormatChange` with an empty delta (property diff is a future TODO).
-  Each revision carries `w:id` (→ `revision_id`), `w:author`, and `w:date` (ISO-8601 string).
-  Anchor is `RevisionAnchor::Paragraph { index }` pointing at the containing paragraph.
-  Accepted-changes convention is preserved: inserted text appears in `content`, deleted text does
-  not. `revisions` is `None` when the document contains no track-changes markup.
+- **pdf/revisions**: PDF extraction now exposes incremental-update history in `ExtractionResult.revisions` with author, timestamp, and xref offset anchor.
 
-- **types**: new `revisions: Option<Vec<DocumentRevision>>` field on `ExtractionResult` plus the
-  `DocumentRevision` / `RevisionKind` / `RevisionAnchor` / `RevisionDelta` types. Every extractor
-  defaults to `None` for now; per-format population lands in follow-up commits (DOCX next).
-  `DocumentRevision` is part of the unconditional public surface — works without the `diff` feature.
-  `DiffLine` and `CellChange` are now canonical in `types::revisions` and re-exported from `diff`
-  for backward compat; the `diff` feature's public paths are unchanged.
+- **docx/revisions**: DOCX extraction now populates `ExtractionResult.revisions` from track-changes markup with revision ID, author, date, and delta content.
 
-- **diff**: new optional `diff` Cargo feature exposes `kreuzberg::diff::compare(a, b, opts) -> ExtractionDiff`
-  over two `ExtractionResult` values. Backed by `similar` (Myers/LCS). Surfaces content hunks (unified-diff
-  format), table cell-level diffs, metadata changes (add/remove/change map), and embedded-children
-  add/remove/change (recursive). Aggregate features `analysis` and `full` now include `diff`.
+- **diff**: new optional `diff` Cargo feature exposes `kreuzberg::diff::compare(a, b, opts) -> ExtractionDiff` over two `ExtractionResult` values. Surfaces content hunks, table cell diffs, metadata changes, and recursive child changes.
 
-- **types**: bidirectional `From` impls between `InternalDocument` (rich pipeline type) and `ExtractionResult` (public output type). Lossy conversions used at FFI/trait-bridge boundaries where foreign-language plugins return `ExtractionResult` but the canonical Rust trait signature requires `InternalDocument`. `ExtractionResult → InternalDocument` stashes content in `pre_rendered_content`; `InternalDocument → ExtractionResult` runs `derive_extraction_result` with `OutputFormat::Plain`.
+- **transcription** (behind `transcription` feature): Foundation for audio/video speech-to-text support. Registers MIME types for mp3, mp4, m4a, wav, webm. All heavy dependencies optional and zero-impact when disabled.
 
-- **transcription** (behind `transcription` + `transcription-types` features): Foundation for audio/video speech-to-text support. Registers MIME types for mp3, mp4/mpeg, m4a, wav, and webm. Adds `TranscriptionConfig` (`model`, `language`, `timestamps`, size/duration/timeout limits) and `WhisperModel` enum. Extraction is routed through a feature-gated `TranscriptionExtractor` with size and duration guards. Real Whisper ONNX inference is the immediate follow-up PR. All heavy dependencies (ort, hf-hub, symphonia) are optional and zero-impact when the feature is disabled. (#487)
+- **extraction**: `ImageExtractionConfig` gains `run_ocr_on_images`, `ocr_text_only`, and `append_ocr_text` fields to control per-image OCR output.
 
-- **extraction**: `ImageExtractionConfig` gains three new fields for controlling image-OCR output:
-  - `run_ocr_on_images` (default `true`) — when `false`, suppresses per-image OCR even if an OCR backend is configured. Useful for extracting images without OCR overhead.
-  - `ocr_text_only` (default `false`) — replaces the `![alt](url)` image placeholder with the OCR text. Only takes effect when `run_ocr_on_images` is `true`.
-  - `append_ocr_text` (default `false`) — appends an OCR text paragraph after the image placeholder. Takes effect when `run_ocr_on_images` is `true` and `ocr_text_only` is `false`.
-  All three fields serialize as snake_case (`run_ocr_on_images`, `ocr_text_only`, `append_ocr_text`) in config files and JSON. (#1017)
+- **extraction**: image OCR now routes through plugin backend registry instead of hard-coding default processor, enabling custom OCR backends.
 
-- **extraction**: image OCR now routes through the plugin backend registry instead of hard-coding `OcrProcessor`. Custom OCR backends registered via `registerOcrBackend` (Node.js) or the Rust registry API are used for per-image OCR, enabling mixed-mode extraction: native text from the document layer, custom-backend OCR on embedded images. (#1017)
+- **extraction (pdf)**: when `images.run_ocr_on_images` is true, PDF document-level OCR fallback is skipped in favor of per-image OCR.
 
-- **extraction (pdf)**: when `images.run_ocr_on_images` is `true`, the PDF document-level OCR fallback (`RunFallback`) is skipped in favour of per-image OCR, preserving native PDF text extraction while still OCR-ing embedded images. (#1017)
+- **node**: `JsOcrBackendBridge` now uses persistent `napi_ref` and `ThreadsafeFunction` to invoke callbacks from tokio worker threads with actual image bytes.
 
-- **node**: `JsOcrBackendBridge` now uses a persistent `napi_ref` to keep the JS object alive after `registerOcrBackend` returns, and a `ThreadsafeFunction` for `process_image` so the callback is invokable from tokio worker threads with the actual image bytes (previously the bytes were passed as a debug string, making the bridge non-functional for real binary payloads). (#1017)
+- **pptx**: `PageContent` gains `speaker_notes` and `section_name` optional fields populated during per-page extraction.
 
-- **pptx**: `PageContent` gains two optional fields populated during PPTX per-page extraction (requires `page_config` to be set): `speaker_notes` (text from `ppt/notesSlides/notesSlideN.xml`) and `section_name` (from `<p14:sectionLst>` in `ppt/presentation.xml`). Both serialize with `skip_serializing_if = "Option::is_none"` and are `None` for all non-PPTX formats. (#960)
+- **excel**: XLSX extraction now populates `ExtractionResult.pages` with one `PageContent` per sheet, enabling per-sheet billing.
 
-- **excel**: XLSX extraction now populates `ExtractionResult.pages` with one `PageContent` per
-  sheet. Top-level `content` remains the concatenation of all sheets, preserving backward compat
-  for callers that do not read `pages`. Sheet name surfaces as `PageContent.section_name`. Empty
-  sheets still emit a `PageContent` so the page index aligns with the sheet index; they are marked
-  `is_blank = true` and carry no tables. Mirrors the PDF/PPTX per-page model and enables cloud
-  billing per sheet (`billable_pages = sheet_count`).
-
-- **pdf**: opt-in capture of full-page renders produced during PDF OCR preprocessing. When `ImageExtractionConfig.include_page_rasters = true`, per-page PNG renders are returned as `ImageKind::PageRaster` entries in `ExtractionResult.images`, enabling citation thumbnails and visual grounding downstream. Capture covers all three OCR entry paths (`force_ocr`, `force_ocr_pages`, `RunFallback`); document-level backend bypass emits a `ProcessingWarning`. (#1018)
+- **pdf**: opt-in capture of full-page PNG renders during PDF OCR preprocessing via `ImageExtractionConfig.include_page_rasters`, enabling citation thumbnails and visual grounding.
 
 ### Changed (breaking)
 
-- **ffi (ABI)**: `KreuzbergOcrBackendVTable.process_image` and `KreuzbergDocumentExtractorVTable.extract_bytes` now include a `uintptr_t image_bytes_len` / `content_len` parameter **immediately after** the `*const uint8_t` pointer and before the `config` string:
+- **ffi (ABI)**: `KreuzbergOcrBackendVTable.process_image` and `KreuzbergDocumentExtractorVTable.extract_bytes` now include `uintptr_t *_len` parameter immediately after the `*const uint8_t` pointer. Old signature caused silent truncation at first embedded NUL byte. Any pre-compiled C, Go, Java, or C# callback must be recompiled. Fixes #1056.
 
-  ```c
-  // Before (alef < 0.19.21)
-  int32_t (*process_image)(const void *user_data,
-                           const uint8_t *image_bytes,
-                           const char *config, ...);
-  // After (alef >= 0.19.21)
-  int32_t (*process_image)(const void *user_data,
-                           const uint8_t *image_bytes,
-                           uintptr_t image_bytes_len,
-                           const char *config, ...);
-  ```
+- **types**: `ImageKind` gains new `PageRaster` variant. Exhaustive matches must add a `PageRaster` arm.
 
-  The old signature caused silent truncation of binary payloads at the first embedded NUL byte. Any pre-compiled C, Go, Java, or C# callback registered against the old vtable ABI must be recompiled. Fixes #1056.
+### Security
 
-- **types**: `ImageKind` gains a new `PageRaster` variant. Any exhaustive `match` on `ImageKind` in downstream code must add a `PageRaster` arm. (#1018)
+- **config**: `ExtractionConfig::extraction_timeout_secs` now defaults to `Some(60)` instead of `None`, preventing indefinite execution on pathological inputs. Set to `None` to disable for trusted input.
 
-### Fixed
+- **config**: new `ExtractionConfig::max_embedded_file_bytes` field (default 50 MiB) caps uncompressed embedded file size for OOXML and email attachments.
 
-- **ocr**: `kreuzberg-tesseract` now registers an `atexit` handler that calls `TessBaseAPIEnd` to finalize Tesseract's singleton ObjectCache, eliminating `WARNING! LEAK!` stderr spam at process shutdown. Corrupted zig `--listen=-` IPC frames by embedding spurious newlines in stderr during engine cleanup.
+- **security**: Component-based path traversal detection for DOCX image extraction, replacing string search that could be bypassed with normalized paths.
 
-- **python**: unskipped `ExtractionResult` and `ExtractionDiff` return-type annotations in the PyO3 bindings so type checkers can validate return values without needing to suppress warnings.
+- **pdf/email**: `SecurityBudget` enforces `max_content_size` (default 100 MiB) on accumulated element text after extraction.
 
-- **swift**: removed `async=false` override from `extract_bytes` call configuration, allowing the binding to generate the correct async variant. Also marked `ExtractionResult` methods in e2e method_calls config to ensure they generate properly.
+- **pdf**: Decompression ratio guard for PDF embedded file streams, capping expansion ratio at default 100×.
 
-- **api**: `NodeContent::MetadataBlock` entries now emit as an array form instead of a singular object, fixing JSON schema codegen compatibility for OpenAPI consumers.
+- **excel**: DDE / external-call formula scanner detects `=DDE(`, `=WEBSERVICE(`, `=HYPERLINK(`, and `=cmd|` formulas with warnings capped at 100 per document.
 
-- **api**: flat tuples and flat tagged unions now emit codegen-compatible schemas, fixing deserialization failures in code generators expecting simple struct/enum wrappers.
+### Known Issues
 
-- **java**: JVM SIGSEGV (exit 134) in `PluginApiTest.testRegisterDocumentExtractorTraitBridge`.
-  Two Panama FFM bugs in the alef-generated trait bridges: (1) `free_user_data` vtable slot was
-  set to `MemorySegment.NULL` instead of a proper upcall stub — Rust dereferenced NULL on drop
-  causing SIGBUS; (2) the `DocumentExtractor` vtable's `MemoryLayout.structLayout` declared 10
-  ADDRESS fields where the Rust `#[repr(C)]` struct has 11, mis-aligning every offset past the
-  missing slot. Both fixed at the alef template level + regenerated bindings. Java e2e now 100/100.
+- **PDF quality gate**: two ground-truth documents regress after v5 post-processor wiring and are temporarily excluded from validation. Restore once offending processor is identified.
 
-- **wasm**: `task wasm:e2e` failed before tests ran with `getrandom 0.2: the wasm32-unknown-unknown
-  targets are not supported by default, you may need to enable the "js" feature`. Transitive deps
-  (`const-random-macro`, `redox_users`, `ring`) pull `getrandom 0.2.17` into the wasm build; the
-  pre-existing `getrandom 0.3`/`0.4` pins in the wasm crate manifest don't unify features back to
-  0.2. alef now emits a third `getrandom_02` alias pinning the 0.2 entry with the `js` feature.
-
-- **wasm**: `Swift{Trait}Bridge`-style JSON deserialization in the wasm trait-bridge sync/async
-  method bodies. Four template sites used `.as_string().and_then(|s| serde_json::from_str(&s).ok())
-  .unwrap_or_default()` for enum and struct return decoding, silently swallowing decode errors
-  and returning `Default::default()`. Replaced `.ok()` with `.map_err(|_| {{ error_deser }})` so
-  decode failures surface during testing while the no-error return contract is preserved.
-
-- **excel**: split `PageContent.sheet_name` from `PageContent.section_name` (the latter is PPTX-only)
-  so the type's doc-comment matches the data again. Escape markdown-significant characters in sheet
-  names when rendering per-page headings, preventing double-heading or broken-link rendering on
-  adversarial sheet names (e.g. `## Profit` or `[Sales](evil)`). Normalise the empty-sheet content
-  shape to `## <name>\n\n` so per-page concatenation produces consistent separation between headings.
-
-- **core/extractor**: fix `let validated_mime = if ... else { ... }` arm-type mismatch when `tree-sitter` feature is disabled. The octet-stream branch was wrapped in `#[cfg(feature = "tree-sitter")]` with no `#[cfg(not(...))]` fallback, causing the arm to evaluate to `()` under default features (which don't include tree-sitter) while the else arm produced `String`. Added an explicit `#[cfg(not(feature = "tree-sitter"))]` fallback that calls `mime::detect_mime_type_from_bytes`.
-
-- **diff**: hoist `similar` dep to workspace root and reference via `workspace = true` in the
-  kreuzberg crate (the prior direct leaf pin would have failed cargo-sort and risked duplicate-version
-  compiles). Doc-comment fixes: `tables_same_shape` now documents the dimensions-only behaviour
-  explicitly (no claim of header-order matching), and the metadata-diff shape doc drops the misleading
-  RFC 6902 reference in favour of describing the actual `{added, removed, changed}` envelope.
-
-- **mime**: accept legacy `application/docx` as an alias for the RFC docx MIME so callers using the non-standard form aren't rejected. (cc kreuzberg-cloud sandbox + production traffic.)
-
-- **swift**: extract bytes/sync overloads now resolve the first argument against the test-documents/fixtures directories before falling back to UTF-8 string content. Add Bridge-protocol `register*` overloads so trait-stub e2e fixtures compile against the typed Box surface. Add `name:` argument-label overloads for every `unregister*` function.
-
-- **wasm**: feature-gate `LayoutDetectionConfig`, `TreeSitterConfig`, `FormatMetadata::Code`, and `ExtractionResult.code_intelligence` references that aren't part of `wasm-target`. Fix `WasmEmbeddingBackendBridge::dimensions` to parse JS numbers as `f64`/usize rather than JSON strings. Add explicit cfg-guarded match arm for `FormatMetadata::Code` in the `From<kreuzberg::FormatMetadata>` impl to resolve non-exhaustive match error when compiling with `--all-features` (code variant is feature-gated and only visible when `tree-sitter` or `tree-sitter-wasm` is enabled). Reorder the e2e setup to install the `require('env')` and WASI shims before the wasm bundle is pre-imported. Gate `tempfile`-based PST extraction behind `not(target_arch = "wasm32")` (WASI doesn't expose `mkstemp`).
-
-- **kotlin-android**: force-link every `kreuzberg-ffi` C export into `libkreuzberg_jni.dylib` via the `use kreuzberg_ffi::{…}` import block (no `#[used]` shim needed once we depend on the typed surface directly). Migrate the JNI shim off c_void extern-C forwards onto typed kreuzberg-ffi paths — the Rust compiler then caught three signature-drift bugs (`kreuzberg_embed_texts` takes `*const EmbeddingConfig`, not a JSON c_char; `kreuzberg_get_embedding_preset` returns a typed `*mut EmbeddingPreset`; `kreuzberg_render_pdf_page_to_png` takes 8 args including `out_ptr/out_len/out_cap`). Close the last 12 e2e gaps to land 82/82 green: empty-mime → null FFI pointer, Jackson `ByteArray` (de)serializer that emits JSON int arrays to match Rust `Vec<u8>`, `KotlinModule` configured with `NullIsSameAsDefault` / `NullToEmptyCollection` / `SerializationInclusion.NON_EMPTY` / `FAIL_ON_UNKNOWN_PROPERTIES=false` so Rust serde defaults survive the round-trip, custom (de)serializer for the `OutputFormat` sealed class, JSON-text capture for `FormatMetadata.Code`, nullable `DocumentNode.contentLayer` and `ChunkingConfig.sizing`, path-or-bytes resolution in `renderPdfPageToPng`, and `nativeGetExtensionsForMimeImpl` wired to the real FFI.
-
-- **email (RTF)**: `decompress_rtf_compressed` no longer performs a 4 GiB `Vec::with_capacity` on the attacker-controlled `raw_size` field from the OXRTFCP header in `.msg` files. The pre-allocation hint is now capped at 16 MiB; the `Vec` still grows freely beyond that limit for legitimate large payloads, so correctness is unaffected. (#1058)
-
-- **table**: `detect_rows` sort comparator changed from `.unwrap()` to `.unwrap_or(Ordering::Equal)` on `partial_cmp`, eliminating a latent panic if a NaN y-center value were ever introduced. Defensive improvement; the `u32` fields of `HocrWord` cannot produce NaN today. (#1057)
-
-- **chunking (pptx)**: skip `<pic>` elements whose `<a:blip>` lacks `r:embed` instead of aborting the entire slide; logs a warning and preserves the rest of the slide content. (#1016)
-
-- **pdf/chunking**: populate `first_page`/`last_page` on every chunk from multi-page PDFs by normalising trailing whitespace in page content before locating it inside `result.content`; previously caused 7 of 24 chunks to have null page metadata. (#1013, #1004)
-
-- **chunking (yaml/json)**: populate `first_page`/`last_page` on YAML/JSON section chunks by threading `page_boundaries` into `chunk_yaml_by_sections`. This unblocks the image-indices population step in `features.rs` for YAML chunks. (#963)
-
-- **html/chunking**: nested mixed lists (`ul > li > ul > li > ol`) no longer duplicate content in extracted Markdown, and the Markdown chunker no longer panics with an integer underflow on the previously malformed output. (#1004)
+- **types**: Result-shape scaffolding for v5 roadmap. New optional fields on `ExtractionResult` (`entities`, `summary`, `translation`, `page_classifications`, `redaction_report`) and `ExtractedImage` (`caption`, `qr_codes`) populated by subsequent per-feature post-processors.
 
 ## [5.0.0-rc.3] - 2026-05-26
 
