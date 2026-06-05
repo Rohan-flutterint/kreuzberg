@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **feat(taskfile)**: add `e2e:lang` dispatcher task for uniform e2e invocation by language. Enables CI workflows to call `task e2e:lang LANG=<language>` instead of per-language if-gates. All 15 language e2e targets now available: `{rust,python,go,node,ruby,php,java,csharp,elixir,wasm,r,dart,kotlin-android,swift,zig}:e2e`.
+
 ### Changed
 
 - **chore(benchmarks)**: skip mineru plaintext shard 1/3 — recurring framework-env failure (see project_benchmark_status.md).
