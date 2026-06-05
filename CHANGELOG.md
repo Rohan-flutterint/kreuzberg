@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **chore(benchmarks)**: skip mineru plaintext shard 1/3 — recurring framework-env failure (see project_benchmark_status.md).
 - **chore(alef)**: pin to alef v0.23.7 + regenerate all bindings. Picks up 24 upstream codegen fixes since v0.23.6: pyo3 `exclude_functions` propagation to `api.py`/`__init__.py`/`.pyi`; e2e/python `BatchFileItem`/`BatchBytesItem` constructor emission via `element_type`; napi register accepts camelCase + snake_case method names; swift Codable value-struct ownership marshalling (`PatternMatch` no longer emits `isOwned`); swift `extractRegionWithVlm` RustBridge export via enum-param filter relaxation; extendr async function format-string parameters complete; java trait-bridge vtable wrap + constructor extracted to `initializeStubs()` helper (clears 7 checkstyle violations); java Panama FFM service initialization; dart FRB `Vec<String>→&[&str]` conversion for free functions; dart FRB handler-vs-class-field rewrite distinction; e2e/go double-free removal; e2e/wasm exclude_types + App-class fallback; e2e/ruby Magnus config exposure; e2e/swift harness binary path; e2e/napi excluded entrypoint skip; e2e/elixir harness syntax + App.config exclusion; e2e/csharp streaming aggregator locals; swift optional-parameter `= nil` defaults; php tail-optional check; sync-versions zig hash refresh.
 
 ### Fixed
