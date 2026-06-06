@@ -275,6 +275,17 @@ jobs:
             ls -la target/release/libonnxruntime.so* 2>/dev/null || echo "No ORT libraries found (may be bundled)"
           fi
 
+      - name: Stage FFI libraries for C# e2e
+        if: matrix.lang == 'csharp'
+        shell: bash
+        run: |
+          mkdir -p e2e/csharp/bin/Debug/net10.0
+          cp -f target/release/libkreuzberg_ffi.so e2e/csharp/bin/Debug/net10.0/ 2>/dev/null || true
+          if [ -f target/release/libonnxruntime.so.1 ]; then
+            cp -f target/release/libonnxruntime.so.1 e2e/csharp/bin/Debug/net10.0/ || true
+          fi
+          ls -la e2e/csharp/bin/Debug/net10.0/lib*.so 2>/dev/null || echo "No native libraries found for C#"
+
       - name: Setup Tesseract cache
         uses: ./.github/actions/setup-tesseract-cache
         with:

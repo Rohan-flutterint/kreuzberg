@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ci/e2e/csharp**: stage `libkreuzberg_ffi.so` into `e2e/csharp/bin/Debug/net10.0/` as part of the C# e2e test matrix job so that .NET P/Invoke can locate the native library. On Linux, P/Invoke does not search `LD_LIBRARY_PATH` by default; instead it checks the assembly directory. This fixes the "libkreuzberg_ffi: cannot open shared object file" runtime failure in C# e2e tests.
+
+- **ci/e2e/node**: invoke `@napi-rs/cli` via `pnpm exec napi` in alef.toml `[crates.test.node]` before hook; bare `napi` binary is not in CI PATH, causing Node e2e test job to fail immediately with "napi: not found".
+
 - **ci**: exclude `.rs` files from the `check-executables-have-shebangs` and `check-shebang-scripts-are-executable` prek hooks; Rust inner attributes (`#![cfg(...)]`, `#![allow(...)]`) start with `#!` and were being mis-classified as shebangs.
 
 - **ci**: disable the `rustdoc-lint` hook pending a workspace-wide `-D missing-docs` cleanup pass (tracked separately).
