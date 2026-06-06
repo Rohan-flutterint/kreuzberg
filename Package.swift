@@ -18,9 +18,17 @@ let package = Package(
     .library(name: "Kreuzberg", targets: ["Kreuzberg"])
   ],
   targets: [
+    // RustBridgeC: C headers target extracted from the artifact bundle.
+    // Swift files in RustBridge import this to access C types (RustStr, etc.)
+    // produced by swift-bridge. publicHeadersPath: "." exposes the headers.
+    .target(
+      name: "RustBridgeC",
+      path: "packages/swift/Sources/RustBridgeC",
+      publicHeadersPath: "."
+    ),
     // RustBridge: pre-built binary target containing the compiled Rust library
     // for macOS (arm64, x86_64), iOS (device, simulator), and Linux (arm64, x86_64).
-    // The binary includes C headers for swift-bridge interop.
+    // Depends on RustBridgeC so generated Swift files can use the C types.
     .binaryTarget(
       name: "RustBridge",
       url: "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v__ALEF_SWIFT_VERSION__/Kreuzberg-rs.artifactbundle.zip",
@@ -28,7 +36,7 @@ let package = Package(
     ),
     .target(
       name: "Kreuzberg",
-      dependencies: ["RustBridge"],
+      dependencies: ["RustBridge", "RustBridgeC"],
       path: "packages/swift/Sources/Kreuzberg"
     ),
   ]

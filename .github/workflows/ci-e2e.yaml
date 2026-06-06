@@ -385,11 +385,11 @@ jobs:
           matrix.lang == 'csharp' || matrix.lang == 'elixir' ||
           matrix.lang == 'r' || matrix.lang == 'kotlin-android' ||
           matrix.lang == 'swift' || matrix.lang == 'zig' ||
-          matrix.lang == 'rust'
+          matrix.lang == 'rust' || matrix.lang == 'python'
         shell: bash
         run: |
           export PKG_CONFIG_PATH="${PWD}/crates/kreuzberg-ffi:${PKG_CONFIG_PATH}"
-          export LD_LIBRARY_PATH="${PWD}/target/release:${LD_LIBRARY_PATH}"
+          export LD_LIBRARY_PATH="${PWD}/target/release:${ORT_LIB_LOCATION}:${LD_LIBRARY_PATH}"
           echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 

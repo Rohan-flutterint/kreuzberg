@@ -33,7 +33,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 object Kreuzberg {
     /// Jackson module that marshals ByteArray as a JSON array of unsigned bytes,
     /// matching how Rust serde encodes Vec<u8> on the wire.

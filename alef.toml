@@ -1,5 +1,5 @@
 [workspace]
-alef_version = "0.23.8"
+alef_version = "0.23.19"
 languages = [
   "python",
   "node",
@@ -520,6 +520,11 @@ exclude_fields = ["ExtractionResult.ocr_internal_document", "OcrExtractionResult
 exclude_functions = [
   "calculate_quality_score",
   "embed_texts",
+  # Pure Rust helper functions without swift-bridge extern declarations
+  "find_all",
+  "scan_text",
+  # FFI-wrapped function whose RustString return is not properly converted
+  "download_model",
 ]
 
 [crates.csharp]
@@ -746,8 +751,8 @@ e2e = "cd e2e/ruby && bundle exec rspec"
 
 [crates.test.php]
 precondition = "command -v composer >/dev/null 2>&1"
-before = "cargo build --release -p kreuzberg-php && cd e2e/php && composer install && bash ../../scripts/setup-php-ext-ini.sh"
-e2e = "cd e2e/php && PHP_INI_SCAN_DIR= php -c php.ini vendor/bin/phpunit"
+before = "cargo build --release -p kreuzberg-php && cd e2e/php && composer install"
+e2e = "cd e2e/php && php run_tests.php"
 
 [crates.test.java]
 precondition = "command -v mvn >/dev/null 2>&1"

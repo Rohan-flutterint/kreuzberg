@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftValidatorBox {
     private let bridge: any SwiftValidatorBridge
     public init(_ bridge: any SwiftValidatorBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,20 +36,16 @@ public final class SwiftValidatorBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_validate(result: RustString, config: RustString) -> RustString {
         do {
           try bridge.validate(result: result.toString(), config: config.toString())
           return encodeOkVoidEnvelope()
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_should_validate(result: RustString, config: RustString) -> Bool {
         return bridge.shouldValidate(result: result.toString(), config: config.toString())
     }
-
     public func alef_priority() -> Int32 {
         return bridge.priority()
     }
-
 }

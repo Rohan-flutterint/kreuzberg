@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftEmbeddingBackendBox {
     private let bridge: any SwiftEmbeddingBackendBridge
     public init(_ bridge: any SwiftEmbeddingBackendBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,11 +36,9 @@ public final class SwiftEmbeddingBackendBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_dimensions() -> UInt {
         return UInt(bridge.dimensions())
     }
-
     public func alef_embed(texts: RustVec<RustString>) -> RustString {
         var texts_list: [String] = []
 let texts_count = texts.len()
@@ -55,5 +52,4 @@ while texts_idx < texts_count {
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
 }

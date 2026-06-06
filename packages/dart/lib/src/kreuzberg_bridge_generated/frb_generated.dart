@@ -3,9 +3,10 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:io';
+import 'dart:core' as _DartCore;
+import 'dart:core';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -20,30 +21,87 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   static final instance = RustLib._();
 
   RustLib._();
-
-  /// Resolve the prebuilt native library from this package's own installed
-  /// location so the load works from any working directory and under hardened
-  /// runtimes. Returns `null` to defer to flutter_rust_bridge's default loader.
+  /// Resolve the prebuilt native library from environment variable,
+  /// package-relative location, or defer to flutter_rust_bridge's default loader.
+  /// Returns `null` to defer to flutter_rust_bridge's default loader.
   ///
-  /// Published pub.dev packages stage natives under `lib/src/native/<rid>/`
-  /// (e.g. `macos-arm64`, `linux-x64`). For local FRB-dev builds the dylib is
-  /// emitted into `lib/src/kreuzberg_bridge_generated/`; that
-  /// path is searched as a fallback.
+  /// Checks in order:
+  /// 1. FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR environment variable
+  ///    (allows test harnesses to point to development build paths)
+  /// 2. Package-installed location with RID subdirectory (lib/src/native/<rid>/)
+  ///    (for published pub.dev packages with platform-specific bundled native libraries)
+  /// 3. Package-installed location (lib/src/kreuzberg_bridge_generated/)
+  ///    (legacy fallback for development or packages without per-platform binaries)
+  /// 4. Returns null (flutter_rust_bridge falls back to its default loader)
   static Future<ExternalLibrary?> _alefResolveExternalLibrary() async {
     try {
-      final packageRoot = await Isolate.resolvePackageUri(
-        Uri.parse('package:kreuzberg/kreuzberg.dart'),
-      );
-      if (packageRoot == null) return null;
-      final libNames = _alefHostLibNames();
-      final searchDirs = <Uri>[
-        if (_alefHostRid() != null)
-          packageRoot.resolve('src/native/${_alefHostRid()}/'),
-        packageRoot.resolve('src/kreuzberg_bridge_generated/'),
+      const candidates = <String>[
+        'libkreuzberg_dart.dylib',
+        'libkreuzberg_dart.so',
+        'kreuzberg_dart.dll',
       ];
-      for (final dir in searchDirs) {
-        for (final name in libNames) {
-          final libPath = dir.resolve(name).toFilePath();
+
+      // Check FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR env var first.
+      // This allows test harnesses to override library location for development.
+      final envDir = Platform.environment['FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR'];
+      if (envDir != null && envDir.isNotEmpty) {
+        final libDir = Directory(envDir);
+        if (libDir.existsSync()) {
+          for (final candidate in candidates) {
+            final libPath = '$envDir/$candidate';
+            if (File(libPath).existsSync()) {
+              return ExternalLibrary.open(libPath);
+            }
+          }
+        }
+      }
+
+      // Compute RID (runtime identifier) from platform and architecture.
+      String? computeRid() {
+        final os = Platform.operatingSystem;
+        // Use Dart's Platform.version to detect architecture.
+        // Format: "Dart <version> (stable) ... on \"<os> <arch>\""
+        final version = Platform.version;
+        final archMatch = version.contains('x86_64') ? 'x64'
+            : version.contains('aarch64') || version.contains('arm64') ? 'arm64'
+            : version.contains('armv7') ? 'arm'
+            : null;
+        if (archMatch == null) return null;
+
+        switch (os) {
+          case 'linux':
+            return 'linux-$archMatch';
+          case 'macos':
+            return 'macos-$archMatch';
+          case 'windows':
+            return 'windows-$archMatch';
+          default:
+            return null;
+        }
+      }
+
+      final rid = computeRid();
+      if (rid != null) {
+        final packageRoot =
+            await Isolate.resolvePackageUri(_DartCore.Uri.parse('package:kreuzberg/kreuzberg.dart'));
+        if (packageRoot != null) {
+          final ridDir = packageRoot.resolve('src/native/$rid/');
+          for (final candidate in candidates) {
+            final libPath = ridDir.resolve(candidate).toFilePath();
+            if (File(libPath).existsSync()) {
+              return ExternalLibrary.open(libPath);
+            }
+          }
+        }
+      }
+
+      // Check legacy package-installed location as fallback.
+      final packageRoot =
+          await Isolate.resolvePackageUri(_DartCore.Uri.parse('package:kreuzberg/kreuzberg.dart'));
+      if (packageRoot != null) {
+        final libDir = packageRoot.resolve('src/kreuzberg_bridge_generated/');
+        for (final candidate in candidates) {
+          final libPath = libDir.resolve(candidate).toFilePath();
           if (File(libPath).existsSync()) {
             return ExternalLibrary.open(libPath);
           }
@@ -53,28 +111,6 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
       // Fall through to the default loader on any resolution failure.
     }
     return null;
-  }
-
-  /// Map the host platform to the pub.dev native staging RID. Returns `null`
-  /// for unrecognized host triples so the FRB-dev fallback path runs instead.
-  static String? _alefHostRid() {
-    final abi = Abi.current();
-    if (abi == Abi.macosArm64) return 'macos-arm64';
-    if (abi == Abi.macosX64) return 'macos-x64';
-    if (abi == Abi.linuxArm64) return 'linux-arm64';
-    if (abi == Abi.linuxX64) return 'linux-x64';
-    if (abi == Abi.windowsArm64) return 'windows-arm64';
-    if (abi == Abi.windowsX64) return 'windows-x64';
-    return null;
-  }
-
-  static List<String> _alefHostLibNames() {
-    // The Dart-binding Rust crate is `{stem}-dart` (per the cargo manifest
-    // template), which produces a cdylib named `lib{stem}_dart.{ext}` on Unix
-    // and `{stem}_dart.dll` on Windows.
-    if (Platform.isMacOS) return const ['libkreuzberg_dart.dylib'];
-    if (Platform.isWindows) return const ['kreuzberg_dart.dll'];
-    return const ['libkreuzberg_dart.so'];
   }
 
   /// Initialize flutter_rust_bridge
@@ -1102,7 +1138,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcDocumentExtractor crateDocumentExtractorDartImplAutoAccessorGetField0({
     required DocumentExtractorDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1137,7 +1173,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required DocumentExtractorDartImpl that,
     required ArcDocumentExtractor field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1174,7 +1210,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcEmbeddingBackend crateEmbeddingBackendDartImplAutoAccessorGetField0({
     required EmbeddingBackendDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1208,7 +1244,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required EmbeddingBackendDartImpl that,
     required ArcEmbeddingBackend field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1246,7 +1282,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String text,
     required List<EntityCategory> categories,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1286,7 +1322,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<EntityCategory> categories,
     required List<String> customLabels,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1323,7 +1359,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<LlmBackend> crateLlmBackendNew({required LlmConfig config}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1354,7 +1390,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcOcrBackend crateOcrBackendDartImplAutoAccessorGetField0({
     required OcrBackendDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1387,7 +1423,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required OcrBackendDartImpl that,
     required ArcOcrBackend field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1422,7 +1458,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcPostProcessor cratePostProcessorDartImplAutoAccessorGetField0({
     required PostProcessorDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1455,7 +1491,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required PostProcessorDartImpl that,
     required ArcPostProcessor field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1490,7 +1526,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcRenderer crateRendererDartImplAutoAccessorGetField0({
     required RendererDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1523,7 +1559,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required RendererDartImpl that,
     required ArcRenderer field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1556,7 +1592,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<TokenCounter> crateTokenCounterNew() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1586,7 +1622,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ArcValidator crateValidatorDartImplAutoAccessorGetField0({
     required ValidatorDartImpl that,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1619,7 +1655,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required ValidatorDartImpl that,
     required ArcValidator field0,
   }) {
-    return await handler(
+    return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1655,7 +1691,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<BatchBytesItem> items,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1689,7 +1725,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<BatchBytesItem> items,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1723,7 +1759,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<BatchFileItem> items,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1757,7 +1793,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<BatchFileItem> items,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1791,7 +1827,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required ExtractionResult result,
     required PageClassificationConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1822,7 +1858,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearDocumentExtractors() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1849,7 +1885,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearEmbeddingBackends() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1876,7 +1912,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearOcrBackends() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1903,7 +1939,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearPostProcessors() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1930,7 +1966,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearRenderers() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1957,7 +1993,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateClearValidators() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -1988,7 +2024,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required ExtractionResult b,
     required DiffOptions opts,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2020,7 +2056,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<AccelerationConfig> crateCreateAccelerationConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2051,7 +2087,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<ArchiveEntry> crateCreateArchiveEntryFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2084,7 +2120,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ArchiveMetadata> crateCreateArchiveMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2117,7 +2153,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<AudioMetadata> crateCreateAudioMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2148,7 +2184,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<BBox> crateCreateBBoxFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2180,7 +2216,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<BatchBytesItem> crateCreateBatchBytesItemFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2213,7 +2249,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<BatchFileItem> crateCreateBatchFileItemFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2246,7 +2282,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<BibtexMetadata> crateCreateBibtexMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2277,7 +2313,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<BoundingBox> crateCreateBoundingBoxFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2308,7 +2344,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<CacheStats> crateCreateCacheStatsFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2341,7 +2377,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<CaptioningConfig> crateCreateCaptioningConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2372,7 +2408,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<CellChange> crateCreateCellChangeFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2403,7 +2439,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Chunk> crateCreateChunkFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2435,7 +2471,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ChunkMetadata> crateCreateChunkMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2468,7 +2504,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ChunkingConfig> crateCreateChunkingConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2501,7 +2537,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<CitationMetadata> crateCreateCitationMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2534,7 +2570,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ClassificationLabel> crateCreateClassificationLabelFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2567,7 +2603,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ContentFilterConfig> crateCreateContentFilterConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2600,7 +2636,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ContributorRole> crateCreateContributorRoleFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2633,7 +2669,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<CoreProperties> crateCreateCorePropertiesFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2664,7 +2700,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<CsvMetadata> crateCreateCsvMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2695,7 +2731,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DbfFieldInfo> crateCreateDbfFieldInfoFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2726,7 +2762,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DbfMetadata> crateCreateDbfMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2759,7 +2795,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DetectResponse> crateCreateDetectResponseFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2792,7 +2828,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DetectionResult> crateCreateDetectionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2823,7 +2859,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DiffHunk> crateCreateDiffHunkFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2854,7 +2890,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DiffOptions> crateCreateDiffOptionsFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2885,7 +2921,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DjotContent> crateCreateDjotContentFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2916,7 +2952,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DjotImage> crateCreateDjotImageFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2947,7 +2983,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DjotLink> crateCreateDjotLinkFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -2996,7 +3032,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required FutureOr<PlatformInt64> Function() priority,
     required FutureOr<bool> Function(String, String) canHandle,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3065,7 +3101,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DocumentNode> crateCreateDocumentNodeFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3098,7 +3134,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DocumentRelationship> crateCreateDocumentRelationshipFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3131,7 +3167,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DocumentRevision> crateCreateDocumentRevisionFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3164,7 +3200,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DocumentStructure> crateCreateDocumentStructureFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3197,7 +3233,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DocumentSummary> crateCreateDocumentSummaryFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3230,7 +3266,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<DocxAppProperties> crateCreateDocxAppPropertiesFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3261,7 +3297,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<DocxMetadata> crateCreateDocxMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3292,7 +3328,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Element> crateCreateElementFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3324,7 +3360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ElementMetadata> crateCreateElementMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3357,7 +3393,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmailAttachment> crateCreateEmailAttachmentFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3388,7 +3424,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<EmailConfig> crateCreateEmailConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3421,7 +3457,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmailExtractionResult> crateCreateEmailExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3454,7 +3490,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmailMetadata> crateCreateEmailMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3487,7 +3523,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmbeddedChanges> crateCreateEmbeddedChangesFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3518,7 +3554,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<EmbeddedDiff> crateCreateEmbeddedDiffFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3549,7 +3585,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<EmbeddedFile> crateCreateEmbeddedFileFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3585,7 +3621,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required FutureOr<PlatformInt64> Function() dimensions,
     required FutureOr<List<Float64List>> Function(List<String>) embed,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3628,7 +3664,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmbeddingConfig> crateCreateEmbeddingConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3661,7 +3697,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<EmbeddingPreset> crateCreateEmbeddingPresetFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3692,7 +3728,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Entity> crateCreateEntityFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3722,7 +3758,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<EpubMetadata> crateCreateEpubMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3755,7 +3791,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ErrorMetadata> crateCreateErrorMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3788,7 +3824,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExcelMetadata> crateCreateExcelMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3819,7 +3855,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<ExcelSheet> crateCreateExcelSheetFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3852,7 +3888,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExcelWorkbook> crateCreateExcelWorkbookFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3885,7 +3921,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExtractedImage> crateCreateExtractedImageFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3916,7 +3952,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<ExtractedUri> crateCreateExtractedUriFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3949,7 +3985,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExtractionConfig> crateCreateExtractionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -3982,7 +4018,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExtractionDiff> crateCreateExtractionDiffFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4015,7 +4051,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ExtractionResult> crateCreateExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4048,7 +4084,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<FictionBookMetadata> crateCreateFictionBookMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4081,7 +4117,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<FileExtractionConfig> crateCreateFileExtractionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4112,7 +4148,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Footnote> crateCreateFootnoteFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4145,7 +4181,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<FormattedBlock> crateCreateFormattedBlockFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4176,7 +4212,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<GridCell> crateCreateGridCellFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4209,7 +4245,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<HeaderMetadata> crateCreateHeaderMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4242,7 +4278,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<HeadingContext> crateCreateHeadingContextFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4273,7 +4309,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<HeadingLevel> crateCreateHeadingLevelFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4306,7 +4342,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<HierarchicalBlock> crateCreateHierarchicalBlockFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4339,7 +4375,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<HierarchyConfig> crateCreateHierarchyConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4370,7 +4406,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<HtmlMetadata> crateCreateHtmlMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4403,7 +4439,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<HtmlOutputConfig> crateCreateHtmlOutputConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4436,7 +4472,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ImageExtractionConfig> crateCreateImageExtractionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4469,7 +4505,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ImageMetadata> crateCreateImageMetadataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4502,7 +4538,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ImageMetadataType> crateCreateImageMetadataTypeFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4535,7 +4571,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ImagePreprocessingConfig> crateCreateImagePreprocessingConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4567,7 +4603,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @override
   Future<ImagePreprocessingMetadata>
   crateCreateImagePreprocessingMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4600,7 +4636,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<InlineElement> crateCreateInlineElementFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4631,7 +4667,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<JatsMetadata> crateCreateJatsMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4664,7 +4700,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<KeywordConfig> crateCreateKeywordConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4695,7 +4731,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Keyword> crateCreateKeywordFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4727,7 +4763,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<LanguageDetectionConfig> crateCreateLanguageDetectionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4760,7 +4796,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<LayoutDetectionConfig> crateCreateLayoutDetectionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4793,7 +4829,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<LayoutDetection> crateCreateLayoutDetectionFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4824,7 +4860,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<LayoutRegion> crateCreateLayoutRegionFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4855,7 +4891,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<LinkMetadata> crateCreateLinkMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4886,7 +4922,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<LlmConfig> crateCreateLlmConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4917,7 +4953,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<LlmUsage> crateCreateLlmUsageFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4948,7 +4984,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Metadata> crateCreateMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -4979,7 +5015,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<ModelPaths> crateCreateModelPathsFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5010,7 +5046,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<NerConfig> crateCreateNerConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5055,7 +5091,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required FutureOr<ExtractionResult> Function(String, OcrConfig)
     processDocument,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5144,7 +5180,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrConfidence> crateCreateOcrConfidenceFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5175,7 +5211,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<OcrConfig> crateCreateOcrConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5208,7 +5244,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrElementConfig> crateCreateOcrElementConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5239,7 +5275,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<OcrElement> crateCreateOcrElementFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5272,7 +5308,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrExtractionResult> crateCreateOcrExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5303,7 +5339,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<OcrMetadata> crateCreateOcrMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5336,7 +5372,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrPipelineConfig> crateCreateOcrPipelineConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5369,7 +5405,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrPipelineStage> crateCreateOcrPipelineStageFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5402,7 +5438,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrQualityThresholds> crateCreateOcrQualityThresholdsFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5433,7 +5469,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<OcrRotation> crateCreateOcrRotationFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5466,7 +5502,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OcrTableBoundingBox> crateCreateOcrTableBoundingBoxFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5497,7 +5533,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<OcrTable> crateCreateOcrTableFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5530,7 +5566,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<OrientationResult> crateCreateOrientationResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5563,7 +5599,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PaddleOcrConfig> crateCreatePaddleOcrConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5594,7 +5630,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PageBoundary> crateCreatePageBoundaryFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5627,7 +5663,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PageClassificationConfig> crateCreatePageClassificationConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5660,7 +5696,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PageClassification> crateCreatePageClassificationFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5691,7 +5727,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PageConfig> crateCreatePageConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5722,7 +5758,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PageContent> crateCreatePageContentFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5755,7 +5791,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PageHierarchy> crateCreatePageHierarchyFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5786,7 +5822,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PageInfo> crateCreatePageInfoFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5819,7 +5855,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PageStructure> crateCreatePageStructureFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5850,7 +5886,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PatternMatch> crateCreatePatternMatchFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5883,7 +5919,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PdfAnnotation> crateCreatePdfAnnotationFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5914,7 +5950,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PdfConfig> crateCreatePdfConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5945,7 +5981,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PdfMetadata> crateCreatePdfMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -5978,7 +6014,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PostProcessorConfig> crateCreatePostProcessorConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6020,7 +6056,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     estimatedDurationMs,
     required FutureOr<PlatformInt64> Function() priority,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6091,7 +6127,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PptxAppProperties> crateCreatePptxAppPropertiesFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6124,7 +6160,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<PptxExtractionResult> crateCreatePptxExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6155,7 +6191,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PptxMetadata> crateCreatePptxMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6188,7 +6224,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<ProcessingWarning> crateCreateProcessingWarningFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6219,7 +6255,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PstMetadata> crateCreatePstMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6252,7 +6288,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<QrBoundingBox> crateCreateQrBoundingBoxFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6283,7 +6319,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<QrCode> crateCreateQrCodeFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6313,7 +6349,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<RakeParams> crateCreateRakeParamsFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6346,7 +6382,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RecognizedTable> crateCreateRecognizedTableFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6379,7 +6415,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RedactionConfig> crateCreateRedactionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6412,7 +6448,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RedactionFinding> crateCreateRedactionFindingFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6445,7 +6481,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RedactionPattern> crateCreateRedactionPatternFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6478,7 +6514,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RedactionReport> crateCreateRedactionReportFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6511,7 +6547,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RedactionTerm> crateCreateRedactionTermFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6546,7 +6582,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String pluginVersion,
     required FutureOr<String> Function(InternalDocumentBridge) render,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6585,7 +6621,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<RevisionDelta> crateCreateRevisionDeltaFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6618,7 +6654,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<SecurityLimits> crateCreateSecurityLimitsFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6649,7 +6685,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<ServerConfig> crateCreateServerConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6682,7 +6718,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<StructuredData> crateCreateStructuredDataFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6715,7 +6751,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<StructuredDataResult> crateCreateStructuredDataResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6747,7 +6783,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @override
   Future<StructuredExtractionConfig>
   crateCreateStructuredExtractionConfigFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6780,7 +6816,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<SummarizationConfig> crateCreateSummarizationConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6813,7 +6849,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<SupportedFormat> crateCreateSupportedFormatFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6844,7 +6880,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<TableCell> crateCreateTableCellFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6875,7 +6911,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<TableDiff> crateCreateTableDiffFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6906,7 +6942,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Table> crateCreateTableFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6936,7 +6972,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<TableGrid> crateCreateTableGridFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -6969,7 +7005,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TesseractConfig> crateCreateTesseractConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7002,7 +7038,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TextAnnotation> crateCreateTextAnnotationFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7035,7 +7071,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TextExtractionResult> crateCreateTextExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7066,7 +7102,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<TextMetadata> crateCreateTextMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7099,7 +7135,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TokenReductionConfig> crateCreateTokenReductionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7132,7 +7168,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TokenReductionOptions> crateCreateTokenReductionOptionsFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7165,7 +7201,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TranscriptionConfig> crateCreateTranscriptionConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7198,7 +7234,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TranslationConfig> crateCreateTranslationConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7229,7 +7265,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<Translation> crateCreateTranslationFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7262,7 +7298,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TreeSitterConfig> crateCreateTreeSitterConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7295,7 +7331,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<TreeSitterProcessConfig> crateCreateTreeSitterProcessConfigFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7334,7 +7370,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     shouldValidate,
     required FutureOr<PlatformInt64> Function() priority,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7393,7 +7429,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<XlsxAppProperties> crateCreateXlsxAppPropertiesFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7426,7 +7462,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<XmlExtractionResult> crateCreateXmlExtractionResultFromJson({
     required String json,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7457,7 +7493,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<XmlMetadata> crateCreateXmlMetadataFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7488,7 +7524,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<YakeParams> crateCreateYakeParamsFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7519,7 +7555,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<YearRange> crateCreateYearRangeFromJson({required String json}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7550,7 +7586,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<String> crateDefaultModelName() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7580,7 +7616,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String path,
     required bool checkExists,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7611,7 +7647,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<String> crateDetectMimeTypeFromBytes({required List<int> content}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7645,7 +7681,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<int> imageBytes,
     String? formatHint,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7676,7 +7712,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<String> crateDownloadModel({required String name, String? cacheDir}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7710,7 +7746,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<String> texts,
     required EmbeddingConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7745,7 +7781,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String mimeType,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7781,7 +7817,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String mimeType,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7817,7 +7853,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     String? mimeType,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7853,7 +7889,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     String? mimeType,
     required ExtractionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7891,7 +7927,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required LlmConfig llmConfig,
     String? customPrompt,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7931,7 +7967,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<PatternMatch>> crateFindAll({required String text}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7959,7 +7995,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<EmbeddingPreset?> crateGetEmbeddingPreset({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -7989,7 +8025,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateGetExtensionsForMime({required String mimeType}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8019,7 +8055,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateKnownModels() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8046,7 +8082,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListDocumentExtractors() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8073,7 +8109,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListEmbeddingBackends() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8100,7 +8136,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListEmbeddingPresets() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8127,7 +8163,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListOcrBackends() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8154,7 +8190,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListPostProcessors() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8181,7 +8217,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListRenderers() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8208,7 +8244,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<String>> crateListValidators() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8238,7 +8274,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required ExtractionResult result,
     required RedactionConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8267,7 +8303,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateRegisterBuiltin() {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8296,7 +8332,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<void> crateRegisterDocumentExtractor({
     required DocumentExtractorDartImpl impl,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8332,7 +8368,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<void> crateRegisterEmbeddingBackend({
     required EmbeddingBackendDartImpl impl,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8366,7 +8402,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateRegisterOcrBackend({required OcrBackendDartImpl impl}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8401,7 +8437,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<void> crateRegisterPostProcessor({
     required PostProcessorDartImpl impl,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8434,7 +8470,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateRegisterRenderer({required RendererDartImpl impl}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8465,7 +8501,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateRegisterValidator({required ValidatorDartImpl impl}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8501,7 +8537,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     PlatformInt64? dpi,
     String? password,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8537,7 +8573,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String text,
     required List<PiiCategory> categories,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8572,7 +8608,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     String? language,
     PlatformInt64? maxTokens,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8604,7 +8640,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<PlatformInt64> crateTokenCount({required String text}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8635,7 +8671,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required ExtractionResult result,
     required TranslationConfig config,
   }) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8666,7 +8702,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterDocumentExtractor({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8697,7 +8733,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterEmbeddingBackend({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8728,7 +8764,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterOcrBackend({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8758,7 +8794,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterPostProcessor({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8789,7 +8825,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterRenderer({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -8817,7 +8853,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateUnregisterValidator({required String name}) {
-    return await handler(
+    return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);

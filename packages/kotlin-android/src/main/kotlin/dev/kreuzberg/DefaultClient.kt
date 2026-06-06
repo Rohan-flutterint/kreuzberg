@@ -15,7 +15,6 @@ package dev.kreuzberg
 import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 @Suppress("TooManyFunctions")
 class LlmBackend internal constructor(internal val handle: Long) : AutoCloseable {
     companion object {

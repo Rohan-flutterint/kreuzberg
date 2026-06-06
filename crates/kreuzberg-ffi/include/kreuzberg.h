@@ -15789,7 +15789,7 @@ uintptr_t kreuzberg_list_embedding_presets_len(void);
  * into the plugin.
  */
 int32_t kreuzberg_register_ocr_backend(const char *name,
-                                       struct KREUZBERGKreuzbergOcrBackendVTable vtable,
+                                       const struct KREUZBERGKreuzbergOcrBackendVTable *vtable,
                                        const void *user_data,
                                        char **out_error);
 
@@ -15839,7 +15839,7 @@ int32_t kreuzberg_clear_ocr_backend(char **out_error);
  * into the plugin.
  */
 int32_t kreuzberg_register_post_processor(const char *name,
-                                          struct KREUZBERGKreuzbergPostProcessorVTable vtable,
+                                          const struct KREUZBERGKreuzbergPostProcessorVTable *vtable,
                                           const void *user_data,
                                           char **out_error);
 
@@ -15889,7 +15889,7 @@ int32_t kreuzberg_clear_post_processor(char **out_error);
  * into the plugin.
  */
 int32_t kreuzberg_register_validator(const char *name,
-                                     struct KREUZBERGKreuzbergValidatorVTable vtable,
+                                     const struct KREUZBERGKreuzbergValidatorVTable *vtable,
                                      const void *user_data,
                                      char **out_error);
 
@@ -15939,7 +15939,7 @@ int32_t kreuzberg_clear_validator(char **out_error);
  * into the plugin.
  */
 int32_t kreuzberg_register_embedding_backend(const char *name,
-                                             struct KREUZBERGKreuzbergEmbeddingBackendVTable vtable,
+                                             const struct KREUZBERGKreuzbergEmbeddingBackendVTable *vtable,
                                              const void *user_data,
                                              char **out_error);
 
@@ -15989,7 +15989,7 @@ int32_t kreuzberg_clear_embedding_backend(char **out_error);
  * into the plugin.
  */
 int32_t kreuzberg_register_document_extractor(const char *name,
-                                              struct KREUZBERGKreuzbergDocumentExtractorVTable vtable,
+                                              const struct KREUZBERGKreuzbergDocumentExtractorVTable *vtable,
                                               const void *user_data,
                                               char **out_error);
 
@@ -16039,7 +16039,7 @@ int32_t kreuzberg_clear_document_extractor(char **out_error);
  * into the plugin.
  */
 int32_t kreuzberg_register_renderer(const char *name,
-                                    struct KREUZBERGKreuzbergRendererVTable vtable,
+                                    const struct KREUZBERGKreuzbergRendererVTable *vtable,
                                     const void *user_data,
                                     char **out_error);
 

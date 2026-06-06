@@ -64,9 +64,6 @@ public func listValidators() throws -> RustVec<RustString> {
 public func classifyPages(_ result: ExtractionResult, _ config: PageClassificationConfig) throws -> () {
     try { let val = __swift_bridge__$classify_pages({result.isOwned = false; return result.ptr;}(), {config.isOwned = false; return config.ptr;}()); if val != nil { throw RustString(ptr: val!) } else { return } }()
 }
-public func downloadModel<GenericIntoRustString: IntoRustString>(_ name: GenericIntoRustString, _ cache_dir: Optional<GenericIntoRustString>) throws -> RustString {
-    try { let val = __swift_bridge__$download_model({ let rustString = name.intoRustString(); rustString.isOwned = false; return rustString.ptr }(), { if let rustString = optionalStringIntoRustString(cache_dir) { rustString.isOwned = false; return rustString.ptr } else { return nil } }()); if val.is_ok { return RustString(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
-}
 public func defaultModelName() -> RustString {
     RustString(ptr: __swift_bridge__$default_model_name())
 }
@@ -559,6 +556,9 @@ public func redactionPatternFromJson<GenericIntoRustString: IntoRustString>(_ js
 public func summarizationConfigFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> SummarizationConfig {
     try { let val = __swift_bridge__$summarization_config_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return SummarizationConfig(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
+public func transcriptionConfigFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> TranscriptionConfig {
+    try { let val = __swift_bridge__$transcription_config_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return TranscriptionConfig(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
+}
 public func treeSitterConfigFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> TreeSitterConfig {
     try { let val = __swift_bridge__$tree_sitter_config_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return TreeSitterConfig(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
@@ -793,6 +793,9 @@ public func epubMetadataFromJson<GenericIntoRustString: IntoRustString>(_ json: 
 public func pstMetadataFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> PstMetadata {
     try { let val = __swift_bridge__$pst_metadata_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return PstMetadata(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
+public func audioMetadataFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> AudioMetadata {
+    try { let val = __swift_bridge__$audio_metadata_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return AudioMetadata(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
+}
 public func ocrConfidenceFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> OcrConfidence {
     try { let val = __swift_bridge__$ocr_confidence_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return OcrConfidence(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
@@ -949,6 +952,9 @@ public func chunkSizingFromJson<GenericIntoRustString: IntoRustString>(_ json: G
 public func embeddingModelTypeFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> EmbeddingModelType {
     try { let val = __swift_bridge__$embedding_model_type_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return EmbeddingModelType(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
+public func whisperModelFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> WhisperModel {
+    try { let val = __swift_bridge__$whisper_model_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return WhisperModel(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
+}
 public func codeContentModeFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> CodeContentMode {
     try { let val = __swift_bridge__$code_content_mode_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return CodeContentMode(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
 }
@@ -1059,6 +1065,633 @@ public func paddleLanguageFromJson<GenericIntoRustString: IntoRustString>(_ json
 }
 public func layoutClassFromJson<GenericIntoRustString: IntoRustString>(_ json: GenericIntoRustString) throws -> LayoutClass {
     try { let val = __swift_bridge__$layout_class_from_json({ let rustString = json.intoRustString(); rustString.isOwned = false; return rustString.ptr }()); if val.is_ok { return LayoutClass(ptr: val.ok_or_err!) } else { throw RustString(ptr: val.ok_or_err!) } }()
+}
+public func __alef_phantom_vec_cache_stats() -> RustVec<CacheStats> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_cache_stats())
+}
+public func __alef_phantom_vec_acceleration_config() -> RustVec<AccelerationConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_acceleration_config())
+}
+public func __alef_phantom_vec_captioning_config() -> RustVec<CaptioningConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_captioning_config())
+}
+public func __alef_phantom_vec_page_classification_config() -> RustVec<PageClassificationConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_classification_config())
+}
+public func __alef_phantom_vec_content_filter_config() -> RustVec<ContentFilterConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_content_filter_config())
+}
+public func __alef_phantom_vec_email_config() -> RustVec<EmailConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_email_config())
+}
+public func __alef_phantom_vec_extraction_config() -> RustVec<ExtractionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extraction_config())
+}
+public func __alef_phantom_vec_file_extraction_config() -> RustVec<FileExtractionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_file_extraction_config())
+}
+public func __alef_phantom_vec_batch_bytes_item() -> RustVec<BatchBytesItem> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_batch_bytes_item())
+}
+public func __alef_phantom_vec_batch_file_item() -> RustVec<BatchFileItem> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_batch_file_item())
+}
+public func __alef_phantom_vec_image_extraction_config() -> RustVec<ImageExtractionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_extraction_config())
+}
+public func __alef_phantom_vec_token_reduction_options() -> RustVec<TokenReductionOptions> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_token_reduction_options())
+}
+public func __alef_phantom_vec_language_detection_config() -> RustVec<LanguageDetectionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_language_detection_config())
+}
+public func __alef_phantom_vec_html_output_config() -> RustVec<HtmlOutputConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_html_output_config())
+}
+public func __alef_phantom_vec_layout_detection_config() -> RustVec<LayoutDetectionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_layout_detection_config())
+}
+public func __alef_phantom_vec_llm_config() -> RustVec<LlmConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_llm_config())
+}
+public func __alef_phantom_vec_structured_extraction_config() -> RustVec<StructuredExtractionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_structured_extraction_config())
+}
+public func __alef_phantom_vec_ner_config() -> RustVec<NerConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ner_config())
+}
+public func __alef_phantom_vec_ocr_quality_thresholds() -> RustVec<OcrQualityThresholds> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_quality_thresholds())
+}
+public func __alef_phantom_vec_ocr_pipeline_stage() -> RustVec<OcrPipelineStage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_pipeline_stage())
+}
+public func __alef_phantom_vec_ocr_pipeline_config() -> RustVec<OcrPipelineConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_pipeline_config())
+}
+public func __alef_phantom_vec_ocr_config() -> RustVec<OcrConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_config())
+}
+public func __alef_phantom_vec_page_config() -> RustVec<PageConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_config())
+}
+public func __alef_phantom_vec_pdf_config() -> RustVec<PdfConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pdf_config())
+}
+public func __alef_phantom_vec_hierarchy_config() -> RustVec<HierarchyConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_hierarchy_config())
+}
+public func __alef_phantom_vec_post_processor_config() -> RustVec<PostProcessorConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_post_processor_config())
+}
+public func __alef_phantom_vec_chunking_config() -> RustVec<ChunkingConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunking_config())
+}
+public func __alef_phantom_vec_embedding_config() -> RustVec<EmbeddingConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedding_config())
+}
+public func __alef_phantom_vec_redaction_config() -> RustVec<RedactionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_config())
+}
+public func __alef_phantom_vec_redaction_term() -> RustVec<RedactionTerm> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_term())
+}
+public func __alef_phantom_vec_redaction_pattern() -> RustVec<RedactionPattern> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_pattern())
+}
+public func __alef_phantom_vec_summarization_config() -> RustVec<SummarizationConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_summarization_config())
+}
+public func __alef_phantom_vec_transcription_config() -> RustVec<TranscriptionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_transcription_config())
+}
+public func __alef_phantom_vec_translation_config() -> RustVec<TranslationConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_translation_config())
+}
+public func __alef_phantom_vec_tree_sitter_config() -> RustVec<TreeSitterConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_tree_sitter_config())
+}
+public func __alef_phantom_vec_tree_sitter_process_config() -> RustVec<TreeSitterProcessConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_tree_sitter_process_config())
+}
+public func __alef_phantom_vec_supported_format() -> RustVec<SupportedFormat> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_supported_format())
+}
+public func __alef_phantom_vec_server_config() -> RustVec<ServerConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_server_config())
+}
+public func __alef_phantom_vec_structured_data_result() -> RustVec<StructuredDataResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_structured_data_result())
+}
+public func __alef_phantom_vec_docx_app_properties() -> RustVec<DocxAppProperties> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_docx_app_properties())
+}
+public func __alef_phantom_vec_xlsx_app_properties() -> RustVec<XlsxAppProperties> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_xlsx_app_properties())
+}
+public func __alef_phantom_vec_pptx_app_properties() -> RustVec<PptxAppProperties> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pptx_app_properties())
+}
+public func __alef_phantom_vec_core_properties() -> RustVec<CoreProperties> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_core_properties())
+}
+public func __alef_phantom_vec_security_limits() -> RustVec<SecurityLimits> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_security_limits())
+}
+public func __alef_phantom_vec_token_reduction_config() -> RustVec<TokenReductionConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_token_reduction_config())
+}
+public func __alef_phantom_vec_llm_backend() -> RustVec<LlmBackend> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_llm_backend())
+}
+public func __alef_phantom_vec_pattern_match() -> RustVec<PatternMatch> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pattern_match())
+}
+public func __alef_phantom_vec_token_counter() -> RustVec<TokenCounter> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_token_counter())
+}
+public func __alef_phantom_vec_pdf_annotation() -> RustVec<PdfAnnotation> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pdf_annotation())
+}
+public func __alef_phantom_vec_page_classification() -> RustVec<PageClassification> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_classification())
+}
+public func __alef_phantom_vec_classification_label() -> RustVec<ClassificationLabel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_classification_label())
+}
+public func __alef_phantom_vec_djot_content() -> RustVec<DjotContent> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_djot_content())
+}
+public func __alef_phantom_vec_formatted_block() -> RustVec<FormattedBlock> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_formatted_block())
+}
+public func __alef_phantom_vec_inline_element() -> RustVec<InlineElement> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_inline_element())
+}
+public func __alef_phantom_vec_djot_image() -> RustVec<DjotImage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_djot_image())
+}
+public func __alef_phantom_vec_djot_link() -> RustVec<DjotLink> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_djot_link())
+}
+public func __alef_phantom_vec_footnote() -> RustVec<Footnote> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_footnote())
+}
+public func __alef_phantom_vec_document_structure() -> RustVec<DocumentStructure> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_document_structure())
+}
+public func __alef_phantom_vec_document_relationship() -> RustVec<DocumentRelationship> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_document_relationship())
+}
+public func __alef_phantom_vec_document_node() -> RustVec<DocumentNode> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_document_node())
+}
+public func __alef_phantom_vec_table_grid() -> RustVec<TableGrid> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_table_grid())
+}
+public func __alef_phantom_vec_grid_cell() -> RustVec<GridCell> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_grid_cell())
+}
+public func __alef_phantom_vec_text_annotation() -> RustVec<TextAnnotation> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_text_annotation())
+}
+public func __alef_phantom_vec_entity() -> RustVec<Entity> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_entity())
+}
+public func __alef_phantom_vec_extraction_result() -> RustVec<ExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extraction_result())
+}
+public func __alef_phantom_vec_archive_entry() -> RustVec<ArchiveEntry> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_archive_entry())
+}
+public func __alef_phantom_vec_processing_warning() -> RustVec<ProcessingWarning> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_processing_warning())
+}
+public func __alef_phantom_vec_llm_usage() -> RustVec<LlmUsage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_llm_usage())
+}
+public func __alef_phantom_vec_chunk() -> RustVec<Chunk> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunk())
+}
+public func __alef_phantom_vec_heading_context() -> RustVec<HeadingContext> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_heading_context())
+}
+public func __alef_phantom_vec_heading_level() -> RustVec<HeadingLevel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_heading_level())
+}
+public func __alef_phantom_vec_chunk_metadata() -> RustVec<ChunkMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunk_metadata())
+}
+public func __alef_phantom_vec_extracted_image() -> RustVec<ExtractedImage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extracted_image())
+}
+public func __alef_phantom_vec_bounding_box() -> RustVec<BoundingBox> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_bounding_box())
+}
+public func __alef_phantom_vec_element_metadata() -> RustVec<ElementMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_element_metadata())
+}
+public func __alef_phantom_vec_element() -> RustVec<Element> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_element())
+}
+public func __alef_phantom_vec_excel_workbook() -> RustVec<ExcelWorkbook> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_excel_workbook())
+}
+public func __alef_phantom_vec_excel_sheet() -> RustVec<ExcelSheet> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_excel_sheet())
+}
+public func __alef_phantom_vec_xml_extraction_result() -> RustVec<XmlExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_xml_extraction_result())
+}
+public func __alef_phantom_vec_text_extraction_result() -> RustVec<TextExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_text_extraction_result())
+}
+public func __alef_phantom_vec_pptx_extraction_result() -> RustVec<PptxExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pptx_extraction_result())
+}
+public func __alef_phantom_vec_email_extraction_result() -> RustVec<EmailExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_email_extraction_result())
+}
+public func __alef_phantom_vec_email_attachment() -> RustVec<EmailAttachment> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_email_attachment())
+}
+public func __alef_phantom_vec_ocr_extraction_result() -> RustVec<OcrExtractionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_extraction_result())
+}
+public func __alef_phantom_vec_ocr_table() -> RustVec<OcrTable> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_table())
+}
+public func __alef_phantom_vec_ocr_table_bounding_box() -> RustVec<OcrTableBoundingBox> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_table_bounding_box())
+}
+public func __alef_phantom_vec_image_preprocessing_config() -> RustVec<ImagePreprocessingConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_preprocessing_config())
+}
+public func __alef_phantom_vec_tesseract_config() -> RustVec<TesseractConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_tesseract_config())
+}
+public func __alef_phantom_vec_image_preprocessing_metadata() -> RustVec<ImagePreprocessingMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_preprocessing_metadata())
+}
+public func __alef_phantom_vec_metadata() -> RustVec<Metadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_metadata())
+}
+public func __alef_phantom_vec_excel_metadata() -> RustVec<ExcelMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_excel_metadata())
+}
+public func __alef_phantom_vec_email_metadata() -> RustVec<EmailMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_email_metadata())
+}
+public func __alef_phantom_vec_archive_metadata() -> RustVec<ArchiveMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_archive_metadata())
+}
+public func __alef_phantom_vec_image_metadata() -> RustVec<ImageMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_metadata())
+}
+public func __alef_phantom_vec_xml_metadata() -> RustVec<XmlMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_xml_metadata())
+}
+public func __alef_phantom_vec_text_metadata() -> RustVec<TextMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_text_metadata())
+}
+public func __alef_phantom_vec_header_metadata() -> RustVec<HeaderMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_header_metadata())
+}
+public func __alef_phantom_vec_link_metadata() -> RustVec<LinkMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_link_metadata())
+}
+public func __alef_phantom_vec_image_metadata_type() -> RustVec<ImageMetadataType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_metadata_type())
+}
+public func __alef_phantom_vec_structured_data() -> RustVec<StructuredData> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_structured_data())
+}
+public func __alef_phantom_vec_html_metadata() -> RustVec<HtmlMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_html_metadata())
+}
+public func __alef_phantom_vec_ocr_metadata() -> RustVec<OcrMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_metadata())
+}
+public func __alef_phantom_vec_error_metadata() -> RustVec<ErrorMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_error_metadata())
+}
+public func __alef_phantom_vec_pptx_metadata() -> RustVec<PptxMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pptx_metadata())
+}
+public func __alef_phantom_vec_docx_metadata() -> RustVec<DocxMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_docx_metadata())
+}
+public func __alef_phantom_vec_csv_metadata() -> RustVec<CsvMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_csv_metadata())
+}
+public func __alef_phantom_vec_bibtex_metadata() -> RustVec<BibtexMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_bibtex_metadata())
+}
+public func __alef_phantom_vec_citation_metadata() -> RustVec<CitationMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_citation_metadata())
+}
+public func __alef_phantom_vec_year_range() -> RustVec<YearRange> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_year_range())
+}
+public func __alef_phantom_vec_fiction_book_metadata() -> RustVec<FictionBookMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_fiction_book_metadata())
+}
+public func __alef_phantom_vec_dbf_metadata() -> RustVec<DbfMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_dbf_metadata())
+}
+public func __alef_phantom_vec_dbf_field_info() -> RustVec<DbfFieldInfo> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_dbf_field_info())
+}
+public func __alef_phantom_vec_jats_metadata() -> RustVec<JatsMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_jats_metadata())
+}
+public func __alef_phantom_vec_contributor_role() -> RustVec<ContributorRole> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_contributor_role())
+}
+public func __alef_phantom_vec_epub_metadata() -> RustVec<EpubMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_epub_metadata())
+}
+public func __alef_phantom_vec_pst_metadata() -> RustVec<PstMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pst_metadata())
+}
+public func __alef_phantom_vec_audio_metadata() -> RustVec<AudioMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_audio_metadata())
+}
+public func __alef_phantom_vec_ocr_confidence() -> RustVec<OcrConfidence> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_confidence())
+}
+public func __alef_phantom_vec_ocr_rotation() -> RustVec<OcrRotation> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_rotation())
+}
+public func __alef_phantom_vec_ocr_element() -> RustVec<OcrElement> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_element())
+}
+public func __alef_phantom_vec_ocr_element_config() -> RustVec<OcrElementConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_element_config())
+}
+public func __alef_phantom_vec_page_structure() -> RustVec<PageStructure> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_structure())
+}
+public func __alef_phantom_vec_page_boundary() -> RustVec<PageBoundary> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_boundary())
+}
+public func __alef_phantom_vec_page_info() -> RustVec<PageInfo> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_info())
+}
+public func __alef_phantom_vec_page_content() -> RustVec<PageContent> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_content())
+}
+public func __alef_phantom_vec_layout_region() -> RustVec<LayoutRegion> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_layout_region())
+}
+public func __alef_phantom_vec_page_hierarchy() -> RustVec<PageHierarchy> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_hierarchy())
+}
+public func __alef_phantom_vec_hierarchical_block() -> RustVec<HierarchicalBlock> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_hierarchical_block())
+}
+public func __alef_phantom_vec_qr_code() -> RustVec<QrCode> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_qr_code())
+}
+public func __alef_phantom_vec_qr_bounding_box() -> RustVec<QrBoundingBox> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_qr_bounding_box())
+}
+public func __alef_phantom_vec_redaction_report() -> RustVec<RedactionReport> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_report())
+}
+public func __alef_phantom_vec_redaction_finding() -> RustVec<RedactionFinding> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_finding())
+}
+public func __alef_phantom_vec_cell_change() -> RustVec<CellChange> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_cell_change())
+}
+public func __alef_phantom_vec_document_revision() -> RustVec<DocumentRevision> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_document_revision())
+}
+public func __alef_phantom_vec_revision_delta() -> RustVec<RevisionDelta> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_revision_delta())
+}
+public func __alef_phantom_vec_document_summary() -> RustVec<DocumentSummary> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_document_summary())
+}
+public func __alef_phantom_vec_table() -> RustVec<Table> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_table())
+}
+public func __alef_phantom_vec_table_cell() -> RustVec<TableCell> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_table_cell())
+}
+public func __alef_phantom_vec_translation() -> RustVec<Translation> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_translation())
+}
+public func __alef_phantom_vec_extracted_uri() -> RustVec<ExtractedUri> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extracted_uri())
+}
+public func __alef_phantom_vec_detect_response() -> RustVec<DetectResponse> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_detect_response())
+}
+public func __alef_phantom_vec_diff_options() -> RustVec<DiffOptions> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_diff_options())
+}
+public func __alef_phantom_vec_extraction_diff() -> RustVec<ExtractionDiff> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extraction_diff())
+}
+public func __alef_phantom_vec_diff_hunk() -> RustVec<DiffHunk> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_diff_hunk())
+}
+public func __alef_phantom_vec_table_diff() -> RustVec<TableDiff> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_table_diff())
+}
+public func __alef_phantom_vec_embedded_changes() -> RustVec<EmbeddedChanges> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedded_changes())
+}
+public func __alef_phantom_vec_embedded_diff() -> RustVec<EmbeddedDiff> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedded_diff())
+}
+public func __alef_phantom_vec_embedding_preset() -> RustVec<EmbeddingPreset> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedding_preset())
+}
+public func __alef_phantom_vec_yake_params() -> RustVec<YakeParams> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_yake_params())
+}
+public func __alef_phantom_vec_rake_params() -> RustVec<RakeParams> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_rake_params())
+}
+public func __alef_phantom_vec_keyword_config() -> RustVec<KeywordConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_keyword_config())
+}
+public func __alef_phantom_vec_keyword() -> RustVec<Keyword> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_keyword())
+}
+public func __alef_phantom_vec_paddle_ocr_config() -> RustVec<PaddleOcrConfig> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_paddle_ocr_config())
+}
+public func __alef_phantom_vec_model_paths() -> RustVec<ModelPaths> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_model_paths())
+}
+public func __alef_phantom_vec_orientation_result() -> RustVec<OrientationResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_orientation_result())
+}
+public func __alef_phantom_vec_b_box() -> RustVec<BBox> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_b_box())
+}
+public func __alef_phantom_vec_layout_detection() -> RustVec<LayoutDetection> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_layout_detection())
+}
+public func __alef_phantom_vec_recognized_table() -> RustVec<RecognizedTable> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_recognized_table())
+}
+public func __alef_phantom_vec_detection_result() -> RustVec<DetectionResult> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_detection_result())
+}
+public func __alef_phantom_vec_embedded_file() -> RustVec<EmbeddedFile> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedded_file())
+}
+public func __alef_phantom_vec_pdf_metadata() -> RustVec<PdfMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pdf_metadata())
+}
+public func __alef_phantom_vec_execution_provider_type() -> RustVec<ExecutionProviderType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_execution_provider_type())
+}
+public func __alef_phantom_vec_output_format() -> RustVec<OutputFormat> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_output_format())
+}
+public func __alef_phantom_vec_html_theme() -> RustVec<HtmlTheme> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_html_theme())
+}
+public func __alef_phantom_vec_table_model() -> RustVec<TableModel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_table_model())
+}
+public func __alef_phantom_vec_ner_backend_kind() -> RustVec<NerBackendKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ner_backend_kind())
+}
+public func __alef_phantom_vec_vlm_fallback_policy() -> RustVec<VlmFallbackPolicy> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_vlm_fallback_policy())
+}
+public func __alef_phantom_vec_chunker_type() -> RustVec<ChunkerType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunker_type())
+}
+public func __alef_phantom_vec_chunk_sizing() -> RustVec<ChunkSizing> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunk_sizing())
+}
+public func __alef_phantom_vec_embedding_model_type() -> RustVec<EmbeddingModelType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_embedding_model_type())
+}
+public func __alef_phantom_vec_whisper_model() -> RustVec<WhisperModel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_whisper_model())
+}
+public func __alef_phantom_vec_code_content_mode() -> RustVec<CodeContentMode> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_code_content_mode())
+}
+public func __alef_phantom_vec_list_type() -> RustVec<ListType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_list_type())
+}
+public func __alef_phantom_vec_ocr_backend_type() -> RustVec<OcrBackendType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_backend_type())
+}
+public func __alef_phantom_vec_processing_stage() -> RustVec<ProcessingStage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_processing_stage())
+}
+public func __alef_phantom_vec_reduction_level() -> RustVec<ReductionLevel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_reduction_level())
+}
+public func __alef_phantom_vec_pdf_annotation_type() -> RustVec<PdfAnnotationType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pdf_annotation_type())
+}
+public func __alef_phantom_vec_block_type() -> RustVec<BlockType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_block_type())
+}
+public func __alef_phantom_vec_inline_type() -> RustVec<InlineType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_inline_type())
+}
+public func __alef_phantom_vec_relationship_kind() -> RustVec<RelationshipKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_relationship_kind())
+}
+public func __alef_phantom_vec_content_layer() -> RustVec<ContentLayer> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_content_layer())
+}
+public func __alef_phantom_vec_node_content() -> RustVec<NodeContent> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_node_content())
+}
+public func __alef_phantom_vec_annotation_kind() -> RustVec<AnnotationKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_annotation_kind())
+}
+public func __alef_phantom_vec_entity_category() -> RustVec<EntityCategory> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_entity_category())
+}
+public func __alef_phantom_vec_extraction_method() -> RustVec<ExtractionMethod> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_extraction_method())
+}
+public func __alef_phantom_vec_chunk_type() -> RustVec<ChunkType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_chunk_type())
+}
+public func __alef_phantom_vec_image_kind() -> RustVec<ImageKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_kind())
+}
+public func __alef_phantom_vec_result_format() -> RustVec<ResultFormat> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_result_format())
+}
+public func __alef_phantom_vec_element_type() -> RustVec<ElementType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_element_type())
+}
+public func __alef_phantom_vec_format_metadata() -> RustVec<FormatMetadata> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_format_metadata())
+}
+public func __alef_phantom_vec_text_direction() -> RustVec<TextDirection> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_text_direction())
+}
+public func __alef_phantom_vec_link_type() -> RustVec<LinkType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_link_type())
+}
+public func __alef_phantom_vec_image_type() -> RustVec<ImageType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_image_type())
+}
+public func __alef_phantom_vec_structured_data_type() -> RustVec<StructuredDataType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_structured_data_type())
+}
+public func __alef_phantom_vec_ocr_bounding_geometry() -> RustVec<OcrBoundingGeometry> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_bounding_geometry())
+}
+public func __alef_phantom_vec_ocr_element_level() -> RustVec<OcrElementLevel> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_ocr_element_level())
+}
+public func __alef_phantom_vec_page_unit_type() -> RustVec<PageUnitType> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_page_unit_type())
+}
+public func __alef_phantom_vec_redaction_strategy() -> RustVec<RedactionStrategy> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_redaction_strategy())
+}
+public func __alef_phantom_vec_pii_category() -> RustVec<PiiCategory> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_pii_category())
+}
+public func __alef_phantom_vec_diff_line() -> RustVec<DiffLine> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_diff_line())
+}
+public func __alef_phantom_vec_revision_kind() -> RustVec<RevisionKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_revision_kind())
+}
+public func __alef_phantom_vec_revision_anchor() -> RustVec<RevisionAnchor> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_revision_anchor())
+}
+public func __alef_phantom_vec_summary_strategy() -> RustVec<SummaryStrategy> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_summary_strategy())
+}
+public func __alef_phantom_vec_uri_kind() -> RustVec<UriKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_uri_kind())
+}
+public func __alef_phantom_vec_region_kind() -> RustVec<RegionKind> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_region_kind())
+}
+public func __alef_phantom_vec_keyword_algorithm() -> RustVec<KeywordAlgorithm> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_keyword_algorithm())
+}
+public func __alef_phantom_vec_psm_mode() -> RustVec<PSMMode> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_psm_mode())
+}
+public func __alef_phantom_vec_paddle_language() -> RustVec<PaddleLanguage> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_paddle_language())
+}
+public func __alef_phantom_vec_layout_class() -> RustVec<LayoutClass> {
+    RustVec(ptr: __swift_bridge__$__alef_phantom_vec_layout_class())
 }
 
 public class CacheStats: CacheStatsRefMut {
@@ -4496,6 +5129,127 @@ extension SummarizationConfig: Vectorizable {
 
     public static func vecOfSelfLen(vecPtr: UnsafeMutableRawPointer) -> UInt {
         __swift_bridge__$Vec_SummarizationConfig$len(vecPtr)
+    }
+}
+
+
+public class TranscriptionConfig: TranscriptionConfigRefMut {
+    public var isOwned: Bool = true
+
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+
+    deinit {
+        if isOwned {
+            __swift_bridge__$TranscriptionConfig$_free(ptr)
+        }
+    }
+}
+extension TranscriptionConfig {
+    public convenience init<GenericIntoRustString: IntoRustString>(_ enabled: Bool, _ model: WhisperModel, _ language: Optional<GenericIntoRustString>, _ timestamps: Bool, _ max_duration_ms: Optional<UInt64>, _ max_bytes: Optional<UInt64>, _ timeout_ms: Optional<UInt64>, _ model_cache_dir: Optional<GenericIntoRustString>, _ allow_network: Bool, _ verify_hash: Bool) {
+        self.init(ptr: __swift_bridge__$TranscriptionConfig$new(enabled, {model.isOwned = false; return model.ptr;}(), { if let rustString = optionalStringIntoRustString(language) { rustString.isOwned = false; return rustString.ptr } else { return nil } }(), timestamps, max_duration_ms.intoFfiRepr(), max_bytes.intoFfiRepr(), timeout_ms.intoFfiRepr(), { if let rustString = optionalStringIntoRustString(model_cache_dir) { rustString.isOwned = false; return rustString.ptr } else { return nil } }(), allow_network, verify_hash))
+    }
+}
+public class TranscriptionConfigRefMut: TranscriptionConfigRef {
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+}
+public class TranscriptionConfigRef {
+    public var ptr: UnsafeMutableRawPointer
+
+    public init(ptr: UnsafeMutableRawPointer) {
+        self.ptr = ptr
+    }
+}
+extension TranscriptionConfigRef {
+    public func enabled() -> Bool {
+        __swift_bridge__$TranscriptionConfig$enabled(ptr)
+    }
+
+    public func model() -> RustString {
+        RustString(ptr: __swift_bridge__$TranscriptionConfig$model(ptr))
+    }
+
+    public func language() -> Optional<RustString> {
+        { let val = __swift_bridge__$TranscriptionConfig$language(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
+    }
+
+    public func timestamps() -> Bool {
+        __swift_bridge__$TranscriptionConfig$timestamps(ptr)
+    }
+
+    public func maxDurationMs() -> Optional<UInt64> {
+        __swift_bridge__$TranscriptionConfig$max_duration_ms(ptr).intoSwiftRepr()
+    }
+
+    public func maxBytes() -> Optional<UInt64> {
+        __swift_bridge__$TranscriptionConfig$max_bytes(ptr).intoSwiftRepr()
+    }
+
+    public func timeoutMs() -> Optional<UInt64> {
+        __swift_bridge__$TranscriptionConfig$timeout_ms(ptr).intoSwiftRepr()
+    }
+
+    public func modelCacheDir() -> Optional<RustString> {
+        { let val = __swift_bridge__$TranscriptionConfig$model_cache_dir(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
+    }
+
+    public func allowNetwork() -> Bool {
+        __swift_bridge__$TranscriptionConfig$allow_network(ptr)
+    }
+
+    public func verifyHash() -> Bool {
+        __swift_bridge__$TranscriptionConfig$verify_hash(ptr)
+    }
+}
+extension TranscriptionConfig: Vectorizable {
+    public static func vecOfSelfNew() -> UnsafeMutableRawPointer {
+        __swift_bridge__$Vec_TranscriptionConfig$new()
+    }
+
+    public static func vecOfSelfFree(vecPtr: UnsafeMutableRawPointer) {
+        __swift_bridge__$Vec_TranscriptionConfig$drop(vecPtr)
+    }
+
+    public static func vecOfSelfPush(vecPtr: UnsafeMutableRawPointer, value: TranscriptionConfig) {
+        __swift_bridge__$Vec_TranscriptionConfig$push(vecPtr, {value.isOwned = false; return value.ptr;}())
+    }
+
+    public static func vecOfSelfPop(vecPtr: UnsafeMutableRawPointer) -> Optional<Self> {
+        let pointer = __swift_bridge__$Vec_TranscriptionConfig$pop(vecPtr)
+        if pointer == nil {
+            return nil
+        } else {
+            return (TranscriptionConfig(ptr: pointer!) as! Self)
+        }
+    }
+
+    public static func vecOfSelfGet(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<TranscriptionConfigRef> {
+        let pointer = __swift_bridge__$Vec_TranscriptionConfig$get(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return TranscriptionConfigRef(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfGetMut(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<TranscriptionConfigRefMut> {
+        let pointer = __swift_bridge__$Vec_TranscriptionConfig$get_mut(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return TranscriptionConfigRefMut(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfAsPtr(vecPtr: UnsafeMutableRawPointer) -> UnsafePointer<TranscriptionConfigRef> {
+        UnsafePointer<TranscriptionConfigRef>(OpaquePointer(__swift_bridge__$Vec_TranscriptionConfig$as_ptr(vecPtr)))
+    }
+
+    public static func vecOfSelfLen(vecPtr: UnsafeMutableRawPointer) -> UInt {
+        __swift_bridge__$Vec_TranscriptionConfig$len(vecPtr)
     }
 }
 
@@ -12951,6 +13705,111 @@ extension PstMetadata: Vectorizable {
 }
 
 
+public class AudioMetadata: AudioMetadataRefMut {
+    public var isOwned: Bool = true
+
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+
+    deinit {
+        if isOwned {
+            __swift_bridge__$AudioMetadata$_free(ptr)
+        }
+    }
+}
+extension AudioMetadata {
+    public convenience init<GenericIntoRustString: IntoRustString>(_ duration_ms: Optional<UInt64>, _ codec: Optional<GenericIntoRustString>, _ container: Optional<GenericIntoRustString>, _ sample_rate_hz: Optional<UInt32>, _ channels: Optional<UInt16>, _ bitrate: Optional<UInt32>) {
+        self.init(ptr: __swift_bridge__$AudioMetadata$new(duration_ms.intoFfiRepr(), { if let rustString = optionalStringIntoRustString(codec) { rustString.isOwned = false; return rustString.ptr } else { return nil } }(), { if let rustString = optionalStringIntoRustString(container) { rustString.isOwned = false; return rustString.ptr } else { return nil } }(), sample_rate_hz.intoFfiRepr(), channels.intoFfiRepr(), bitrate.intoFfiRepr()))
+    }
+}
+public class AudioMetadataRefMut: AudioMetadataRef {
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+}
+public class AudioMetadataRef {
+    public var ptr: UnsafeMutableRawPointer
+
+    public init(ptr: UnsafeMutableRawPointer) {
+        self.ptr = ptr
+    }
+}
+extension AudioMetadataRef {
+    public func durationMs() -> Optional<UInt64> {
+        __swift_bridge__$AudioMetadata$duration_ms(ptr).intoSwiftRepr()
+    }
+
+    public func codec() -> Optional<RustString> {
+        { let val = __swift_bridge__$AudioMetadata$codec(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
+    }
+
+    public func container() -> Optional<RustString> {
+        { let val = __swift_bridge__$AudioMetadata$container(ptr); if val != nil { return RustString(ptr: val!) } else { return nil } }()
+    }
+
+    public func sampleRateHz() -> Optional<UInt32> {
+        __swift_bridge__$AudioMetadata$sample_rate_hz(ptr).intoSwiftRepr()
+    }
+
+    public func channels() -> Optional<UInt16> {
+        __swift_bridge__$AudioMetadata$channels(ptr).intoSwiftRepr()
+    }
+
+    public func bitrate() -> Optional<UInt32> {
+        __swift_bridge__$AudioMetadata$bitrate(ptr).intoSwiftRepr()
+    }
+}
+extension AudioMetadata: Vectorizable {
+    public static func vecOfSelfNew() -> UnsafeMutableRawPointer {
+        __swift_bridge__$Vec_AudioMetadata$new()
+    }
+
+    public static func vecOfSelfFree(vecPtr: UnsafeMutableRawPointer) {
+        __swift_bridge__$Vec_AudioMetadata$drop(vecPtr)
+    }
+
+    public static func vecOfSelfPush(vecPtr: UnsafeMutableRawPointer, value: AudioMetadata) {
+        __swift_bridge__$Vec_AudioMetadata$push(vecPtr, {value.isOwned = false; return value.ptr;}())
+    }
+
+    public static func vecOfSelfPop(vecPtr: UnsafeMutableRawPointer) -> Optional<Self> {
+        let pointer = __swift_bridge__$Vec_AudioMetadata$pop(vecPtr)
+        if pointer == nil {
+            return nil
+        } else {
+            return (AudioMetadata(ptr: pointer!) as! Self)
+        }
+    }
+
+    public static func vecOfSelfGet(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<AudioMetadataRef> {
+        let pointer = __swift_bridge__$Vec_AudioMetadata$get(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return AudioMetadataRef(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfGetMut(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<AudioMetadataRefMut> {
+        let pointer = __swift_bridge__$Vec_AudioMetadata$get_mut(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return AudioMetadataRefMut(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfAsPtr(vecPtr: UnsafeMutableRawPointer) -> UnsafePointer<AudioMetadataRef> {
+        UnsafePointer<AudioMetadataRef>(OpaquePointer(__swift_bridge__$Vec_AudioMetadata$as_ptr(vecPtr)))
+    }
+
+    public static func vecOfSelfLen(vecPtr: UnsafeMutableRawPointer) -> UInt {
+        __swift_bridge__$Vec_AudioMetadata$len(vecPtr)
+    }
+}
+
+
 public class OcrConfidence: OcrConfidenceRefMut {
     public var isOwned: Bool = true
 
@@ -17821,6 +18680,86 @@ extension EmbeddingModelType: Vectorizable {
 
     public static func vecOfSelfLen(vecPtr: UnsafeMutableRawPointer) -> UInt {
         __swift_bridge__$Vec_EmbeddingModelType$len(vecPtr)
+    }
+}
+
+
+public class WhisperModel: WhisperModelRefMut {
+    public var isOwned: Bool = true
+
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+
+    deinit {
+        if isOwned {
+            __swift_bridge__$WhisperModel$_free(ptr)
+        }
+    }
+}
+public class WhisperModelRefMut: WhisperModelRef {
+    public override init(ptr: UnsafeMutableRawPointer) {
+        super.init(ptr: ptr)
+    }
+}
+public class WhisperModelRef {
+    public var ptr: UnsafeMutableRawPointer
+
+    public init(ptr: UnsafeMutableRawPointer) {
+        self.ptr = ptr
+    }
+}
+extension WhisperModelRef {
+    public func to_string() -> RustString {
+        RustString(ptr: __swift_bridge__$WhisperModel$to_string(ptr))
+    }
+}
+extension WhisperModel: Vectorizable {
+    public static func vecOfSelfNew() -> UnsafeMutableRawPointer {
+        __swift_bridge__$Vec_WhisperModel$new()
+    }
+
+    public static func vecOfSelfFree(vecPtr: UnsafeMutableRawPointer) {
+        __swift_bridge__$Vec_WhisperModel$drop(vecPtr)
+    }
+
+    public static func vecOfSelfPush(vecPtr: UnsafeMutableRawPointer, value: WhisperModel) {
+        __swift_bridge__$Vec_WhisperModel$push(vecPtr, {value.isOwned = false; return value.ptr;}())
+    }
+
+    public static func vecOfSelfPop(vecPtr: UnsafeMutableRawPointer) -> Optional<Self> {
+        let pointer = __swift_bridge__$Vec_WhisperModel$pop(vecPtr)
+        if pointer == nil {
+            return nil
+        } else {
+            return (WhisperModel(ptr: pointer!) as! Self)
+        }
+    }
+
+    public static func vecOfSelfGet(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<WhisperModelRef> {
+        let pointer = __swift_bridge__$Vec_WhisperModel$get(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return WhisperModelRef(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfGetMut(vecPtr: UnsafeMutableRawPointer, index: UInt) -> Optional<WhisperModelRefMut> {
+        let pointer = __swift_bridge__$Vec_WhisperModel$get_mut(vecPtr, index)
+        if pointer == nil {
+            return nil
+        } else {
+            return WhisperModelRefMut(ptr: pointer!)
+        }
+    }
+
+    public static func vecOfSelfAsPtr(vecPtr: UnsafeMutableRawPointer) -> UnsafePointer<WhisperModelRef> {
+        UnsafePointer<WhisperModelRef>(OpaquePointer(__swift_bridge__$Vec_WhisperModel$as_ptr(vecPtr)))
+    }
+
+    public static func vecOfSelfLen(vecPtr: UnsafeMutableRawPointer) -> UInt {
+        __swift_bridge__$Vec_WhisperModel$len(vecPtr)
     }
 }
 

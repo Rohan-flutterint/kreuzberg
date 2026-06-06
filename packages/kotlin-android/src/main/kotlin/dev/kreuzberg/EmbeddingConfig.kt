@@ -24,7 +24,6 @@
 package dev.kreuzberg
 
 import java.nio.file.Path
-
 /**
  * Embedding configuration for text chunks.
  *

@@ -176,4 +176,7 @@ object KreuzbergBridge {
     external fun nativeRegisterRenderer(impl: dev.kreuzberg.IRenderer)
     @Throws(KreuzbergBridgeException::class)
     external fun nativeUnregisterRenderer(name: String)
+
+    // Destructor external funs for handle-only opaque types.
+    external fun nativeFreeTokenCounter(handle: Long)
 }

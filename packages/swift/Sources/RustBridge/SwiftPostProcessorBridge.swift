@@ -10,10 +10,15 @@ import RustBridge
 /// a Rust trait from the host side.
 public protocol SwiftPostProcessorBridge: SwiftPluginBridge {
     func process(result: String, config: String) throws -> Void
+
     func processingStage() -> String
+
     func shouldProcess(result: String, config: String) -> Bool
+
     func estimatedDurationMs(result: String) -> UInt64
+
     func priority() -> Int32
+
 }
 
 public extension SwiftPostProcessorBridge {
@@ -38,16 +43,16 @@ final class SwiftPostProcessorAdapter {
     private let bridge: any SwiftPostProcessorBridge
 
     init(bridge: any SwiftPostProcessorBridge) {
-    self.bridge = bridge
+        self.bridge = bridge
     }
 
     func processCall(result: String, config: String) throws -> String {
         do {
-    let result = try self.bridge.process(result: result, config: config)
+            let result = try self.bridge.process(result: result, config: config)
             return marshal_ok_result(Empty())
-    } catch {
-        return marshal_error_result(error)
-    }
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
     func processingStageCall() -> String {

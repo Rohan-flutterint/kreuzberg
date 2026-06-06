@@ -24,7 +24,6 @@
 package dev.kreuzberg
 
 import java.nio.file.Path
-
 /**
  * Trait for OCR backend plugins.
  *

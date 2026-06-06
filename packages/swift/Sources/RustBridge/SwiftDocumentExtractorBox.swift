@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftDocumentExtractorBox {
     private let bridge: any SwiftDocumentExtractorBridge
     public init(_ bridge: any SwiftDocumentExtractorBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,34 +36,28 @@ public final class SwiftDocumentExtractorBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_extract_bytes(content: RustVec<UInt8>, mime_type mimeType: RustString, config: RustString) -> RustString {
         do {
           let result = try bridge.extractBytes(content: Data(content), mimeType: mimeType.toString(), config: config.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_extract_file(path: RustString, mime_type mimeType: RustString, config: RustString) -> RustString {
         do {
           let result = try bridge.extractFile(path: URL(fileURLWithPath: path.toString()), mimeType: mimeType.toString(), config: config.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_supported_mime_types() -> RustVec<RustString> {
         let strings = bridge.supportedMimeTypes()
         let vec = RustVec<RustString>()
         for s in strings { vec.push(value: RustString(s)) }
         return vec
     }
-
     public func alef_priority() -> Int32 {
         return bridge.priority()
     }
-
     public func alef_can_handle(path: RustString, mime_type mimeType: RustString) -> Bool {
         return bridge.canHandle(path: URL(fileURLWithPath: path.toString()), mimeType: mimeType.toString())
     }
-
 }

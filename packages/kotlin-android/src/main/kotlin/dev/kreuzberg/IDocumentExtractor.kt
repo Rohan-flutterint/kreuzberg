@@ -24,7 +24,6 @@
 package dev.kreuzberg
 
 import java.nio.file.Path
-
 /**
  * Trait for document extractor plugins.
  *
@@ -63,7 +62,7 @@ interface IDocumentExtractor {
      * Can include exact MIME types and prefix patterns:
      *
      * - Exact: `"application/pdf"`, `"text/plain"`
-     * - Prefix: `"image/*"` (matches any image type)
+     * - Prefix: `"image/ *"` (matches any image type)
      *
      * **Returns:**
      *

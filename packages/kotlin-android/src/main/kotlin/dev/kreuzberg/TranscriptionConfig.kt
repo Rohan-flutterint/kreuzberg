@@ -24,7 +24,6 @@
 package dev.kreuzberg
 
 import java.nio.file.Path
-
 /**
  * Configuration for audio/video transcription (speech-to-text).
  *

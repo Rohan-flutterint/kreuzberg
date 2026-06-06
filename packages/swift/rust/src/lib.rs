@@ -13,8 +13,7 @@
     clippy::match_single_binding,
     clippy::redundant_closure,
     clippy::useless_conversion,
-    clippy::inherent_to_string,
-    clippy::into_iter_on_ref
+    clippy::inherent_to_string
 )]
 
 /// Process-wide tokio runtime shared across every swift-bridge async wrapper.
@@ -3113,8 +3112,6 @@ mod ffi {
         fn list_validators() -> Result<Vec<String>, String>;
         #[swift_bridge(swift_name = "classifyPages")]
         fn classify_pages(result: ExtractionResult, config: PageClassificationConfig) -> Result<(), String>;
-        #[swift_bridge(swift_name = "downloadModel")]
-        fn download_model(name: String, cache_dir: Option<String>) -> Result<String, String>;
         #[swift_bridge(swift_name = "defaultModelName")]
         fn default_model_name() -> String;
         #[swift_bridge(swift_name = "knownModels")]
@@ -3745,6 +3742,1271 @@ mod ffi {
         #[swift_bridge(swift_name = "layoutClassFromJson")]
         fn layout_class_from_json(json: String) -> Result<LayoutClass, String>;
     }
+    extern "Rust" {
+        // Phantom Vec<T> functions: swift-bridge-build must emit the full Vec support
+        // C ABI symbols (__swift_bridge__$Vec_T$new, drop, push, pop, get, get_mut, as_ptr, len)
+        // which the auto-generated Swift Vec<T> conformances reference.
+        //
+        // swift-bridge 0.1.59 only emits these when Vec<T> appears as a return type
+        // in an extern block. Without these phantom functions, Swift linker fails when
+        // trying to construct or manipulate Vec<T> of opaque types.
+        //
+        // These declarations are paired with phantom_impl functions below the bridge module.
+        fn __alef_phantom_vec_cache_stats() -> Vec<CacheStats>;
+        fn __alef_phantom_vec_acceleration_config() -> Vec<AccelerationConfig>;
+        fn __alef_phantom_vec_captioning_config() -> Vec<CaptioningConfig>;
+        fn __alef_phantom_vec_page_classification_config() -> Vec<PageClassificationConfig>;
+        fn __alef_phantom_vec_content_filter_config() -> Vec<ContentFilterConfig>;
+        fn __alef_phantom_vec_email_config() -> Vec<EmailConfig>;
+        fn __alef_phantom_vec_extraction_config() -> Vec<ExtractionConfig>;
+        fn __alef_phantom_vec_file_extraction_config() -> Vec<FileExtractionConfig>;
+        fn __alef_phantom_vec_batch_bytes_item() -> Vec<BatchBytesItem>;
+        fn __alef_phantom_vec_batch_file_item() -> Vec<BatchFileItem>;
+        fn __alef_phantom_vec_image_extraction_config() -> Vec<ImageExtractionConfig>;
+        fn __alef_phantom_vec_token_reduction_options() -> Vec<TokenReductionOptions>;
+        fn __alef_phantom_vec_language_detection_config() -> Vec<LanguageDetectionConfig>;
+        fn __alef_phantom_vec_html_output_config() -> Vec<HtmlOutputConfig>;
+        fn __alef_phantom_vec_layout_detection_config() -> Vec<LayoutDetectionConfig>;
+        fn __alef_phantom_vec_llm_config() -> Vec<LlmConfig>;
+        fn __alef_phantom_vec_structured_extraction_config() -> Vec<StructuredExtractionConfig>;
+        fn __alef_phantom_vec_ner_config() -> Vec<NerConfig>;
+        fn __alef_phantom_vec_ocr_quality_thresholds() -> Vec<OcrQualityThresholds>;
+        fn __alef_phantom_vec_ocr_pipeline_stage() -> Vec<OcrPipelineStage>;
+        fn __alef_phantom_vec_ocr_pipeline_config() -> Vec<OcrPipelineConfig>;
+        fn __alef_phantom_vec_ocr_config() -> Vec<OcrConfig>;
+        fn __alef_phantom_vec_page_config() -> Vec<PageConfig>;
+        fn __alef_phantom_vec_pdf_config() -> Vec<PdfConfig>;
+        fn __alef_phantom_vec_hierarchy_config() -> Vec<HierarchyConfig>;
+        fn __alef_phantom_vec_post_processor_config() -> Vec<PostProcessorConfig>;
+        fn __alef_phantom_vec_chunking_config() -> Vec<ChunkingConfig>;
+        fn __alef_phantom_vec_embedding_config() -> Vec<EmbeddingConfig>;
+        fn __alef_phantom_vec_redaction_config() -> Vec<RedactionConfig>;
+        fn __alef_phantom_vec_redaction_term() -> Vec<RedactionTerm>;
+        fn __alef_phantom_vec_redaction_pattern() -> Vec<RedactionPattern>;
+        fn __alef_phantom_vec_summarization_config() -> Vec<SummarizationConfig>;
+        fn __alef_phantom_vec_transcription_config() -> Vec<TranscriptionConfig>;
+        fn __alef_phantom_vec_translation_config() -> Vec<TranslationConfig>;
+        fn __alef_phantom_vec_tree_sitter_config() -> Vec<TreeSitterConfig>;
+        fn __alef_phantom_vec_tree_sitter_process_config() -> Vec<TreeSitterProcessConfig>;
+        fn __alef_phantom_vec_supported_format() -> Vec<SupportedFormat>;
+        fn __alef_phantom_vec_server_config() -> Vec<ServerConfig>;
+        fn __alef_phantom_vec_structured_data_result() -> Vec<StructuredDataResult>;
+        fn __alef_phantom_vec_docx_app_properties() -> Vec<DocxAppProperties>;
+        fn __alef_phantom_vec_xlsx_app_properties() -> Vec<XlsxAppProperties>;
+        fn __alef_phantom_vec_pptx_app_properties() -> Vec<PptxAppProperties>;
+        fn __alef_phantom_vec_core_properties() -> Vec<CoreProperties>;
+        fn __alef_phantom_vec_security_limits() -> Vec<SecurityLimits>;
+        fn __alef_phantom_vec_token_reduction_config() -> Vec<TokenReductionConfig>;
+        fn __alef_phantom_vec_llm_backend() -> Vec<LlmBackend>;
+        fn __alef_phantom_vec_pattern_match() -> Vec<PatternMatch>;
+        fn __alef_phantom_vec_token_counter() -> Vec<TokenCounter>;
+        fn __alef_phantom_vec_pdf_annotation() -> Vec<PdfAnnotation>;
+        fn __alef_phantom_vec_page_classification() -> Vec<PageClassification>;
+        fn __alef_phantom_vec_classification_label() -> Vec<ClassificationLabel>;
+        fn __alef_phantom_vec_djot_content() -> Vec<DjotContent>;
+        fn __alef_phantom_vec_formatted_block() -> Vec<FormattedBlock>;
+        fn __alef_phantom_vec_inline_element() -> Vec<InlineElement>;
+        fn __alef_phantom_vec_djot_image() -> Vec<DjotImage>;
+        fn __alef_phantom_vec_djot_link() -> Vec<DjotLink>;
+        fn __alef_phantom_vec_footnote() -> Vec<Footnote>;
+        fn __alef_phantom_vec_document_structure() -> Vec<DocumentStructure>;
+        fn __alef_phantom_vec_document_relationship() -> Vec<DocumentRelationship>;
+        fn __alef_phantom_vec_document_node() -> Vec<DocumentNode>;
+        fn __alef_phantom_vec_table_grid() -> Vec<TableGrid>;
+        fn __alef_phantom_vec_grid_cell() -> Vec<GridCell>;
+        fn __alef_phantom_vec_text_annotation() -> Vec<TextAnnotation>;
+        fn __alef_phantom_vec_entity() -> Vec<Entity>;
+        fn __alef_phantom_vec_extraction_result() -> Vec<ExtractionResult>;
+        fn __alef_phantom_vec_archive_entry() -> Vec<ArchiveEntry>;
+        fn __alef_phantom_vec_processing_warning() -> Vec<ProcessingWarning>;
+        fn __alef_phantom_vec_llm_usage() -> Vec<LlmUsage>;
+        fn __alef_phantom_vec_chunk() -> Vec<Chunk>;
+        fn __alef_phantom_vec_heading_context() -> Vec<HeadingContext>;
+        fn __alef_phantom_vec_heading_level() -> Vec<HeadingLevel>;
+        fn __alef_phantom_vec_chunk_metadata() -> Vec<ChunkMetadata>;
+        fn __alef_phantom_vec_extracted_image() -> Vec<ExtractedImage>;
+        fn __alef_phantom_vec_bounding_box() -> Vec<BoundingBox>;
+        fn __alef_phantom_vec_element_metadata() -> Vec<ElementMetadata>;
+        fn __alef_phantom_vec_element() -> Vec<Element>;
+        fn __alef_phantom_vec_excel_workbook() -> Vec<ExcelWorkbook>;
+        fn __alef_phantom_vec_excel_sheet() -> Vec<ExcelSheet>;
+        fn __alef_phantom_vec_xml_extraction_result() -> Vec<XmlExtractionResult>;
+        fn __alef_phantom_vec_text_extraction_result() -> Vec<TextExtractionResult>;
+        fn __alef_phantom_vec_pptx_extraction_result() -> Vec<PptxExtractionResult>;
+        fn __alef_phantom_vec_email_extraction_result() -> Vec<EmailExtractionResult>;
+        fn __alef_phantom_vec_email_attachment() -> Vec<EmailAttachment>;
+        fn __alef_phantom_vec_ocr_extraction_result() -> Vec<OcrExtractionResult>;
+        fn __alef_phantom_vec_ocr_table() -> Vec<OcrTable>;
+        fn __alef_phantom_vec_ocr_table_bounding_box() -> Vec<OcrTableBoundingBox>;
+        fn __alef_phantom_vec_image_preprocessing_config() -> Vec<ImagePreprocessingConfig>;
+        fn __alef_phantom_vec_tesseract_config() -> Vec<TesseractConfig>;
+        fn __alef_phantom_vec_image_preprocessing_metadata() -> Vec<ImagePreprocessingMetadata>;
+        fn __alef_phantom_vec_metadata() -> Vec<Metadata>;
+        fn __alef_phantom_vec_excel_metadata() -> Vec<ExcelMetadata>;
+        fn __alef_phantom_vec_email_metadata() -> Vec<EmailMetadata>;
+        fn __alef_phantom_vec_archive_metadata() -> Vec<ArchiveMetadata>;
+        fn __alef_phantom_vec_image_metadata() -> Vec<ImageMetadata>;
+        fn __alef_phantom_vec_xml_metadata() -> Vec<XmlMetadata>;
+        fn __alef_phantom_vec_text_metadata() -> Vec<TextMetadata>;
+        fn __alef_phantom_vec_header_metadata() -> Vec<HeaderMetadata>;
+        fn __alef_phantom_vec_link_metadata() -> Vec<LinkMetadata>;
+        fn __alef_phantom_vec_image_metadata_type() -> Vec<ImageMetadataType>;
+        fn __alef_phantom_vec_structured_data() -> Vec<StructuredData>;
+        fn __alef_phantom_vec_html_metadata() -> Vec<HtmlMetadata>;
+        fn __alef_phantom_vec_ocr_metadata() -> Vec<OcrMetadata>;
+        fn __alef_phantom_vec_error_metadata() -> Vec<ErrorMetadata>;
+        fn __alef_phantom_vec_pptx_metadata() -> Vec<PptxMetadata>;
+        fn __alef_phantom_vec_docx_metadata() -> Vec<DocxMetadata>;
+        fn __alef_phantom_vec_csv_metadata() -> Vec<CsvMetadata>;
+        fn __alef_phantom_vec_bibtex_metadata() -> Vec<BibtexMetadata>;
+        fn __alef_phantom_vec_citation_metadata() -> Vec<CitationMetadata>;
+        fn __alef_phantom_vec_year_range() -> Vec<YearRange>;
+        fn __alef_phantom_vec_fiction_book_metadata() -> Vec<FictionBookMetadata>;
+        fn __alef_phantom_vec_dbf_metadata() -> Vec<DbfMetadata>;
+        fn __alef_phantom_vec_dbf_field_info() -> Vec<DbfFieldInfo>;
+        fn __alef_phantom_vec_jats_metadata() -> Vec<JatsMetadata>;
+        fn __alef_phantom_vec_contributor_role() -> Vec<ContributorRole>;
+        fn __alef_phantom_vec_epub_metadata() -> Vec<EpubMetadata>;
+        fn __alef_phantom_vec_pst_metadata() -> Vec<PstMetadata>;
+        fn __alef_phantom_vec_audio_metadata() -> Vec<AudioMetadata>;
+        fn __alef_phantom_vec_ocr_confidence() -> Vec<OcrConfidence>;
+        fn __alef_phantom_vec_ocr_rotation() -> Vec<OcrRotation>;
+        fn __alef_phantom_vec_ocr_element() -> Vec<OcrElement>;
+        fn __alef_phantom_vec_ocr_element_config() -> Vec<OcrElementConfig>;
+        fn __alef_phantom_vec_page_structure() -> Vec<PageStructure>;
+        fn __alef_phantom_vec_page_boundary() -> Vec<PageBoundary>;
+        fn __alef_phantom_vec_page_info() -> Vec<PageInfo>;
+        fn __alef_phantom_vec_page_content() -> Vec<PageContent>;
+        fn __alef_phantom_vec_layout_region() -> Vec<LayoutRegion>;
+        fn __alef_phantom_vec_page_hierarchy() -> Vec<PageHierarchy>;
+        fn __alef_phantom_vec_hierarchical_block() -> Vec<HierarchicalBlock>;
+        fn __alef_phantom_vec_qr_code() -> Vec<QrCode>;
+        fn __alef_phantom_vec_qr_bounding_box() -> Vec<QrBoundingBox>;
+        fn __alef_phantom_vec_redaction_report() -> Vec<RedactionReport>;
+        fn __alef_phantom_vec_redaction_finding() -> Vec<RedactionFinding>;
+        fn __alef_phantom_vec_cell_change() -> Vec<CellChange>;
+        fn __alef_phantom_vec_document_revision() -> Vec<DocumentRevision>;
+        fn __alef_phantom_vec_revision_delta() -> Vec<RevisionDelta>;
+        fn __alef_phantom_vec_document_summary() -> Vec<DocumentSummary>;
+        fn __alef_phantom_vec_table() -> Vec<Table>;
+        fn __alef_phantom_vec_table_cell() -> Vec<TableCell>;
+        fn __alef_phantom_vec_translation() -> Vec<Translation>;
+        fn __alef_phantom_vec_extracted_uri() -> Vec<ExtractedUri>;
+        fn __alef_phantom_vec_detect_response() -> Vec<DetectResponse>;
+        fn __alef_phantom_vec_diff_options() -> Vec<DiffOptions>;
+        fn __alef_phantom_vec_extraction_diff() -> Vec<ExtractionDiff>;
+        fn __alef_phantom_vec_diff_hunk() -> Vec<DiffHunk>;
+        fn __alef_phantom_vec_table_diff() -> Vec<TableDiff>;
+        fn __alef_phantom_vec_embedded_changes() -> Vec<EmbeddedChanges>;
+        fn __alef_phantom_vec_embedded_diff() -> Vec<EmbeddedDiff>;
+        fn __alef_phantom_vec_embedding_preset() -> Vec<EmbeddingPreset>;
+        fn __alef_phantom_vec_yake_params() -> Vec<YakeParams>;
+        fn __alef_phantom_vec_rake_params() -> Vec<RakeParams>;
+        fn __alef_phantom_vec_keyword_config() -> Vec<KeywordConfig>;
+        fn __alef_phantom_vec_keyword() -> Vec<Keyword>;
+        fn __alef_phantom_vec_paddle_ocr_config() -> Vec<PaddleOcrConfig>;
+        fn __alef_phantom_vec_model_paths() -> Vec<ModelPaths>;
+        fn __alef_phantom_vec_orientation_result() -> Vec<OrientationResult>;
+        fn __alef_phantom_vec_b_box() -> Vec<BBox>;
+        fn __alef_phantom_vec_layout_detection() -> Vec<LayoutDetection>;
+        fn __alef_phantom_vec_recognized_table() -> Vec<RecognizedTable>;
+        fn __alef_phantom_vec_detection_result() -> Vec<DetectionResult>;
+        fn __alef_phantom_vec_embedded_file() -> Vec<EmbeddedFile>;
+        fn __alef_phantom_vec_pdf_metadata() -> Vec<PdfMetadata>;
+        fn __alef_phantom_vec_execution_provider_type() -> Vec<ExecutionProviderType>;
+        fn __alef_phantom_vec_output_format() -> Vec<OutputFormat>;
+        fn __alef_phantom_vec_html_theme() -> Vec<HtmlTheme>;
+        fn __alef_phantom_vec_table_model() -> Vec<TableModel>;
+        fn __alef_phantom_vec_ner_backend_kind() -> Vec<NerBackendKind>;
+        fn __alef_phantom_vec_vlm_fallback_policy() -> Vec<VlmFallbackPolicy>;
+        fn __alef_phantom_vec_chunker_type() -> Vec<ChunkerType>;
+        fn __alef_phantom_vec_chunk_sizing() -> Vec<ChunkSizing>;
+        fn __alef_phantom_vec_embedding_model_type() -> Vec<EmbeddingModelType>;
+        fn __alef_phantom_vec_whisper_model() -> Vec<WhisperModel>;
+        fn __alef_phantom_vec_code_content_mode() -> Vec<CodeContentMode>;
+        fn __alef_phantom_vec_list_type() -> Vec<ListType>;
+        fn __alef_phantom_vec_ocr_backend_type() -> Vec<OcrBackendType>;
+        fn __alef_phantom_vec_processing_stage() -> Vec<ProcessingStage>;
+        fn __alef_phantom_vec_reduction_level() -> Vec<ReductionLevel>;
+        fn __alef_phantom_vec_pdf_annotation_type() -> Vec<PdfAnnotationType>;
+        fn __alef_phantom_vec_block_type() -> Vec<BlockType>;
+        fn __alef_phantom_vec_inline_type() -> Vec<InlineType>;
+        fn __alef_phantom_vec_relationship_kind() -> Vec<RelationshipKind>;
+        fn __alef_phantom_vec_content_layer() -> Vec<ContentLayer>;
+        fn __alef_phantom_vec_node_content() -> Vec<NodeContent>;
+        fn __alef_phantom_vec_annotation_kind() -> Vec<AnnotationKind>;
+        fn __alef_phantom_vec_entity_category() -> Vec<EntityCategory>;
+        fn __alef_phantom_vec_extraction_method() -> Vec<ExtractionMethod>;
+        fn __alef_phantom_vec_chunk_type() -> Vec<ChunkType>;
+        fn __alef_phantom_vec_image_kind() -> Vec<ImageKind>;
+        fn __alef_phantom_vec_result_format() -> Vec<ResultFormat>;
+        fn __alef_phantom_vec_element_type() -> Vec<ElementType>;
+        fn __alef_phantom_vec_format_metadata() -> Vec<FormatMetadata>;
+        fn __alef_phantom_vec_text_direction() -> Vec<TextDirection>;
+        fn __alef_phantom_vec_link_type() -> Vec<LinkType>;
+        fn __alef_phantom_vec_image_type() -> Vec<ImageType>;
+        fn __alef_phantom_vec_structured_data_type() -> Vec<StructuredDataType>;
+        fn __alef_phantom_vec_ocr_bounding_geometry() -> Vec<OcrBoundingGeometry>;
+        fn __alef_phantom_vec_ocr_element_level() -> Vec<OcrElementLevel>;
+        fn __alef_phantom_vec_page_unit_type() -> Vec<PageUnitType>;
+        fn __alef_phantom_vec_redaction_strategy() -> Vec<RedactionStrategy>;
+        fn __alef_phantom_vec_pii_category() -> Vec<PiiCategory>;
+        fn __alef_phantom_vec_diff_line() -> Vec<DiffLine>;
+        fn __alef_phantom_vec_revision_kind() -> Vec<RevisionKind>;
+        fn __alef_phantom_vec_revision_anchor() -> Vec<RevisionAnchor>;
+        fn __alef_phantom_vec_summary_strategy() -> Vec<SummaryStrategy>;
+        fn __alef_phantom_vec_uri_kind() -> Vec<UriKind>;
+        fn __alef_phantom_vec_region_kind() -> Vec<RegionKind>;
+        fn __alef_phantom_vec_keyword_algorithm() -> Vec<KeywordAlgorithm>;
+        fn __alef_phantom_vec_psm_mode() -> Vec<PSMMode>;
+        fn __alef_phantom_vec_paddle_language() -> Vec<PaddleLanguage>;
+        fn __alef_phantom_vec_layout_class() -> Vec<LayoutClass>;
+    }
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_cache_stats() -> Vec<CacheStats> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_acceleration_config() -> Vec<AccelerationConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_captioning_config() -> Vec<CaptioningConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_classification_config() -> Vec<PageClassificationConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_content_filter_config() -> Vec<ContentFilterConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_email_config() -> Vec<EmailConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extraction_config() -> Vec<ExtractionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_file_extraction_config() -> Vec<FileExtractionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_batch_bytes_item() -> Vec<BatchBytesItem> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_batch_file_item() -> Vec<BatchFileItem> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_extraction_config() -> Vec<ImageExtractionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_token_reduction_options() -> Vec<TokenReductionOptions> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_language_detection_config() -> Vec<LanguageDetectionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_html_output_config() -> Vec<HtmlOutputConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_layout_detection_config() -> Vec<LayoutDetectionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_llm_config() -> Vec<LlmConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_structured_extraction_config() -> Vec<StructuredExtractionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ner_config() -> Vec<NerConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_quality_thresholds() -> Vec<OcrQualityThresholds> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_pipeline_stage() -> Vec<OcrPipelineStage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_pipeline_config() -> Vec<OcrPipelineConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_config() -> Vec<OcrConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_config() -> Vec<PageConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pdf_config() -> Vec<PdfConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_hierarchy_config() -> Vec<HierarchyConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_post_processor_config() -> Vec<PostProcessorConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunking_config() -> Vec<ChunkingConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedding_config() -> Vec<EmbeddingConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_config() -> Vec<RedactionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_term() -> Vec<RedactionTerm> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_pattern() -> Vec<RedactionPattern> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_summarization_config() -> Vec<SummarizationConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_transcription_config() -> Vec<TranscriptionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_translation_config() -> Vec<TranslationConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_tree_sitter_config() -> Vec<TreeSitterConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_tree_sitter_process_config() -> Vec<TreeSitterProcessConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_supported_format() -> Vec<SupportedFormat> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_server_config() -> Vec<ServerConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_structured_data_result() -> Vec<StructuredDataResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_docx_app_properties() -> Vec<DocxAppProperties> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_xlsx_app_properties() -> Vec<XlsxAppProperties> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pptx_app_properties() -> Vec<PptxAppProperties> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_core_properties() -> Vec<CoreProperties> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_security_limits() -> Vec<SecurityLimits> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_token_reduction_config() -> Vec<TokenReductionConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_llm_backend() -> Vec<LlmBackend> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pattern_match() -> Vec<PatternMatch> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_token_counter() -> Vec<TokenCounter> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pdf_annotation() -> Vec<PdfAnnotation> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_classification() -> Vec<PageClassification> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_classification_label() -> Vec<ClassificationLabel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_djot_content() -> Vec<DjotContent> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_formatted_block() -> Vec<FormattedBlock> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_inline_element() -> Vec<InlineElement> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_djot_image() -> Vec<DjotImage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_djot_link() -> Vec<DjotLink> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_footnote() -> Vec<Footnote> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_document_structure() -> Vec<DocumentStructure> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_document_relationship() -> Vec<DocumentRelationship> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_document_node() -> Vec<DocumentNode> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_table_grid() -> Vec<TableGrid> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_grid_cell() -> Vec<GridCell> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_text_annotation() -> Vec<TextAnnotation> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_entity() -> Vec<Entity> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extraction_result() -> Vec<ExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_archive_entry() -> Vec<ArchiveEntry> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_processing_warning() -> Vec<ProcessingWarning> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_llm_usage() -> Vec<LlmUsage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunk() -> Vec<Chunk> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_heading_context() -> Vec<HeadingContext> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_heading_level() -> Vec<HeadingLevel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunk_metadata() -> Vec<ChunkMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extracted_image() -> Vec<ExtractedImage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_bounding_box() -> Vec<BoundingBox> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_element_metadata() -> Vec<ElementMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_element() -> Vec<Element> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_excel_workbook() -> Vec<ExcelWorkbook> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_excel_sheet() -> Vec<ExcelSheet> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_xml_extraction_result() -> Vec<XmlExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_text_extraction_result() -> Vec<TextExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pptx_extraction_result() -> Vec<PptxExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_email_extraction_result() -> Vec<EmailExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_email_attachment() -> Vec<EmailAttachment> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_extraction_result() -> Vec<OcrExtractionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_table() -> Vec<OcrTable> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_table_bounding_box() -> Vec<OcrTableBoundingBox> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_preprocessing_config() -> Vec<ImagePreprocessingConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_tesseract_config() -> Vec<TesseractConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_preprocessing_metadata() -> Vec<ImagePreprocessingMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_metadata() -> Vec<Metadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_excel_metadata() -> Vec<ExcelMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_email_metadata() -> Vec<EmailMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_archive_metadata() -> Vec<ArchiveMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_metadata() -> Vec<ImageMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_xml_metadata() -> Vec<XmlMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_text_metadata() -> Vec<TextMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_header_metadata() -> Vec<HeaderMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_link_metadata() -> Vec<LinkMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_metadata_type() -> Vec<ImageMetadataType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_structured_data() -> Vec<StructuredData> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_html_metadata() -> Vec<HtmlMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_metadata() -> Vec<OcrMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_error_metadata() -> Vec<ErrorMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pptx_metadata() -> Vec<PptxMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_docx_metadata() -> Vec<DocxMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_csv_metadata() -> Vec<CsvMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_bibtex_metadata() -> Vec<BibtexMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_citation_metadata() -> Vec<CitationMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_year_range() -> Vec<YearRange> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_fiction_book_metadata() -> Vec<FictionBookMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_dbf_metadata() -> Vec<DbfMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_dbf_field_info() -> Vec<DbfFieldInfo> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_jats_metadata() -> Vec<JatsMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_contributor_role() -> Vec<ContributorRole> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_epub_metadata() -> Vec<EpubMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pst_metadata() -> Vec<PstMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_audio_metadata() -> Vec<AudioMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_confidence() -> Vec<OcrConfidence> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_rotation() -> Vec<OcrRotation> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_element() -> Vec<OcrElement> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_element_config() -> Vec<OcrElementConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_structure() -> Vec<PageStructure> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_boundary() -> Vec<PageBoundary> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_info() -> Vec<PageInfo> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_content() -> Vec<PageContent> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_layout_region() -> Vec<LayoutRegion> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_hierarchy() -> Vec<PageHierarchy> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_hierarchical_block() -> Vec<HierarchicalBlock> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_qr_code() -> Vec<QrCode> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_qr_bounding_box() -> Vec<QrBoundingBox> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_report() -> Vec<RedactionReport> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_finding() -> Vec<RedactionFinding> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_cell_change() -> Vec<CellChange> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_document_revision() -> Vec<DocumentRevision> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_revision_delta() -> Vec<RevisionDelta> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_document_summary() -> Vec<DocumentSummary> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_table() -> Vec<Table> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_table_cell() -> Vec<TableCell> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_translation() -> Vec<Translation> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extracted_uri() -> Vec<ExtractedUri> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_detect_response() -> Vec<DetectResponse> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_diff_options() -> Vec<DiffOptions> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extraction_diff() -> Vec<ExtractionDiff> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_diff_hunk() -> Vec<DiffHunk> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_table_diff() -> Vec<TableDiff> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedded_changes() -> Vec<EmbeddedChanges> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedded_diff() -> Vec<EmbeddedDiff> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedding_preset() -> Vec<EmbeddingPreset> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_yake_params() -> Vec<YakeParams> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_rake_params() -> Vec<RakeParams> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_keyword_config() -> Vec<KeywordConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_keyword() -> Vec<Keyword> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_paddle_ocr_config() -> Vec<PaddleOcrConfig> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_model_paths() -> Vec<ModelPaths> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_orientation_result() -> Vec<OrientationResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_b_box() -> Vec<BBox> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_layout_detection() -> Vec<LayoutDetection> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_recognized_table() -> Vec<RecognizedTable> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_detection_result() -> Vec<DetectionResult> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedded_file() -> Vec<EmbeddedFile> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pdf_metadata() -> Vec<PdfMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_execution_provider_type() -> Vec<ExecutionProviderType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_output_format() -> Vec<OutputFormat> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_html_theme() -> Vec<HtmlTheme> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_table_model() -> Vec<TableModel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ner_backend_kind() -> Vec<NerBackendKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_vlm_fallback_policy() -> Vec<VlmFallbackPolicy> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunker_type() -> Vec<ChunkerType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunk_sizing() -> Vec<ChunkSizing> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_embedding_model_type() -> Vec<EmbeddingModelType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_whisper_model() -> Vec<WhisperModel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_code_content_mode() -> Vec<CodeContentMode> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_list_type() -> Vec<ListType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_backend_type() -> Vec<OcrBackendType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_processing_stage() -> Vec<ProcessingStage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_reduction_level() -> Vec<ReductionLevel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pdf_annotation_type() -> Vec<PdfAnnotationType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_block_type() -> Vec<BlockType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_inline_type() -> Vec<InlineType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_relationship_kind() -> Vec<RelationshipKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_content_layer() -> Vec<ContentLayer> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_node_content() -> Vec<NodeContent> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_annotation_kind() -> Vec<AnnotationKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_entity_category() -> Vec<EntityCategory> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_extraction_method() -> Vec<ExtractionMethod> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_chunk_type() -> Vec<ChunkType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_kind() -> Vec<ImageKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_result_format() -> Vec<ResultFormat> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_element_type() -> Vec<ElementType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_format_metadata() -> Vec<FormatMetadata> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_text_direction() -> Vec<TextDirection> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_link_type() -> Vec<LinkType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_image_type() -> Vec<ImageType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_structured_data_type() -> Vec<StructuredDataType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_bounding_geometry() -> Vec<OcrBoundingGeometry> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_ocr_element_level() -> Vec<OcrElementLevel> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_page_unit_type() -> Vec<PageUnitType> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_redaction_strategy() -> Vec<RedactionStrategy> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_pii_category() -> Vec<PiiCategory> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_diff_line() -> Vec<DiffLine> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_revision_kind() -> Vec<RevisionKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_revision_anchor() -> Vec<RevisionAnchor> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_summary_strategy() -> Vec<SummaryStrategy> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_uri_kind() -> Vec<UriKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_region_kind() -> Vec<RegionKind> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_keyword_algorithm() -> Vec<KeywordAlgorithm> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_psm_mode() -> Vec<PSMMode> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_paddle_language() -> Vec<PaddleLanguage> {
+    Vec::new()
+}
+
+#[doc(hidden)]
+pub fn __alef_phantom_vec_layout_class() -> Vec<LayoutClass> {
+    Vec::new()
 }
 
 pub struct CacheStats(pub kreuzberg::CacheStats);
@@ -6935,6 +8197,7 @@ pub fn llm_backend_detect(client: &LlmBackend, text: String, categories: Vec<Str
             .map(|vec| vec.into_iter().map(Entity).collect())
     })
 }
+
 pub fn llm_backend_detect_with_custom(
     client: &LlmBackend,
     text: String,
@@ -13557,19 +14820,13 @@ pub fn classify_pages(mut result: ExtractionResult, config: PageClassificationCo
     })
 }
 
-pub fn download_model(name: String, cache_dir: Option<String>) -> Result<String, String> {
-    kreuzberg::text::ner::download_model(&name, cache_dir.map(std::path::PathBuf::from))
-        .map_err(|e| e.to_string())
-        .map(|s| s.display().to_string())
-}
-
 pub fn default_model_name() -> String {
     kreuzberg::text::ner::default_model_name().to_string()
 }
 
 pub fn known_models() -> Vec<String> {
     kreuzberg::text::ner::known_models()
-        .into_iter()
+        .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
 }

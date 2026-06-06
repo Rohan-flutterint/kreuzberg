@@ -10,7 +10,9 @@ import RustBridge
 /// a Rust trait from the host side.
 public protocol SwiftEmbeddingBackendBridge: SwiftPluginBridge {
     func dimensions() -> Int
+
     func embed(texts: [String]) throws -> [[Float]]
+
 }
 
 public extension SwiftEmbeddingBackendBridge {
@@ -23,7 +25,7 @@ final class SwiftEmbeddingBackendAdapter {
     private let bridge: any SwiftEmbeddingBackendBridge
 
     init(bridge: any SwiftEmbeddingBackendBridge) {
-    self.bridge = bridge
+        self.bridge = bridge
     }
 
     func dimensionsCall() -> Int {
@@ -33,11 +35,11 @@ final class SwiftEmbeddingBackendAdapter {
 
     func embedCall(texts: [String]) throws -> String {
         do {
-    let result = try self.bridge.embed(texts: texts)
+            let result = try self.bridge.embed(texts: texts)
             return marshal_ok_result(try JSONEncoder().encode(result))
-    } catch {
-        return marshal_error_result(error)
-    }
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
 }

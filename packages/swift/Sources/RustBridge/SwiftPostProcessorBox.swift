@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftPostProcessorBox {
     private let bridge: any SwiftPostProcessorBridge
     public init(_ bridge: any SwiftPostProcessorBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,28 +36,22 @@ public final class SwiftPostProcessorBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_process(result: RustString, config: RustString) -> RustString {
         do {
           try bridge.process(result: result.toString(), config: config.toString())
           return encodeOkVoidEnvelope()
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_processing_stage() -> RustString {
         return RustString(bridge.processingStage())
     }
-
     public func alef_should_process(result: RustString, config: RustString) -> Bool {
         return bridge.shouldProcess(result: result.toString(), config: config.toString())
     }
-
     public func alef_estimated_duration_ms(result: RustString) -> UInt64 {
         return bridge.estimatedDurationMs(result: result.toString())
     }
-
     public func alef_priority() -> Int32 {
         return bridge.priority()
     }
-
 }

@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftOcrBackendBox {
     private let bridge: any SwiftOcrBackendBridge
     public init(_ bridge: any SwiftOcrBackendBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,49 +36,40 @@ public final class SwiftOcrBackendBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_process_image(image_bytes imageBytes: RustVec<UInt8>, config: RustString) -> RustString {
         do {
           let result = try bridge.processImage(imageBytes: Data(imageBytes), config: config.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_process_image_file(path: RustString, config: RustString) -> RustString {
         do {
           let result = try bridge.processImageFile(path: URL(fileURLWithPath: path.toString()), config: config.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
     public func alef_supports_language(lang: RustString) -> Bool {
         return bridge.supportsLanguage(lang: lang.toString())
     }
-
     public func alef_backend_type() -> RustString {
         return RustString(bridge.backendType())
     }
-
     public func alef_supported_languages() -> RustVec<RustString> {
         let strings = bridge.supportedLanguages()
         let vec = RustVec<RustString>()
         for s in strings { vec.push(value: RustString(s)) }
         return vec
     }
-
     public func alef_supports_table_detection() -> Bool {
         return bridge.supportsTableDetection()
     }
-
     public func alef_supports_document_processing() -> Bool {
         return bridge.supportsDocumentProcessing()
     }
-
     public func alef_process_document(path: RustString, config: RustString) -> RustString {
         do {
           let result = try bridge.processDocument(path: URL(fileURLWithPath: path.toString()), config: config.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
 }

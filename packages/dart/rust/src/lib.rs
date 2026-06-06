@@ -8,9 +8,7 @@
     clippy::too_many_arguments,
     clippy::unit_arg,
     clippy::type_complexity,
-    clippy::useless_conversion,
-    clippy::redundant_closure_call,
-    clippy::into_iter_on_ref
+    clippy::useless_conversion
 )]
 mod frb_generated;
 pub use flutter_rust_bridge::DartFnFuture;
@@ -10367,7 +10365,7 @@ pub fn batch_extract_files_sync(
             .collect::<Vec<_>>(),
         &kreuzberg::ExtractionConfig::from(config),
     )
-    .map(|v: Vec<_>| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
+    .map(|v| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
     .map_err(|e| e.to_string())
 }
 
@@ -10388,7 +10386,7 @@ pub fn batch_extract_bytes_sync(
             .collect::<Vec<_>>(),
         &kreuzberg::ExtractionConfig::from(config),
     )
-    .map(|v: Vec<_>| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
+    .map(|v| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
     .map_err(|e| e.to_string())
 }
 
@@ -10433,7 +10431,7 @@ pub async fn batch_extract_files(
         &kreuzberg::ExtractionConfig::from(config),
     )
     .await
-    .map(|v: Vec<_>| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
+    .map(|v| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
     .map_err(|e| e.to_string())
 }
 
@@ -10472,7 +10470,7 @@ pub async fn batch_extract_bytes(
         &kreuzberg::ExtractionConfig::from(config),
     )
     .await
-    .map(|v: Vec<_>| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
+    .map(|v| v.into_iter().map(ExtractionResult::from).collect::<Vec<_>>())
     .map_err(|e| e.to_string())
 }
 
@@ -10529,10 +10527,10 @@ pub fn get_extensions_for_mime(mime_type: String) -> Result<Vec<String>, String>
 /// as high-confidence by convention), and the pixel-space bounding box derived
 /// from the four corner points of the grid.
 pub fn detect_qr_codes(image_bytes: Vec<u8>, _format_hint: Option<String>) -> Vec<QrCode> {
-    (|v: Vec<_>| v.into_iter().map(QrCode::from).collect::<Vec<_>>())(kreuzberg::extractors::qr::detect_qr_codes(
-        &image_bytes,
-        _format_hint.as_deref(),
-    ))
+    kreuzberg::extractors::qr::detect_qr_codes(&image_bytes, _format_hint.as_deref())
+        .into_iter()
+        .map(QrCode::from)
+        .collect::<Vec<_>>()
 }
 
 /// List the names of all registered embedding backends.
@@ -10649,7 +10647,7 @@ pub fn default_model_name() -> String {
 /// All NER models kreuzberg knows about (used by `--all-ner-models`).
 pub fn known_models() -> Vec<String> {
     kreuzberg::text::ner::known_models()
-        .into_iter()
+        .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
 }
@@ -10667,9 +10665,10 @@ pub async fn redact(result: ExtractionResult, config: RedactionConfig) -> Result
 }
 
 pub fn find_all(text: String) -> Vec<PatternMatch> {
-    (|v: Vec<_>| v.into_iter().map(PatternMatch::from).collect::<Vec<_>>())(
-        kreuzberg::text::redaction::patterns::ssn::find_all(&text),
-    )
+    kreuzberg::text::redaction::patterns::ssn::find_all(&text)
+        .into_iter()
+        .map(PatternMatch::from)
+        .collect::<Vec<_>>()
 }
 
 /// Scan `text` for every PII category in `categories` and return all matches
@@ -10679,14 +10678,15 @@ pub fn find_all(text: String) -> Vec<PatternMatch> {
 /// Person / Organization / Location are *not* covered by the pattern engine —
 /// they must be supplied by a NER backend through the redaction engine.
 pub fn scan_text(text: String, categories: Vec<PiiCategory>) -> Vec<PatternMatch> {
-    (|v: Vec<_>| v.into_iter().map(PatternMatch::from).collect::<Vec<_>>())(
-        kreuzberg::text::redaction::patterns::scan_text(&text, unsafe {
-            std::slice::from_raw_parts(
-                std::mem::transmute::<*const PiiCategory, *const kreuzberg::PiiCategory>(categories.as_ptr()),
-                categories.len(),
-            )
-        }),
-    )
+    kreuzberg::text::redaction::patterns::scan_text(&text, unsafe {
+        std::slice::from_raw_parts(
+            std::mem::transmute::<*const PiiCategory, *const kreuzberg::PiiCategory>(categories.as_ptr()),
+            categories.len(),
+        )
+    })
+    .into_iter()
+    .map(PatternMatch::from)
+    .collect::<Vec<_>>()
 }
 
 /// Score and return the top-N sentences from `text`, joined in original order.
@@ -10727,7 +10727,7 @@ pub async fn translate_result(result: ExtractionResult, config: TranslationConfi
 /// The comparison is purely structural — no I/O, no side effects. All fields
 /// of `ExtractionDiff` are populated according to the provided `DiffOptions`.
 pub fn compare(a: ExtractionResult, b: ExtractionResult, opts: DiffOptions) -> ExtractionDiff {
-    (ExtractionDiff::from)(kreuzberg::compare(
+    ExtractionDiff::from(kreuzberg::compare(
         &kreuzberg::ExtractionResult::from(a),
         &kreuzberg::ExtractionResult::from(b),
         &kreuzberg::DiffOptions::from(opts),
@@ -10819,7 +10819,7 @@ pub async fn embed_texts_async(_texts: Vec<String>, _config: EmbeddingConfig) ->
 /// Returns `null` if no preset with the given name exists. Returns an owned
 /// clone so the value is safe to pass across FFI boundaries.
 pub fn get_embedding_preset(name: String) -> Option<EmbeddingPreset> {
-    (|v: Option<_>| v.map(EmbeddingPreset::from))(kreuzberg::get_embedding_preset(&name))
+    kreuzberg::get_embedding_preset(&name).map(EmbeddingPreset::from)
 }
 
 /// List the names of all available embedding presets.
@@ -11954,7 +11954,7 @@ pub fn create_pdf_metadata_from_json(json: String) -> Result<PdfMetadata, String
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct OcrBackendDartCallbacks {
+pub struct OcrBackendDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
@@ -12151,7 +12151,7 @@ pub fn clear_ocr_backends() -> Result<(), String> {
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct PostProcessorDartCallbacks {
+pub struct PostProcessorDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
@@ -12313,7 +12313,7 @@ pub fn clear_post_processors() -> Result<(), String> {
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct ValidatorDartCallbacks {
+pub struct ValidatorDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
@@ -12452,7 +12452,7 @@ pub fn clear_validators() -> Result<(), String> {
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct EmbeddingBackendDartCallbacks {
+pub struct EmbeddingBackendDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
@@ -12576,7 +12576,7 @@ pub fn clear_embedding_backends() -> Result<(), String> {
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct DocumentExtractorDartCallbacks {
+pub struct DocumentExtractorDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.
@@ -12754,7 +12754,7 @@ pub fn clear_document_extractors() -> Result<(), String> {
 /// closure fields behind the wrapper keeps FRB from walking them and silently
 /// dropping the factory (FRB v2 cannot generate callable Dart classes for
 /// `Box<dyn Fn(...)>` opaque-struct fields).
-struct RendererDartCallbacks {
+pub struct RendererDartCallbacks {
     /// Plugin name used by the Plugin super-trait impl.
     plugin_name: String,
     /// Plugin version used by the Plugin super-trait impl.

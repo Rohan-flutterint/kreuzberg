@@ -24,7 +24,6 @@
 package dev.kreuzberg
 
 import java.nio.file.Path
-
 /** Combined paths to all models needed for OCR (backward compatibility). */
 data class ModelPaths(
     /** Path to the detection model directory. */

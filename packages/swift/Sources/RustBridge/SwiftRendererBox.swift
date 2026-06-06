@@ -11,7 +11,6 @@ import RustBridge
 public final class SwiftRendererBox {
     private let bridge: any SwiftRendererBridge
     public init(_ bridge: any SwiftRendererBridge) { self.bridge = bridge }
-
     // MARK: Plugin super-trait shims
 
     public func alef_name() -> RustString {
@@ -37,12 +36,10 @@ public final class SwiftRendererBox {
     }
 
     // MARK: Trait-specific shims
-
     public func alef_render(doc: RustString) -> RustString {
         do {
           let result = try bridge.render(doc: doc.toString())
           return encodeOkEnvelope(result)
         } catch { return encodeErrEnvelope("\(error)") }
     }
-
 }

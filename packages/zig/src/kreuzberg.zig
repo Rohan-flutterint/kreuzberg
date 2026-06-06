@@ -4793,7 +4793,8 @@ pub fn batch_extract_files_sync(items: []const u8, config: []const u8) Kreuzberg
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Synchronous wrapper for `batch_extract_bytes`.
@@ -4824,7 +4825,8 @@ pub fn batch_extract_bytes_sync(items: []const u8, config: []const u8) Kreuzberg
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Extract content from multiple files concurrently.
@@ -4878,7 +4880,8 @@ pub fn batch_extract_files(items: []const u8, config: []const u8) KreuzbergError
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Extract content from multiple byte arrays concurrently.
@@ -4926,7 +4929,8 @@ pub fn batch_extract_bytes(items: []const u8, config: []const u8) KreuzbergError
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Detect MIME type from raw file bytes.
@@ -4956,7 +4960,8 @@ pub fn detect_mime_type_from_bytes(content: []const u8) KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Get file extensions for a given MIME type.
@@ -4981,7 +4986,8 @@ pub fn get_extensions_for_mime(mime_type: []const u8) KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Detect QR codes in the bytes of an `ExtractedImage`.
@@ -5013,7 +5019,8 @@ pub fn detect_qr_codes(image_bytes: []const u8, _format_hint: ?[]const u8) error
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List the names of all registered embedding backends.
@@ -5032,7 +5039,8 @@ pub fn list_embedding_backends() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List names of all registered document extractors.
@@ -5048,7 +5056,8 @@ pub fn list_document_extractors() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List all registered OCR backends.
@@ -5070,7 +5079,8 @@ pub fn list_ocr_backends() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Register every built-in post-processor enabled by the active feature set.
@@ -5109,7 +5119,8 @@ pub fn list_post_processors() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List names of all registered renderers.
@@ -5129,7 +5140,8 @@ pub fn list_renderers() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// List names of all registered validators.
@@ -5145,7 +5157,8 @@ pub fn list_validators() KreuzbergError![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Run page classification against an extraction result.
@@ -5200,7 +5213,8 @@ pub fn download_model(name: []const u8, cache_dir: ?[]const u8) KreuzbergError![
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Pinned default NER model identifier.
@@ -5212,7 +5226,8 @@ pub fn default_model_name() error{OutOfMemory}![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// All NER models kreuzberg knows about (used by `--all-ner-models`).
@@ -5224,7 +5239,8 @@ pub fn known_models() error{OutOfMemory}![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Run pattern redaction (and optional NER-driven redaction) over `result` and
@@ -5270,7 +5286,8 @@ pub fn summarize(text: []const u8, language: ?[]const u8, max_tokens: ?u32) erro
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Count whitespace-separated tokens (used for token-budget bookkeeping by
@@ -5383,7 +5400,8 @@ pub fn extract_region_with_vlm(image_bytes: []const u8, image_mime: []const u8, 
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Render a single PDF page to PNG bytes.
@@ -5430,7 +5448,8 @@ pub fn detect_mime_type(path: []const u8, check_exists: bool) KreuzbergError![]u
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 pub fn embed_texts_async(_texts: []const u8, _config: []const u8) KreuzbergError![]u8 {
@@ -5455,7 +5474,8 @@ pub fn embed_texts_async(_texts: []const u8, _config: []const u8) KreuzbergError
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Get an embedding preset by name.
@@ -5489,7 +5509,8 @@ pub fn list_embedding_presets() error{OutOfMemory}![]u8 {
         const owned = try std.heap.c_allocator.dupe(u8, slice);
         _free_string(_result);
         break :blk owned;
-    };
+    }
+;
 }
 
 /// Vtable for a Zig implementation of the `OcrBackend` trait.
@@ -5646,7 +5667,13 @@ pub const IOcrBackend = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_ocr_backend(name: [*c]const u8, vtable: IOcrBackend, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_ocr_backend(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergOcrBackendVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_ocr_backend(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }
@@ -5983,7 +6010,13 @@ pub const IPostProcessor = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_post_processor(name: [*c]const u8, vtable: IPostProcessor, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_post_processor(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergPostProcessorVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_post_processor(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }
@@ -6280,7 +6313,13 @@ pub const IValidator = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_validator(name: [*c]const u8, vtable: IValidator, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_validator(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergValidatorVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_validator(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }
@@ -6440,7 +6479,13 @@ pub const IEmbeddingBackend = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_embedding_backend(name: [*c]const u8, vtable: IEmbeddingBackend, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_embedding_backend(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergEmbeddingBackendVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_embedding_backend(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }
@@ -6669,7 +6714,13 @@ pub const IDocumentExtractor = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_document_extractor(name: [*c]const u8, vtable: IDocumentExtractor, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_document_extractor(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergDocumentExtractorVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_document_extractor(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }
@@ -6868,7 +6919,13 @@ pub const IRenderer = extern struct {
 /// Returns 0 on success; non-zero on failure (error text written to `out_error`).
 pub fn register_renderer(name: [*c]const u8, vtable: IRenderer, user_data: ?*anyopaque, out_error: ?*?[*c]u8) i32 {
     var _out_error: [*c]u8 = null;
-    const _rc = c.kreuzberg_register_renderer(name, vtable, user_data, @ptrCast(&_out_error));
+    // The Zig-side `I{Trait}` and the cimport'd C `{c_vtable_type}` are both
+    // `extern struct` with identical layout, but Zig considers them nominally
+    // distinct and rejects the direct call with `expected type
+    // '{c_vtable_type}', found 'I{Trait}'`. `@bitCast` performs the
+    // layout-preserving reinterpretation that crosses the nominal boundary.
+    const _c_vtable: c.struct_KREUZBERGKreuzbergRendererVTable = @bitCast(vtable);
+    const _rc = c.kreuzberg_register_renderer(name, _c_vtable, user_data, @ptrCast(&_out_error));
     if (out_error) |ptr| {
         ptr.* = _out_error;
     }

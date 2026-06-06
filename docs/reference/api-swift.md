@@ -674,31 +674,6 @@ public static func classifyPages(result: ExtractionResult, config: PageClassific
 
 ---
 
-#### downloadModel()
-
-Eagerly download a NER model into the kreuzberg cache.
-
-`name` is a HuggingFace repo id (e.g. `urchade/gliner_multi-v2.1`). The
-CLI flag `kreuzberg warm --ner` delegates here.
-
-**Signature:**
-
-```swift
-public static func downloadModel(name: String, cacheDir: URL? = nil) throws -> URL
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `name` | `String` | Yes | The name |
-| `cacheDir` | `URL?` | No | The cache dir |
-
-**Returns:** `URL`
-**Errors:** Throws `Error`.
-
----
-
 #### defaultModelName()
 
 Pinned default NER model identifier.
@@ -747,50 +722,6 @@ public static func redact(result: ExtractionResult, config: RedactionConfig) thr
 
 **Returns:** `Void`
 **Errors:** Throws `Error`.
-
----
-
-#### findAll()
-
-**Signature:**
-
-```swift
-public static func findAll(text: String) -> [PatternMatch]
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `String` | Yes | The text |
-
-**Returns:** `[PatternMatch]`
-
----
-
-#### scanText()
-
-Scan `text` for every PII category in `categories` and return all matches
-in source-byte order.
-
-When `categories` is empty every supported regex-detectable category fires.
-Person / Organization / Location are *not* covered by the pattern engine —
-they must be supplied by a NER backend through the redaction engine.
-
-**Signature:**
-
-```swift
-public static func scanText(text: String, categories: [PiiCategory]) -> [PatternMatch]
-```
-
-**Parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `String` | Yes | The text |
-| `categories` | `[PiiCategory]` | Yes | The categories |
-
-**Returns:** `[PatternMatch]`
 
 ---
 

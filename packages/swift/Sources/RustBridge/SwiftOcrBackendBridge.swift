@@ -10,13 +10,21 @@ import RustBridge
 /// a Rust trait from the host side.
 public protocol SwiftOcrBackendBridge: SwiftPluginBridge {
     func processImage(imageBytes: Data, config: String) throws -> String
+
     func processImageFile(path: URL, config: String) throws -> String
+
     func supportsLanguage(lang: String) -> Bool
+
     func backendType() -> String
+
     func supportedLanguages() -> [String]
+
     func supportsTableDetection() -> Bool
+
     func supportsDocumentProcessing() -> Bool
+
     func processDocument(path: URL, config: String) throws -> String
+
 }
 
 public extension SwiftOcrBackendBridge {
@@ -49,33 +57,33 @@ final class SwiftOcrBackendAdapter {
     private let bridge: any SwiftOcrBackendBridge
 
     init(bridge: any SwiftOcrBackendBridge) {
-    self.bridge = bridge
+        self.bridge = bridge
     }
 
     func processImageCall(imageBytes: Data, config: String) throws -> String {
         do {
-    let result = try self.bridge.processImage(imageBytes: imageBytes, config: config)
+            let result = try self.bridge.processImage(imageBytes: imageBytes, config: config)
             let encodedData = try marshal_encode_excluded(result)
-    if let jsonString = String(data: encodedData, encoding: .utf8) {
-        return "{\"ok\": \(jsonString)}"
-    }
-    return "{\"ok\": null}"
-    } catch {
-        return marshal_error_result(error)
-    }
+            if let jsonString = String(data: encodedData, encoding: .utf8) {
+                return "{\"ok\": \(jsonString)}"
+            }
+            return "{\"ok\": null}"
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
     func processImageFileCall(path: URL, config: String) throws -> String {
         do {
-    let result = try self.bridge.processImageFile(path: path, config: config)
+            let result = try self.bridge.processImageFile(path: path, config: config)
             let encodedData = try marshal_encode_excluded(result)
-    if let jsonString = String(data: encodedData, encoding: .utf8) {
-        return "{\"ok\": \(jsonString)}"
-    }
-    return "{\"ok\": null}"
-    } catch {
-        return marshal_error_result(error)
-    }
+            if let jsonString = String(data: encodedData, encoding: .utf8) {
+                return "{\"ok\": \(jsonString)}"
+            }
+            return "{\"ok\": null}"
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
     func supportsLanguageCall(lang: String) -> Bool {
@@ -105,15 +113,15 @@ final class SwiftOcrBackendAdapter {
 
     func processDocumentCall(path: URL, config: String) throws -> String {
         do {
-    let result = try self.bridge.processDocument(path: path, config: config)
+            let result = try self.bridge.processDocument(path: path, config: config)
             let encodedData = try marshal_encode_excluded(result)
-    if let jsonString = String(data: encodedData, encoding: .utf8) {
-        return "{\"ok\": \(jsonString)}"
-    }
-    return "{\"ok\": null}"
-    } catch {
-        return marshal_error_result(error)
-    }
+            if let jsonString = String(data: encodedData, encoding: .utf8) {
+                return "{\"ok\": \(jsonString)}"
+            }
+            return "{\"ok\": null}"
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
 }

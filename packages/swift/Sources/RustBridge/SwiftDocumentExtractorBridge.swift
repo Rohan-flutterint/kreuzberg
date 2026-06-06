@@ -10,10 +10,15 @@ import RustBridge
 /// a Rust trait from the host side.
 public protocol SwiftDocumentExtractorBridge: SwiftPluginBridge {
     func extractBytes(content: Data, mimeType: String, config: String) throws -> String
+
     func extractFile(path: URL, mimeType: String, config: String) throws -> String
+
     func supportedMimeTypes() -> [String]
+
     func priority() -> Int32
+
     func canHandle(path: URL, mimeType: String) -> Bool
+
 }
 
 public extension SwiftDocumentExtractorBridge {
@@ -38,33 +43,33 @@ final class SwiftDocumentExtractorAdapter {
     private let bridge: any SwiftDocumentExtractorBridge
 
     init(bridge: any SwiftDocumentExtractorBridge) {
-    self.bridge = bridge
+        self.bridge = bridge
     }
 
     func extractBytesCall(content: Data, mimeType: String, config: String) throws -> String {
         do {
-    let result = try self.bridge.extractBytes(content: content, mimeType: mimeType, config: config)
+            let result = try self.bridge.extractBytes(content: content, mimeType: mimeType, config: config)
             let encodedData = try marshal_encode_excluded(result)
-    if let jsonString = String(data: encodedData, encoding: .utf8) {
-        return "{\"ok\": \(jsonString)}"
-    }
-    return "{\"ok\": null}"
-    } catch {
-        return marshal_error_result(error)
-    }
+            if let jsonString = String(data: encodedData, encoding: .utf8) {
+                return "{\"ok\": \(jsonString)}"
+            }
+            return "{\"ok\": null}"
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
     func extractFileCall(path: URL, mimeType: String, config: String) throws -> String {
         do {
-    let result = try self.bridge.extractFile(path: path, mimeType: mimeType, config: config)
+            let result = try self.bridge.extractFile(path: path, mimeType: mimeType, config: config)
             let encodedData = try marshal_encode_excluded(result)
-    if let jsonString = String(data: encodedData, encoding: .utf8) {
-        return "{\"ok\": \(jsonString)}"
-    }
-    return "{\"ok\": null}"
-    } catch {
-        return marshal_error_result(error)
-    }
+            if let jsonString = String(data: encodedData, encoding: .utf8) {
+                return "{\"ok\": \(jsonString)}"
+            }
+            return "{\"ok\": null}"
+        } catch {
+            return marshal_error_result(error)
+        }
     }
 
     func supportedMimeTypesCall() -> [String] {
