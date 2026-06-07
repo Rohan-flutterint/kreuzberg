@@ -27,6 +27,7 @@ static RE_UK: Lazy<Regex> =
 static RE_CA: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\b[A-Z][0-9][A-Z]\s?[0-9][A-Z][0-9]\b").expect("ca postal regex compiles"));
 
+/// Find all postal code spans in `text` (US ZIP, UK postcode, German PLZ, Canadian FSA, and more).
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     let mut matches = Vec::new();
 

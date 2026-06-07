@@ -134,8 +134,11 @@ fn label_to_category(class: &str) -> EntityCategory {
 /// model can be safely shared across async tasks (inference is synchronous and
 /// serialised internally by the mutex).
 pub struct GlineBackend {
+    /// HuggingFace repository ID used to load this model (e.g. `"urchade/gliner_multi-v2.1"`).
     pub repo_id: String,
+    /// Local path to the cached ONNX model file.
     pub model_path: PathBuf,
+    /// Local path to the cached tokenizer file.
     pub tokenizer_path: PathBuf,
     // SAFETY: GLiNER<SpanMode> is Send (all sub-fields are Send). The Mutex
     // serialises concurrent inference calls, which is required by the

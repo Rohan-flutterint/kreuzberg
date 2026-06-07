@@ -4,6 +4,7 @@ use super::utils::MINIMAL_SUPPORTED_TESSERACT_VERSION;
 use ahash::AHashSet;
 use std::sync::LazyLock;
 
+/// Set of all Tesseract ISO 639-based language codes recognized by this library.
 pub static TESSERACT_SUPPORTED_LANGUAGE_CODES: LazyLock<AHashSet<&'static str>> = LazyLock::new(|| {
     let mut set = AHashSet::new();
     set.insert("afr");
@@ -130,6 +131,13 @@ pub static TESSERACT_SUPPORTED_LANGUAGE_CODES: LazyLock<AHashSet<&'static str>> 
     set
 });
 
+/// Validate a Tesseract language code (or `+`-separated list of codes).
+///
+/// Accepts `"all"` and `"*"` as special values that auto-detect installed languages.
+///
+/// # Errors
+///
+/// Returns [`OcrError::InvalidLanguageCode`] if any component is not in the supported set.
 #[cfg_attr(alef, alef(skip))]
 pub fn validate_language_code(lang_code: &str) -> Result<(), OcrError> {
     // Accept "all" and "*" as special values to auto-detect installed languages

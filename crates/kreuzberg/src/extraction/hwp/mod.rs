@@ -10,9 +10,13 @@
 //! let text = extract_hwp_text(bytes)?;
 //! ```
 
+/// Error types for HWP parsing failures.
 pub mod error;
+/// Document model types for extracted HWP content.
 pub mod model;
+/// HWP record, file-header, and body-text parsers.
 pub mod parser;
+/// CFB compound-file reader and decompression utilities.
 pub mod reader;
 
 use crate::extraction::hwp::model::HwpDocument;

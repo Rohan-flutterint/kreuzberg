@@ -25,9 +25,13 @@ pub struct PptExtractionResult {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Default)]
 pub struct PptMetadata {
+    /// Presentation title from the OLE summary information.
     pub title: Option<String>,
+    /// Presentation subject from the OLE summary information.
     pub subject: Option<String>,
+    /// Original author from the OLE summary information.
     pub author: Option<String>,
+    /// Most recent editor from the OLE summary information.
     pub last_author: Option<String>,
 }
 

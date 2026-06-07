@@ -16,7 +16,12 @@ pub enum ThemeColor {
     /// Direct hex RGB color (e.g., "156082").
     Rgb(String),
     /// System color with fallback RGB (e.g., "windowText" with lastClr "000000").
-    System { name: String, last_color: String },
+    System {
+        /// System color name (e.g., `"windowText"`, `"window"`).
+        name: String,
+        /// Fallback hex RGB color used when the system color cannot be resolved.
+        last_color: String,
+    },
 }
 
 /// Color scheme containing all 12 standard Office theme colors.

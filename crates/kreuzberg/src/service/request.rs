@@ -8,9 +8,19 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub enum ExtractionSource {
     /// Extract from a filesystem path with an optional MIME type hint.
-    File { path: PathBuf, mime_hint: Option<String> },
+    File {
+        /// Filesystem path to the document.
+        path: PathBuf,
+        /// Optional MIME type hint to skip content-based detection.
+        mime_hint: Option<String>,
+    },
     /// Extract from in-memory bytes with a known MIME type.
-    Bytes { data: Bytes, mime_type: String },
+    Bytes {
+        /// Raw document bytes.
+        data: Bytes,
+        /// MIME type of the in-memory document.
+        mime_type: String,
+    },
 }
 #[cfg_attr(alef, alef(skip))]
 /// A request to extract content from a single document.

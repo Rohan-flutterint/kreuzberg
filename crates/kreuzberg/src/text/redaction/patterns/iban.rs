@@ -24,6 +24,7 @@ static RE_IBAN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b").expect("iban regex compiles")
 });
 
+/// Find all IBAN spans in `text`, validated against country-specific length rules.
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     let upper = text.to_ascii_uppercase();
 

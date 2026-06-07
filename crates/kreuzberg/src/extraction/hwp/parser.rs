@@ -16,9 +16,11 @@ const HWP_SIGNATURE: &[u8] = b"HWP Document File";
 // FileHeader — 256-byte header at the start of every HWP 5.0 file
 // ---------------------------------------------------------------------------
 
+/// The 256-byte file header at the start of every HWP 5.0 document.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone)]
 pub struct FileHeader {
+    /// Flags word from bytes 36–39 (little-endian u32): bit 0 = compressed, bit 1 = encrypted.
     pub flags: u32,
 }
 
@@ -57,10 +59,16 @@ impl FileHeader {
 // Record header / Record — the fundamental binary units in HWP streams
 // ---------------------------------------------------------------------------
 
+/// A single HWP binary record decoded from a stream.
+///
+/// Each record starts with a 32-bit packed header containing the tag ID,
+/// outline level, and payload size; followed by the raw payload bytes.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug)]
 pub struct Record {
+    /// Tag identifier (10-bit value from the packed record header).
     pub tag_id: u16,
+    /// Raw payload bytes for this record.
     pub data: Vec<u8>,
 }
 

@@ -8,23 +8,30 @@
 //! The ONNX session is cached globally so that repeated extractions (e.g. batch
 //! processing) pay model-load cost only once.
 
+/// Layout detection result types (pure-Rust, available under `layout-types`).
 pub mod types;
 
 #[cfg(feature = "layout-detection")]
+/// High-level layout detection engine wrapping model loading and inference.
 pub mod engine;
 #[cfg(feature = "layout-detection")]
+/// Error types for layout detection failures.
 pub mod error;
 #[cfg(feature = "layout-detection")]
 pub(crate) mod inference_timings;
 #[cfg(feature = "layout-detection")]
 mod model_manager;
 #[cfg(feature = "layout-detection")]
+/// ONNX model implementations for layout detection (RT-DETR, YOLO, TATR, SLANeXT).
 pub mod models;
 #[cfg(feature = "layout-detection")]
+/// Postprocessing heuristics and NMS for raw model detections.
 pub mod postprocessing;
 #[cfg(feature = "layout-detection")]
+/// Image preprocessing (resize, letterbox, normalization) for layout model input.
 pub mod preprocessing;
 #[cfg(feature = "layout-detection")]
+/// ONNX Runtime session creation and configuration helpers.
 pub mod session;
 
 pub use types::{BBox, DetectionResult, LayoutClass, LayoutDetection};

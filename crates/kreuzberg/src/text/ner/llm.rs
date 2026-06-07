@@ -22,6 +22,7 @@ pub struct LlmBackend {
 }
 
 impl LlmBackend {
+    /// Create a new LLM-backed NER backend with the given LLM configuration.
     pub fn new(config: LlmConfig) -> Self {
         Self { config }
     }

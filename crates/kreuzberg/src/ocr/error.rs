@@ -1,16 +1,24 @@
 use std::fmt;
 
-/// OCR-specific errors (pure Rust, no PyO3)
+/// OCR-specific errors (pure Rust, no PyO3).
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone)]
 pub enum OcrError {
+    /// Tesseract failed to initialize with the given configuration.
     TesseractInitializationFailed(String),
+    /// Tesseract version is below the minimum supported version.
     UnsupportedVersion(String),
+    /// Configuration parameter is invalid or out of range.
     InvalidConfiguration(String),
+    /// Language code is not recognized by Tesseract.
     InvalidLanguageCode(String),
+    /// Image preprocessing or decoding failed.
     ImageProcessingFailed(String),
+    /// The OCR recognition step itself failed.
     ProcessingFailed(String),
+    /// Reading or writing the OCR result cache failed.
     CacheError(String),
+    /// An I/O error occurred while reading an image or writing output.
     IOError(String),
 }
 

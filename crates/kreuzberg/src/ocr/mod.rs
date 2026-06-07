@@ -39,29 +39,43 @@
 //! ```
 mod backends;
 #[cfg(feature = "ocr")]
+/// Persistent file-backed cache for OCR results keyed by image hash and config.
 pub mod cache;
 #[cfg(any(feature = "ocr", feature = "paddle-ocr"))]
+/// Type conversions between internal OCR types and public API types.
 pub mod conversion;
+/// OCR error types.
 pub mod error;
 #[cfg(feature = "ocr")]
+/// hOCR HTML output parser that extracts word bounding boxes and confidence scores.
 pub mod hocr_parser;
+/// Registry of Tesseract language codes and language-pack validation helpers.
 pub mod language_registry;
 #[cfg(feature = "layout-detection")]
+/// Assembles layout-detection bounding boxes with OCR word spans for region-level extraction.
 pub mod layout_assembly;
 #[cfg(feature = "ocr")]
+/// High-level Tesseract OCR processor with caching and table reconstruction.
 pub mod processor;
 #[cfg(feature = "ocr")]
+/// TSV and hOCR table reconstruction utilities.
 pub mod table;
 #[cfg(feature = "ocr")]
+/// Tessdata language-pack download and management utilities.
 pub mod tessdata_manager;
 #[cfg(feature = "ocr")]
+/// Native Tesseract backend using `kreuzberg-tesseract` (C FFI).
 pub mod tesseract_backend;
 #[cfg(all(feature = "ocr-wasm", not(feature = "ocr")))]
+/// WebAssembly Tesseract backend using `tesseract-wasm`.
 pub mod tesseract_wasm_backend;
+/// OCR configuration and result types shared across all backends.
 pub mod types;
 #[cfg(feature = "ocr")]
+/// Utility functions for OCR result hashing and formatting constants.
 pub mod utils;
 #[cfg(feature = "ocr")]
+/// Validation helpers for language codes and Tesseract version constraints.
 pub mod validation;
 
 #[cfg(feature = "ocr")]

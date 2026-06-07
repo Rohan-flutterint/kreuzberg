@@ -1,7 +1,12 @@
+/// RT-DETR v2 layout detection model.
 pub mod rtdetr;
+/// SLANeXT table structure recognition model.
 pub mod slanet;
+/// Binary classifier for distinguishing wired vs wireless tables.
 pub mod table_classifier;
+/// Table Transformer (TATR) table structure recognition model.
 pub mod tatr;
+/// YOLO-based layout detection models (DocLayNet, DocStructBench, YOLOX variants).
 pub mod yolo;
 
 use image::RgbImage;

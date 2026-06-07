@@ -12,18 +12,24 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Drawing {
+    /// Whether the drawing is inline (in text flow) or anchored (floating).
     pub drawing_type: DrawingType,
+    /// Physical dimensions in EMUs (English Metric Units).
     pub extent: Option<Extent>,
+    /// Document properties such as ID, name, and alt-text description.
     pub doc_properties: Option<DocProperties>,
-    pub image_ref: Option<String>, // r:embed rId value
+    /// Relationship ID (`r:embed`) referencing the image part in the DOCX package.
+    pub image_ref: Option<String>,
 }
 
 /// Whether the drawing is inline or anchored.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub enum DrawingType {
+    /// Drawing is inline: placed within the text flow at its insertion point.
     #[default]
     Inline,
+    /// Drawing is anchored: floats at a fixed position relative to the page or paragraph.
     Anchored(AnchorProperties),
 }
 
@@ -31,8 +37,10 @@ pub enum DrawingType {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Extent {
-    pub cx: i64, // width in EMU
-    pub cy: i64, // height in EMU
+    /// Width in EMU.
+    pub cx: i64,
+    /// Height in EMU.
+    pub cy: i64,
 }
 
 impl Extent {
@@ -53,20 +61,29 @@ impl Extent {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct DocProperties {
+    /// Unique numeric identifier for this drawing within the document.
     pub id: Option<String>,
+    /// Human-readable name for this drawing object.
     pub name: Option<String>,
-    pub description: Option<String>, // alt text
+    /// Alt-text description for accessibility.
+    pub description: Option<String>,
 }
 
 /// Properties for anchored drawings.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct AnchorProperties {
+    /// Whether the drawing is placed behind the document text.
     pub behind_doc: bool,
+    /// Whether the drawing is laid out inside a table cell.
     pub layout_in_cell: bool,
+    /// Z-order relative height used for stacking overlapping objects.
     pub relative_height: Option<i64>,
+    /// Horizontal position specification.
     pub position_h: Option<Position>,
+    /// Vertical position specification.
     pub position_v: Option<Position>,
+    /// Text-wrapping mode around this drawing.
     pub wrap_type: WrapType,
 }
 
@@ -74,19 +91,26 @@ pub struct AnchorProperties {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Position {
-    pub relative_from: String, // "page", "margin", "column", "paragraph", "character"
-    pub offset: Option<i64>,   // EMUs
+    /// Reference object for this position: `"page"`, `"margin"`, `"column"`, `"paragraph"`, or `"character"`.
+    pub relative_from: String,
+    /// Offset from the reference object in EMUs.
+    pub offset: Option<i64>,
 }
 
-/// Text wrapping type.
+/// Text wrapping type around an anchored drawing.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub enum WrapType {
+    /// No text wrapping; drawing floats above or below text.
     #[default]
     None,
+    /// Text wraps in a square around the drawing bounding box.
     Square,
+    /// Text wraps tightly to the drawing outline.
     Tight,
+    /// Text appears above and below but not to the sides.
     TopAndBottom,
+    /// Text flows through the drawing's transparent areas.
     Through,
 }
 

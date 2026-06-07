@@ -2,19 +2,30 @@ use serde::{Deserialize, Serialize};
 
 pub use crate::types::ImagePreprocessingConfig;
 
-/// Page Segmentation Mode for Tesseract OCR
+/// Page Segmentation Mode for Tesseract OCR.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PSMMode {
+    /// Orientation and script detection only.
     OsdOnly = 0,
+    /// Automatic page segmentation with OSD.
     AutoOsd = 1,
+    /// Automatic page segmentation without OSD or OCR.
     AutoOnly = 2,
+    /// Fully automatic page segmentation with no OSD (default).
     Auto = 3,
+    /// Assume a single column of text of variable sizes.
     SingleColumn = 4,
+    /// Assume a single uniform block of vertically aligned text.
     SingleBlockVertical = 5,
+    /// Assume a single uniform block of text.
     SingleBlock = 6,
+    /// Treat the image as a single text line.
     SingleLine = 7,
+    /// Treat the image as a single word.
     SingleWord = 8,
+    /// Treat the image as a single word in a circle.
     CircleWord = 9,
+    /// Treat the image as a single character.
     SingleChar = 10,
 }
 
@@ -49,31 +60,47 @@ impl PSMMode {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TesseractConfig {
+    /// Tesseract language code (e.g. `"eng"`, `"deu"`, `"eng+fra"`).
     pub language: String,
+    /// Page Segmentation Mode as a raw `u8` (see [`PSMMode`]).
     pub psm: u8,
+    /// OCR output format: `"text"`, `"markdown"`, `"hocr"`, or `"tsv"`.
     pub output_format: String,
-
+    /// OCR Engine Mode (0 = Legacy, 1 = LSTM, 2 = Both, 3 = Default).
     pub oem: u8,
-
+    /// Minimum word confidence threshold (0.0–100.0); words below are dropped.
     pub min_confidence: f64,
-
+    /// Optional image preprocessing applied before recognition.
     pub preprocessing: Option<ImagePreprocessingConfig>,
-
+    /// Whether to attempt table detection from hOCR/TSV output.
     pub enable_table_detection: bool,
+    /// Minimum confidence for cells included in reconstructed tables.
     pub table_min_confidence: f64,
+    /// Pixel threshold for grouping words into columns.
     pub table_column_threshold: u32,
+    /// Fraction of column height a word must span to count as a row separator.
     pub table_row_threshold_ratio: f64,
-
+    /// Whether to use the on-disk OCR result cache.
     pub use_cache: bool,
+    /// Tesseract `classify_use_pre_adapted_templates` variable.
     pub classify_use_pre_adapted_templates: bool,
+    /// Tesseract `language_model_ngram_on` variable.
     pub language_model_ngram_on: bool,
+    /// Tesseract `tessedit_dont_blkrej_good_wds` variable.
     pub tessedit_dont_blkrej_good_wds: bool,
+    /// Tesseract `tessedit_dont_rowrej_good_wds` variable.
     pub tessedit_dont_rowrej_good_wds: bool,
+    /// Tesseract `tessedit_enable_dict_correction` variable.
     pub tessedit_enable_dict_correction: bool,
+    /// Restrict recognized characters to this set (empty = unrestricted).
     pub tessedit_char_whitelist: String,
+    /// Exclude these characters from recognition (empty = none excluded).
     pub tessedit_char_blacklist: String,
+    /// Tesseract `tessedit_use_primary_params_model` variable.
     pub tessedit_use_primary_params_model: bool,
+    /// Tesseract `textord_space_size_is_variable` variable.
     pub textord_space_size_is_variable: bool,
+    /// Use adaptive thresholding (`true`) instead of Otsu (`false`).
     pub thresholding_method: bool,
 
     /// Enable automatic page rotation based on orientation detection.
@@ -165,31 +192,43 @@ impl From<&crate::types::TesseractConfig> for TesseractConfig {
     }
 }
 
-/// OCR extraction result
+/// OCR extraction result returned by the internal OCR processor.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtractionResult {
+    /// Extracted text content (plain text, Markdown, or hOCR depending on `output_format`).
     pub content: String,
+    /// MIME type of the source image.
     pub mime_type: String,
+    /// Additional metadata key-value pairs (e.g. page count, engine version).
     pub metadata: std::collections::HashMap<String, serde_json::Value>,
+    /// Tables reconstructed from the OCR output.
     pub tables: Vec<Table>,
 }
 
-/// Extracted table from OCR
+/// A table reconstructed from OCR output (hOCR or TSV word bounding boxes).
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
+    /// Cell text as a 2D grid (rows × columns).
     pub cells: Vec<Vec<String>>,
+    /// Markdown-formatted table string.
     pub markdown: String,
+    /// Zero-based page index this table was found on.
     pub page_number: i32,
 }
+
+/// Result for a single item in a batch OCR operation.
 #[cfg_attr(alef, alef(skip))]
-/// Batch item result for processing multiple files
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BatchItemResult {
+    /// Path to the source file that was processed.
     pub file_path: String,
+    /// Whether OCR succeeded for this file.
     pub success: bool,
+    /// Extraction result, present when `success` is `true`.
     pub result: Option<crate::types::OcrExtractionResult>,
+    /// Error message, present when `success` is `false`.
     pub error: Option<String>,
 }
 

@@ -14,7 +14,9 @@ use quick_xml::events::{BytesStart, Event};
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Orientation {
+    /// Page height is greater than page width.
     Portrait,
+    /// Page width is greater than page height.
     Landscape,
 }
 
@@ -42,12 +44,19 @@ pub struct PageMargins {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct PageMarginsPoints {
+    /// Top margin in points.
     pub top: Option<f64>,
+    /// Right margin in points.
     pub right: Option<f64>,
+    /// Bottom margin in points.
     pub bottom: Option<f64>,
+    /// Left margin in points.
     pub left: Option<f64>,
+    /// Header offset in points.
     pub header: Option<f64>,
+    /// Footer offset in points.
     pub footer: Option<f64>,
+    /// Gutter margin in points.
     pub gutter: Option<f64>,
 }
 
@@ -59,7 +68,7 @@ pub struct ColumnLayout {
     pub count: Option<i32>,
     /// Space between columns in twips.
     pub space_twips: Option<i32>,
-    /// Whether columns have equal width.
+    /// Whether columns have equal width; if `false`, individual widths may vary.
     pub equal_width: Option<bool>,
 }
 

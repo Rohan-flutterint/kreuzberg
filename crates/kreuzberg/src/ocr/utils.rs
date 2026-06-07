@@ -1,8 +1,9 @@
 /// Minimal supported Tesseract version
 pub const MINIMAL_SUPPORTED_TESSERACT_VERSION: u32 = 5;
 
-/// TSV parsing constants
+/// TSV confidence-level value that corresponds to individual word entries.
 pub const TSV_WORD_LEVEL: u32 = 5;
+/// Minimum number of tab-separated fields expected per TSV word line.
 pub const TSV_MIN_FIELDS: usize = 12;
 
 /// Table formatting constants

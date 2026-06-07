@@ -52,4 +52,5 @@ impl From<std::io::Error> for HwpError {
     }
 }
 
+/// Convenience `Result` alias for HWP parser operations.
 pub type Result<T> = std::result::Result<T, HwpError>;

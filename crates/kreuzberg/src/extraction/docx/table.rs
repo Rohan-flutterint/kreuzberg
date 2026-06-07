@@ -11,14 +11,23 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct TableProperties {
+    /// Style ID of the table style applied to this table.
     pub style_id: Option<String>,
+    /// Total table width specification.
     pub width: Option<TableWidth>,
-    pub alignment: Option<String>, // "left", "center", "right"
-    pub layout: Option<String>,    // "fixed" or "autofit"
+    /// Horizontal alignment: `"left"`, `"center"`, or `"right"`.
+    pub alignment: Option<String>,
+    /// Table layout algorithm: `"fixed"` or `"autofit"`.
+    pub layout: Option<String>,
+    /// Conditional formatting flags for header/banded rows/columns.
     pub look: Option<TableLook>,
+    /// Table outer and inner border definitions.
     pub borders: Option<TableBorders>,
+    /// Default cell margins applied to all cells in the table.
     pub cell_margins: Option<CellMargins>,
+    /// Table indentation from the leading margin.
     pub indent: Option<TableWidth>,
+    /// Table caption text (from `<w:tblCaption>`).
     pub caption: Option<String>,
 }
 
@@ -26,19 +35,27 @@ pub struct TableProperties {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TableWidth {
+    /// Numeric width value; interpretation depends on `width_type`.
     pub value: i32,
-    pub width_type: String, // "dxa" (twips), "pct" (50ths of percent), "auto", "nil"
+    /// Width unit: `"dxa"` (twips), `"pct"` (50ths of a percent), `"auto"`, or `"nil"`.
+    pub width_type: String,
 }
 
 /// Table look bitmask/flags controlling conditional formatting bands.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct TableLook {
+    /// Apply first-row conditional formatting.
     pub first_row: bool,
+    /// Apply last-row conditional formatting.
     pub last_row: bool,
+    /// Apply first-column conditional formatting.
     pub first_column: bool,
+    /// Apply last-column conditional formatting.
     pub last_column: bool,
+    /// Suppress horizontal banding.
     pub no_h_band: bool,
+    /// Suppress vertical banding.
     pub no_v_band: bool,
 }
 
@@ -46,11 +63,17 @@ pub struct TableLook {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct TableBorders {
+    /// Top outer border.
     pub top: Option<BorderStyle>,
+    /// Bottom outer border.
     pub bottom: Option<BorderStyle>,
+    /// Left outer border.
     pub left: Option<BorderStyle>,
+    /// Right outer border.
     pub right: Option<BorderStyle>,
+    /// Horizontal inner borders between rows.
     pub inside_h: Option<BorderStyle>,
+    /// Vertical inner borders between columns.
     pub inside_v: Option<BorderStyle>,
 }
 
@@ -58,19 +81,27 @@ pub struct TableBorders {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct BorderStyle {
-    pub style: String,         // "single", "double", "dashed", "dotted", "none", etc.
-    pub size: Option<i32>,     // eighths of a point
-    pub color: Option<String>, // hex RGB or "auto"
-    pub space: Option<i32>,    // spacing in points
+    /// Border line style: `"single"`, `"double"`, `"dashed"`, `"dotted"`, `"none"`, etc.
+    pub style: String,
+    /// Border thickness in eighths of a point.
+    pub size: Option<i32>,
+    /// Border color as a hex RGB string (e.g. `"2F5496"`) or `"auto"`.
+    pub color: Option<String>,
+    /// Spacing between the border and the cell contents in points.
+    pub space: Option<i32>,
 }
 
 /// Cell margins (used for both table-level defaults and per-cell overrides).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct CellMargins {
-    pub top: Option<i32>, // twips
+    /// Top cell margin in twips.
+    pub top: Option<i32>,
+    /// Bottom cell margin in twips.
     pub bottom: Option<i32>,
+    /// Left cell margin in twips.
     pub left: Option<i32>,
+    /// Right cell margin in twips.
     pub right: Option<i32>,
 }
 
@@ -78,9 +109,13 @@ pub struct CellMargins {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct RowProperties {
-    pub height: Option<i32>,         // twips
-    pub height_rule: Option<String>, // "auto", "atLeast", "exact"
+    /// Row height in twips.
+    pub height: Option<i32>,
+    /// Height rule: `"auto"`, `"atLeast"`, or `"exact"`.
+    pub height_rule: Option<String>,
+    /// Whether this row acts as a repeating table header.
     pub is_header: bool,
+    /// Whether this row may be split across a page break.
     pub cant_split: bool,
 }
 
@@ -88,49 +123,68 @@ pub struct RowProperties {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct CellProperties {
+    /// Cell width specification.
     pub width: Option<TableWidth>,
-    pub grid_span: Option<u32>,         // column span (default 1)
-    pub v_merge: Option<VerticalMerge>, // vertical merge state
+    /// Number of grid columns this cell spans (default 1).
+    pub grid_span: Option<u32>,
+    /// Vertical merge state for this cell.
+    pub v_merge: Option<VerticalMerge>,
+    /// Per-cell border overrides.
     pub borders: Option<CellBorders>,
+    /// Cell background shading.
     pub shading: Option<CellShading>,
+    /// Per-cell margin overrides.
     pub margins: Option<CellMargins>,
-    pub vertical_align: Option<String>, // "top", "center", "bottom"
-    pub text_direction: Option<String>, // "lrTb", "tbRl", "btLr"
+    /// Vertical text alignment: `"top"`, `"center"`, or `"bottom"`.
+    pub vertical_align: Option<String>,
+    /// Text direction: `"lrTb"`, `"tbRl"`, or `"btLr"`.
+    pub text_direction: Option<String>,
+    /// Whether cell content wraps across lines.
     pub no_wrap: bool,
 }
 
-/// Vertical merge state.
+/// Vertical merge state for a table cell.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum VerticalMerge {
-    Restart,  // Start of a new merged range
-    Continue, // Continuation of a previous merge
+    /// This cell starts a new vertically-merged group.
+    Restart,
+    /// This cell continues a vertically-merged group started above.
+    Continue,
 }
 
 /// Per-cell borders (4 sides).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct CellBorders {
+    /// Top cell border.
     pub top: Option<BorderStyle>,
+    /// Bottom cell border.
     pub bottom: Option<BorderStyle>,
-    pub left: Option<BorderStyle>,  // OOXML calls this "start" in LTR
-    pub right: Option<BorderStyle>, // OOXML calls this "end" in LTR
+    /// Left (start in LTR) cell border.
+    pub left: Option<BorderStyle>,
+    /// Right (end in LTR) cell border.
+    pub right: Option<BorderStyle>,
 }
 
-/// Cell shading/background.
+/// Cell shading/background fill.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(alef, alef(skip))]
 pub struct CellShading {
-    pub fill: Option<String>,  // background color hex or "auto"
-    pub color: Option<String>, // pattern color
-    pub val: Option<String>,   // pattern type: "clear", "solid", "pct10", etc.
+    /// Background fill color as hex RGB or `"auto"`.
+    pub fill: Option<String>,
+    /// Pattern foreground color.
+    pub color: Option<String>,
+    /// Pattern type: `"clear"`, `"solid"`, `"pct10"`, etc.
+    pub val: Option<String>,
 }
 
 /// Column widths from `<w:tblGrid>`.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct TableGrid {
-    pub columns: Vec<i32>, // column widths in twips
+    /// Ordered list of column widths in twips.
+    pub columns: Vec<i32>,
 }
 
 /// Parse table-level properties from streaming XML reader.

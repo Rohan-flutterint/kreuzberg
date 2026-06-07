@@ -25,6 +25,7 @@ static RE_PHONE: Lazy<Regex> = Lazy::new(|| {
     .expect("phone regex compiles")
 });
 
+/// Find all phone number spans in `text` (international E.164 and North American formats).
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     RE_PHONE
         .find_iter(text)

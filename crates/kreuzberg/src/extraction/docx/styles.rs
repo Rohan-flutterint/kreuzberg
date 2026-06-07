@@ -9,25 +9,33 @@ use crate::error::{KreuzbergError, Result};
 use crate::extraction::ooxml_constants::WORDPROCESSINGML_NAMESPACE;
 // --- Types ---
 
-#[cfg_attr(alef, alef(skip))]
 /// The type of a style definition in DOCX.
+#[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleType {
+    /// Style applied to an entire paragraph (`<w:style w:type="paragraph">`).
     Paragraph,
+    /// Style applied to a character run (`<w:style w:type="character">`).
     Character,
+    /// Style applied to a table (`<w:style w:type="table">`).
     Table,
+    /// Style applied to a list numbering definition (`<w:style w:type="numbering">`).
     Numbering,
 }
-#[cfg_attr(alef, alef(skip))]
 /// Run-level formatting properties (bold, italic, font, size, color, etc.).
 ///
 /// All fields are `Option` so that inheritance resolution can distinguish
 /// "not set" (`None`) from "explicitly set" (`Some`).
+#[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct RunProperties {
+    /// Bold formatting.
     pub bold: Option<bool>,
+    /// Italic formatting.
     pub italic: Option<bool>,
+    /// Underline formatting.
     pub underline: Option<bool>,
+    /// Strikethrough formatting.
     pub strikethrough: Option<bool>,
     /// Hex RGB color, e.g. `"2F5496"`.
     pub color: Option<String>,
@@ -148,7 +156,9 @@ pub struct StyleDefinition {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ResolvedStyle {
+    /// Fully-inherited paragraph formatting properties.
     pub paragraph_properties: ParagraphProperties,
+    /// Fully-inherited run formatting properties.
     pub run_properties: RunProperties,
 }
 
@@ -156,8 +166,11 @@ pub struct ResolvedStyle {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct StyleCatalog {
+    /// All named style definitions keyed by their style ID.
     pub styles: AHashMap<String, StyleDefinition>,
+    /// Default paragraph formatting properties for the document.
     pub default_paragraph_properties: ParagraphProperties,
+    /// Default run formatting properties for the document.
     pub default_run_properties: RunProperties,
 }
 

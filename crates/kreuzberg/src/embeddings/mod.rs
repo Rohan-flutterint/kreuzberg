@@ -60,6 +60,7 @@
 //! ```
 
 #[cfg(feature = "embeddings")]
+/// Core ONNX embedding inference engine with thread-safe concurrent inference.
 pub mod engine;
 
 use serde::{Deserialize, Serialize};
@@ -101,8 +102,11 @@ static EMBED_SEMAPHORE: LazyLock<Arc<tokio::sync::Semaphore>> = LazyLock::new(||
 /// are safe to clone and pass across language boundaries.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingPreset {
+    /// Short identifier for this preset (e.g. `"balanced"`, `"fast"`, `"quality"`).
     pub name: String,
+    /// Target chunk size in characters.
     pub chunk_size: usize,
+    /// Overlap between consecutive chunks in characters.
     pub overlap: usize,
     /// HuggingFace repository name for the model.
     pub model_repo: String,
@@ -110,7 +114,9 @@ pub struct EmbeddingPreset {
     pub pooling: String,
     /// Path to the ONNX model file within the repo.
     pub model_file: String,
+    /// Embedding vector dimension produced by this model.
     pub dimensions: usize,
+    /// Human-readable description of the preset's intended use case.
     pub description: String,
 }
 

@@ -39,11 +39,11 @@ pub struct PdfMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub page_count: Option<u32>,
 }
-#[cfg_attr(alef, alef(skip))]
 /// Complete PDF extraction metadata including common and PDF-specific fields.
 ///
 /// Combines common document fields (title, authors, dates) with PDF-specific
 /// metadata and optional page structure information.
+#[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PdfExtractionMetadata {
     /// Document title
@@ -85,13 +85,21 @@ pub struct PdfExtractionMetadata {
 /// Common PDF metadata fields extracted from the document info dictionary.
 ///
 /// Used as an intermediate type during extraction before building `PdfExtractionMetadata`.
+#[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct CommonPdfMetadata {
+    /// Document title from the PDF Info dictionary.
     pub title: Option<String>,
+    /// Document subject from the PDF Info dictionary.
     pub subject: Option<String>,
+    /// Document authors parsed from the PDF Author field.
     pub authors: Option<Vec<String>>,
+    /// Keywords parsed from the PDF Keywords field.
     pub keywords: Option<Vec<String>>,
+    /// Creation timestamp in ISO 8601 format.
     pub created_at: Option<String>,
+    /// Last modification timestamp in ISO 8601 format.
     pub modified_at: Option<String>,
+    /// Creator application or author name.
     pub created_by: Option<String>,
 }

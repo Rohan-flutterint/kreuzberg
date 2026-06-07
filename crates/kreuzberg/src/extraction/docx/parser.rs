@@ -55,24 +55,37 @@ pub(crate) struct Document {
     pub revisions: Vec<crate::types::revisions::DocumentRevision>,
 }
 
+/// A DOCX paragraph containing formatted text runs.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Paragraph {
+    /// Formatted text runs that make up this paragraph.
     pub runs: Vec<Run>,
+    /// Style ID applied to this paragraph (e.g. `"Heading1"`, `"Normal"`).
     pub style: Option<String>,
+    /// Numbering definition ID for bulleted or numbered lists.
     pub numbering_id: Option<i64>,
+    /// Indentation level within the numbering definition (0-based).
     pub numbering_level: Option<i64>,
 }
 
+/// A formatted text run within a DOCX paragraph.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Run {
+    /// Plain text content of this run.
     pub text: String,
+    /// Bold formatting flag.
     pub bold: bool,
+    /// Italic formatting flag.
     pub italic: bool,
+    /// Underline formatting flag.
     pub underline: bool,
+    /// Strikethrough formatting flag.
     pub strikethrough: bool,
+    /// Subscript vertical alignment flag.
     pub subscript: bool,
+    /// Superscript vertical alignment flag.
     pub superscript: bool,
     /// Font size in half-points (from `w:sz`).
     pub font_size: Option<u32>,
@@ -80,31 +93,42 @@ pub struct Run {
     pub font_color: Option<String>,
     /// Highlight color name (from `w:highlight`).
     pub highlight: Option<String>,
+    /// Hyperlink URL, if this run is wrapped in a `<w:hyperlink>`.
     pub hyperlink_url: Option<String>,
     /// LaTeX math content: (latex_source, is_display_math).
     /// When set, this run represents an equation and `text` is ignored.
     pub math_latex: Option<(String, bool)>,
 }
 
+/// A DOCX table parsed from `<w:tbl>`.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Table {
+    /// Ordered list of table rows.
     pub rows: Vec<TableRow>,
+    /// Table-level properties from `<w:tblPr>`.
     pub properties: Option<super::table::TableProperties>,
+    /// Column width definitions from `<w:tblGrid>`.
     pub grid: Option<super::table::TableGrid>,
 }
 
+/// A single row within a DOCX table.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TableRow {
+    /// Cells in this row.
     pub cells: Vec<TableCell>,
+    /// Row-level properties from `<w:trPr>`.
     pub properties: Option<super::table::RowProperties>,
 }
 
+/// A single cell within a DOCX table row.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TableCell {
+    /// Paragraphs contained in this cell.
     pub paragraphs: Vec<Paragraph>,
+    /// Cell-level properties from `<w:tcPr>`.
     pub properties: Option<super::table::CellProperties>,
 }
 
@@ -115,36 +139,52 @@ pub(crate) enum ListType {
     Numbered,
 }
 
+/// A header or footer block from a DOCX section.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct HeaderFooter {
+    /// Paragraphs in this header or footer.
     pub paragraphs: Vec<Paragraph>,
+    /// Tables in this header or footer.
     pub tables: Vec<Table>,
+    /// Which pages this header/footer applies to.
     pub header_type: HeaderFooterType,
 }
 
+/// Specifies which pages a header or footer applies to.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum HeaderFooterType {
+    /// Default header/footer (applies to all pages not covered by First or Even).
     #[default]
     Default,
+    /// First-page header/footer.
     First,
+    /// Even-page header/footer.
     Even,
+    /// Odd-page header/footer.
     Odd,
 }
 
+/// A footnote or endnote from a DOCX document.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone)]
 pub struct Note {
+    /// Note identifier matching the in-text reference mark.
     pub id: String,
+    /// Whether this is a footnote or an endnote.
     pub note_type: NoteType,
+    /// Paragraphs of note content.
     pub paragraphs: Vec<Paragraph>,
 }
 
+/// Distinguishes footnotes from endnotes in DOCX documents.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NoteType {
+    /// Note appears at the bottom of the page.
     Footnote,
+    /// Note appears at the end of the document.
     Endnote,
 }
 

@@ -4,6 +4,7 @@ use crate::types::OcrExtractionResult;
 use std::fs;
 use std::path::PathBuf;
 
+/// File-backed msgpack cache for OCR extraction results, keyed by image + config hash.
 #[cfg_attr(alef, alef(skip))]
 pub struct OcrCache {
     cache_dir: PathBuf,
@@ -140,10 +141,13 @@ impl OcrCache {
     }
 }
 
+/// Statistics about the current state of the OCR result cache.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct OcrCacheStats {
+    /// Number of msgpack cache files on disk.
     pub total_files: usize,
+    /// Total size of all cache files in megabytes.
     pub total_size_mb: f64,
 }
 

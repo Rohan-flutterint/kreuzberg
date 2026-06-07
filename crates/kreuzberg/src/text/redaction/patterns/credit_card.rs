@@ -14,6 +14,7 @@ static RE_CC: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"\b(?:\d[ \-]?){12,18}\d\b").expect("credit card regex compiles")
 });
 
+/// Find all credit card number spans in `text`, validated with the Luhn algorithm.
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     RE_CC
         .find_iter(text)

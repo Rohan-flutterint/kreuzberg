@@ -10,11 +10,17 @@
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone)]
 pub struct HocrWord {
+    /// Recognized word text.
     pub text: String,
+    /// Left edge of the word bounding box in pixels.
     pub left: u32,
+    /// Top edge of the word bounding box in pixels.
     pub top: u32,
+    /// Bounding box width in pixels.
     pub width: u32,
+    /// Bounding box height in pixels.
     pub height: u32,
+    /// OCR confidence score (0.0–100.0).
     pub confidence: f64,
 }
 

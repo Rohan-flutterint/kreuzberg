@@ -1,3 +1,4 @@
+/// TSV (tab-separated value) output parser for Tesseract word-level bounding boxes.
 pub mod tsv_parser;
 
 // Re-export core table utilities

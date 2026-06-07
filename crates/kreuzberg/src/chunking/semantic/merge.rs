@@ -8,7 +8,9 @@ use crate::chunking::text_splitter::TextSplitter;
 /// A text segment with its byte offset in the original document.
 #[derive(Debug, Clone, Copy)]
 pub struct Segment<'a> {
+    /// Borrowed text slice from the original document.
     pub text: &'a str,
+    /// Byte offset of the start of this segment in the original document.
     pub byte_start: usize,
 }
 
@@ -16,8 +18,11 @@ pub struct Segment<'a> {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MergedChunk {
+    /// Merged text content (may include overlap from the previous chunk).
     pub text: String,
+    /// Byte offset of the first character in the original document.
     pub byte_start: usize,
+    /// Byte offset one past the last character in the original document.
     pub byte_end: usize,
 }
 

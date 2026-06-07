@@ -750,6 +750,10 @@ pub fn excel_to_text(workbook: &ExcelWorkbook) -> String {
     result
 }
 
+/// Render all sheets in an [`ExcelWorkbook`] as a single Markdown string.
+///
+/// Sheets are separated by double newlines; each sheet's pre-rendered markdown
+/// is trimmed of trailing whitespace before joining.
 #[cfg_attr(alef, alef(skip))]
 pub fn excel_to_markdown(workbook: &ExcelWorkbook) -> String {
     let total_capacity: usize = workbook.sheets.iter().map(|sheet| sheet.markdown.len() + 2).sum();

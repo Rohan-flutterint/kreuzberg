@@ -137,13 +137,17 @@ pub struct TatrResult {
     /// Detected spanning cells.
     pub spanning: Vec<TatrDetection>,
 }
+/// A cell bounding box within the reconstructed table grid (pixel coordinates in the crop).
 #[cfg_attr(alef, alef(skip))]
-/// A cell bounding box within the reconstructed table grid.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CellBBox {
+    /// Left edge in crop-pixel coordinates.
     pub x1: f32,
+    /// Top edge in crop-pixel coordinates.
     pub y1: f32,
+    /// Right edge in crop-pixel coordinates.
     pub x2: f32,
+    /// Bottom edge in crop-pixel coordinates.
     pub y2: f32,
 }
 

@@ -1,12 +1,16 @@
+/// UTF-8 validation and safe decoding helpers.
 pub mod utf8_validation;
 
 #[cfg(feature = "quality")]
+/// OCR quality scoring: noise detection, confidence aggregation, and artifact removal.
 pub mod quality;
 
 #[cfg(feature = "quality")]
+/// String utilities: mojibake repair, encoding detection, safe truncation.
 pub mod string_utils;
 
 #[cfg(feature = "quality")]
+/// Token-level text reduction pipeline for summarizing or compressing document content.
 pub mod token_reduction;
 
 #[cfg(feature = "quality")]

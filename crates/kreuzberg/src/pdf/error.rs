@@ -1,18 +1,30 @@
 use std::fmt;
 
+/// PDF-specific errors produced by the pure-Rust PDF backend.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone)]
 pub enum PdfError {
+    /// The file is not a valid PDF or the header is corrupted.
     InvalidPdf(String),
+    /// The PDF is encrypted and no password was provided.
     PasswordRequired,
+    /// The provided password did not decrypt the document.
     InvalidPassword,
+    /// The encryption scheme is not supported by the pure-Rust backend.
     EncryptionNotSupported(String),
+    /// The requested page index does not exist in the document.
     PageNotFound(usize),
+    /// Extracting the text layer from a page failed.
     TextExtractionFailed(String),
+    /// Page rendering to an image failed.
     RenderingFailed(String),
+    /// Reading or parsing the PDF document info dictionary failed.
     MetadataExtractionFailed(String),
+    /// A general extraction failure not covered by a more specific variant.
     ExtractionFailed(String),
+    /// A required font could not be loaded or decoded.
     FontLoadingFailed(String),
+    /// An I/O error occurred while reading the PDF stream.
     IOError(String),
     /// The operation was cancelled via a `CancellationToken`.
     Cancelled,
@@ -54,6 +66,7 @@ impl From<lopdf::Error> for PdfError {
     }
 }
 
+/// Convenience `Result` alias for PDF extraction operations.
 pub type Result<T> = std::result::Result<T, PdfError>;
 
 #[cfg(test)]

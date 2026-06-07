@@ -15,8 +15,8 @@ use ndarray::{Array2, ArrayView, Dim, Dimension, IxDynImpl, s};
 use ort::session::Session;
 use ort::value::Value;
 use tokenizers::Tokenizer;
+/// Pooling strategy for extracting a single fixed-length vector from per-token embeddings.
 #[cfg_attr(alef, alef(skip))]
-/// Pooling strategy for extracting a single vector from token embeddings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Pooling {
     /// Use the [CLS] token embedding (first token).
@@ -231,13 +231,17 @@ pub(crate) fn normalize(v: &[f32]) -> Vec<f32> {
         v.to_vec()
     }
 }
+/// Errors that can occur during text embedding inference.
 #[cfg_attr(alef, alef(skip))]
-/// Embedding engine errors.
 #[derive(Debug)]
 pub enum EmbedError {
+    /// Tokenization failed with the given message.
     Tokenizer(String),
+    /// ONNX Runtime returned an error during inference.
     Ort(ort::Error),
+    /// The model output tensor had an unexpected shape.
     Shape(String),
+    /// The model produced no output tensors.
     NoOutput,
 }
 

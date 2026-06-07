@@ -16,6 +16,7 @@ use regex::Regex;
 static RE_SSN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\b(\d{3})[\s\-](\d{2})[\s\-](\d{4})\b").expect("ssn regex compiles"));
 
+/// Find all US Social Security Number spans in `text` (format: NNN-NN-NNNN).
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     RE_SSN
         .captures_iter(text)

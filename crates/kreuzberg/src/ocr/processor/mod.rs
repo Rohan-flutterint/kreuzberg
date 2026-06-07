@@ -18,6 +18,7 @@ use crate::types::OcrExtractionResult;
 #[cfg(feature = "otel")]
 use std::time::Instant;
 
+/// Tesseract-backed OCR processor with persistent result caching.
 #[cfg_attr(alef, alef(skip))]
 pub struct OcrProcessor {
     cache: OcrCache,

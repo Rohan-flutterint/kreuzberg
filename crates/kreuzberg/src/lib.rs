@@ -80,6 +80,7 @@ pub mod llm;
 pub mod embeddings;
 
 #[cfg(feature = "ocr")]
+/// Image preprocessing and DPI utilities for OCR pipelines.
 pub mod image;
 
 #[cfg(feature = "language-detection")]

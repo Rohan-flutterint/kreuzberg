@@ -15,8 +15,8 @@ use crate::layout::models::rtdetr::RtDetrModel;
 use crate::layout::models::yolo::{YoloModel, YoloVariant};
 use crate::layout::postprocessing::heuristics;
 use crate::layout::types::DetectionResult;
+/// Which underlying model architecture to use for layout detection.
 #[cfg_attr(alef, alef(skip))]
-/// Which underlying model architecture to use.
 #[derive(Debug, Clone)]
 pub enum ModelBackend {
     /// YOLO trained on DocLayNet (11 classes, 640x640 input).
@@ -24,16 +24,30 @@ pub enum ModelBackend {
     /// RT-DETR v2 (17 classes, 640x640 input, NMS-free).
     RtDetr,
     /// Custom model from a local file path.
-    Custom { path: PathBuf, variant: CustomModelVariant },
+    Custom {
+        /// Filesystem path to the ONNX model file.
+        path: PathBuf,
+        /// Model architecture variant for the custom file.
+        variant: CustomModelVariant,
+    },
 }
+/// Variant selection for custom model paths, used with [`ModelBackend::Custom`].
 #[cfg_attr(alef, alef(skip))]
-/// Variant selection for custom model paths.
 #[derive(Debug, Clone)]
 pub enum CustomModelVariant {
+    /// RT-DETR v2 model format.
     RtDetr,
+    /// YOLO trained on DocLayNet (11 classes).
     YoloDocLayNet,
+    /// DocLayout-YOLO trained on DocStructBench (10 classes).
     YoloDocStructBench,
-    Yolox { input_width: u32, input_height: u32 },
+    /// YOLOX with explicit input dimensions.
+    Yolox {
+        /// Model input width in pixels.
+        input_width: u32,
+        /// Model input height in pixels.
+        input_height: u32,
+    },
 }
 #[cfg_attr(alef, alef(skip))]
 /// Full configuration for the layout engine.

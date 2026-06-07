@@ -26,6 +26,7 @@ pub struct HwpDocument {
 /// A body-text section containing a flat list of paragraphs.
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Section {
+    /// All paragraphs in this body-text section.
     pub paragraphs: Vec<Paragraph>,
 }
 // ---------------------------------------------------------------------------
@@ -36,7 +37,9 @@ pub struct Section {
 /// A single paragraph; may or may not carry a text payload.
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Paragraph {
+    /// The decoded paragraph text, or `None` if this paragraph has no text record.
     pub text: Option<ParaText>,
+    /// Outline level from the ParaShape record (0 = body text, 1–7 = headings).
     pub outline_level: u8,
     /// Mappings from character position to char_shape index.
     pub char_shape_runs: Vec<(u32, u16)>,
@@ -46,11 +49,15 @@ pub struct Paragraph {
 // CharShape — character formatting attributes
 // ---------------------------------------------------------------------------
 
+/// Character formatting attributes from the HWP DocInfo CharShape table.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CharShape {
+    /// Bold formatting flag.
     pub bold: bool,
+    /// Italic formatting flag.
     pub italic: bool,
+    /// Underline formatting flag.
     pub underline: bool,
 }
 
@@ -58,10 +65,13 @@ pub struct CharShape {
 // Images
 // ---------------------------------------------------------------------------
 
+/// A raw image blob extracted from a BinData stream in an HWP document.
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, Default)]
 pub struct HwpImage {
+    /// Stream path used as a stable identifier (e.g. `"BinData/BIN0001.jpg"`).
     pub name: String,
+    /// Raw image bytes as stored in the BinData stream.
     pub data: Vec<u8>,
 }
 // ---------------------------------------------------------------------------
@@ -72,6 +82,7 @@ pub struct HwpImage {
 /// Plain text content decoded from a ParaText record (tag 0x43).
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct ParaText {
+    /// Decoded UTF-8 text with HWP control characters mapped to whitespace or removed.
     pub content: String,
 }
 

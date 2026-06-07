@@ -19,6 +19,7 @@ pub struct TokenCounter {
 }
 
 impl TokenCounter {
+    /// Create a fresh counter with no previous state.
     pub fn new() -> Self {
         Self::default()
     }

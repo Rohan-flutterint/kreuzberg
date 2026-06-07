@@ -32,6 +32,7 @@ static RE_IPV6: Lazy<Regex> = Lazy::new(|| {
     .expect("ipv6 regex compiles")
 });
 
+/// Find all IPv4 and IPv6 address spans in `text`.
 pub fn find_all(text: &str) -> Vec<PatternMatch> {
     let mut matches = Vec::new();
 
