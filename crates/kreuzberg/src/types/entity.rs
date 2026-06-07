@@ -2,7 +2,7 @@
 //!
 //! Produced by the NER post-processor (`crates/kreuzberg/src/text/ner/`) and
 //! attached to [`ExtractionResult::entities`](super::extraction::ExtractionResult::entities).
-//! Backends (gline-rs ONNX, LLM-driven) share the [`NerBackend`](crate::text::ner::backend::NerBackend)
+//! Backends (gline-rs ONNX, LLM-driven) share a common `NerBackend`
 //! trait so the redaction post-processor can consume the same entity stream.
 
 use serde::{Deserialize, Serialize};
@@ -33,16 +33,27 @@ pub struct Entity {
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum EntityCategory {
+    /// A person's name.
     Person,
+    /// A company, institution, or organisation name.
     Organization,
+    /// A geographic location (city, country, address).
     Location,
+    /// A calendar date.
     Date,
+    /// A time of day or duration.
     Time,
+    /// A monetary amount with optional currency.
     Money,
+    /// A percentage value.
     Percent,
+    /// An email address.
     Email,
+    /// A phone number.
     Phone,
+    /// A URL or URI.
     Url,
+    /// A caller-supplied custom category label.
     Custom(String),
 }
 

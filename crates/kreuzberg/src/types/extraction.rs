@@ -17,12 +17,16 @@ use super::tables::Table;
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum ExtractionMethod {
+    /// Text extracted directly from the document's native format (no OCR).
     Native,
+    /// All text was obtained via OCR (e.g. scanned image-only PDF).
     Ocr,
+    /// Text came from a combination of native extraction and OCR.
     Mixed,
 }
 
 impl ExtractionMethod {
+    /// Returns the snake_case string representation of this method.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Native => "native",
@@ -31,6 +35,7 @@ impl ExtractionMethod {
         }
     }
 
+    /// Returns `true` if OCR was used at any stage of extraction.
     pub fn used_ocr(self) -> bool {
         !matches!(self, Self::Native)
     }
@@ -52,9 +57,12 @@ impl ExtractionMethod {
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "api", schema(no_recursion))]
 pub struct ExtractionResult {
+    /// Plain-text representation of the extracted document content.
     pub content: String,
+    /// MIME type of the source document (e.g. `"application/pdf"`).
     #[cfg_attr(feature = "api", schema(value_type = String))]
     pub mime_type: Cow<'static, str>,
+    /// Document-level metadata (author, title, dates, format-specific fields).
     pub metadata: Metadata,
     /// Extraction strategy used to produce the returned text.
     ///
@@ -63,7 +71,9 @@ pub struct ExtractionResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub extraction_method: Option<ExtractionMethod>,
+    /// Tables extracted from the document, each with structured cell data.
     pub tables: Vec<Table>,
+    /// ISO 639-1 language codes detected in the document content.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detected_languages: Option<Vec<String>>,
 

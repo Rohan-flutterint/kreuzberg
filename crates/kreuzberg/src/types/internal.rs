@@ -479,11 +479,17 @@ pub enum ElementKind {
     /// Document title.
     Title,
     /// Section heading with level (1-6).
-    Heading { level: u8 },
+    Heading {
+        /// Heading depth (1 = h1, 2 = h2, …, 6 = h6).
+        level: u8,
+    },
     /// Body text paragraph.
     Paragraph,
     /// List item. `ordered` indicates numbered vs bulleted.
-    ListItem { ordered: bool },
+    ListItem {
+        /// `true` for ordered (numbered) lists; `false` for unordered (bullet) lists.
+        ordered: bool,
+    },
     /// Code block. Language stored in element attributes.
     Code,
     /// Mathematical formula / equation.
@@ -495,7 +501,10 @@ pub enum ElementKind {
     /// Citation or bibliographic reference.
     Citation,
     /// Presentation slide container.
-    Slide { number: u32 },
+    Slide {
+        /// 1-indexed slide number.
+        number: u32,
+    },
     /// Definition list term.
     DefinitionTerm,
     /// Definition list description.
@@ -509,7 +518,10 @@ pub enum ElementKind {
 
     // --- Container markers (optional, improve tree precision) ---
     /// Start of a list container.
-    ListStart { ordered: bool },
+    ListStart {
+        /// `true` for ordered (numbered) lists; `false` for unordered (bullet) lists.
+        ordered: bool,
+    },
     /// End of a list container.
     ListEnd,
     /// Start of a block quote.
@@ -523,15 +535,24 @@ pub enum ElementKind {
 
     // --- Structural ---
     /// Table reference. `table_index` is an index into `InternalDocument::tables`.
-    Table { table_index: u32 },
+    Table {
+        /// Index into `InternalDocument::tables` for the referenced table.
+        table_index: u32,
+    },
     /// Image reference. `image_index` is an index into `InternalDocument::images`.
-    Image { image_index: u32 },
+    Image {
+        /// Index into `InternalDocument::images` for the referenced image.
+        image_index: u32,
+    },
     /// Page break marker.
     PageBreak,
 
     // --- OCR ---
     /// OCR-detected text at a given hierarchical level.
-    OcrText { level: OcrElementLevel },
+    OcrText {
+        /// Hierarchical level (word, line, paragraph, block) of this OCR element.
+        level: OcrElementLevel,
+    },
 }
 
 impl ElementKind {

@@ -28,8 +28,12 @@ pub struct QrCode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct QrBoundingBox {
+    /// Horizontal pixel offset of the bounding box top-left corner.
     pub x: u32,
+    /// Vertical pixel offset of the bounding box top-left corner.
     pub y: u32,
+    /// Width of the bounding box in pixels.
     pub width: u32,
+    /// Height of the bounding box in pixels.
     pub height: u32,
 }

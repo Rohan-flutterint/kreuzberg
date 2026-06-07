@@ -92,21 +92,37 @@ pub struct FormattedBlock {
 #[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub enum BlockType {
+    /// Standard prose paragraph.
     Paragraph,
+    /// Section heading (level stored in `FormattedBlock::level`).
     Heading,
+    /// Block quotation container.
     Blockquote,
+    /// Fenced or indented code block.
     CodeBlock,
+    /// Individual item within a list.
     ListItem,
+    /// Numbered (ordered) list container.
     OrderedList,
+    /// Unnumbered (bullet) list container.
     BulletList,
+    /// Task / checkbox list container.
     TaskList,
+    /// Definition list container.
     DefinitionList,
+    /// Term part of a definition list entry.
     DefinitionTerm,
+    /// Description / definition part of a definition list entry.
     DefinitionDescription,
+    /// Generic `div` container with optional attributes.
     Div,
+    /// Logical section container, often associated with a heading.
     Section,
+    /// Horizontal rule / thematic break.
     ThematicBreak,
+    /// Raw content block in a specified format (e.g. HTML, LaTeX).
     RawBlock,
+    /// Display-mode mathematical expression.
     MathDisplay,
 }
 
@@ -137,21 +153,37 @@ pub struct InlineElement {
 #[serde(rename_all = "snake_case")]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub enum InlineType {
+    /// Plain text run.
     Text,
+    /// Bold / strong emphasis.
     Strong,
+    /// Italic / regular emphasis.
     Emphasis,
+    /// Highlighted text (marker pen).
     Highlight,
+    /// Subscript text.
     Subscript,
+    /// Superscript text.
     Superscript,
+    /// Inserted text (tracked change).
     Insert,
+    /// Deleted text (tracked change).
     Delete,
+    /// Inline code span.
     Code,
+    /// Hyperlink with URL.
     Link,
+    /// Inline image reference.
     Image,
+    /// Generic inline span with optional attributes.
     Span,
+    /// Inline mathematical expression.
     Math,
+    /// Raw inline content in a specified format.
     RawInline,
+    /// Footnote reference marker.
     FootnoteRef,
+    /// Named symbol or emoji shortcode.
     Symbol,
 }
 

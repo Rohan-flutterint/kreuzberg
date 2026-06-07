@@ -69,33 +69,53 @@ mod additional_serde {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "format_type", rename_all = "snake_case")]
 pub enum FormatMetadata {
+    /// Metadata extracted from a PDF document.
     #[cfg(feature = "pdf")]
     Pdf(PdfMetadata),
+    /// Metadata extracted from a DOCX Word document.
     #[cfg(feature = "office")]
     Docx(Box<DocxMetadata>),
+    /// Metadata extracted from an Excel spreadsheet.
     Excel(ExcelMetadata),
+    /// Metadata extracted from an email message (EML/MSG).
     Email(EmailMetadata),
+    /// Metadata extracted from a PowerPoint presentation.
     Pptx(PptxMetadata),
+    /// Metadata extracted from an archive (ZIP, TAR, 7Z, etc.).
     Archive(ArchiveMetadata),
+    /// Metadata extracted from a raster or vector image.
     Image(ImageMetadata),
+    /// Metadata extracted from an XML document.
     Xml(XmlMetadata),
+    /// Metadata extracted from a plain-text file.
     Text(TextMetadata),
+    /// Metadata extracted from an HTML document.
     Html(Box<HtmlMetadata>),
+    /// Metadata produced by an OCR pipeline.
     Ocr(OcrMetadata),
+    /// Metadata extracted from a CSV or TSV file.
     Csv(CsvMetadata),
+    /// Metadata extracted from a BibTeX bibliography file.
     #[cfg(feature = "office")]
     Bibtex(BibtexMetadata),
+    /// Metadata extracted from a citation file (RIS, PubMed, EndNote).
     #[cfg(feature = "office")]
     Citation(CitationMetadata),
+    /// Metadata extracted from a FictionBook (FB2) e-book.
     #[cfg(feature = "office")]
     FictionBook(FictionBookMetadata),
+    /// Metadata extracted from a dBASE (DBF) database file.
     #[cfg(feature = "office")]
     Dbf(DbfMetadata),
+    /// Metadata extracted from a JATS (Journal Article Tag Suite) XML file.
     #[cfg(feature = "xml")]
     Jats(JatsMetadata),
+    /// Metadata extracted from an EPUB e-book.
     #[cfg(feature = "office")]
     Epub(EpubMetadata),
+    /// Metadata extracted from an Outlook PST archive.
     Pst(PstMetadata),
+    /// Metadata extracted from an audio or video file.
     #[cfg(feature = "transcription-types")]
     Audio(AudioMetadata),
     /// Code metadata (tree-sitter analysis results, not exposed in bindings).
@@ -912,9 +932,11 @@ pub struct OcrMetadata {
     /// Number of tables detected
     pub table_count: u32,
 
+    /// Number of rows in the detected table (if a single table was found).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub table_rows: Option<u32>,
 
+    /// Number of columns in the detected table (if a single table was found).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub table_cols: Option<u32>,
 }
@@ -923,7 +945,9 @@ pub struct OcrMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct ErrorMetadata {
+    /// Machine-readable error type identifier (e.g. "UnsupportedFormat").
     pub error_type: String,
+    /// Human-readable error description.
     pub message: String,
 }
 
@@ -989,11 +1013,16 @@ pub struct DocxMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct CsvMetadata {
+    /// Total number of data rows (excluding the header row if present).
     pub row_count: u32,
+    /// Number of columns detected.
     pub column_count: u32,
+    /// Field delimiter character (e.g. `","` or `"\t"`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delimiter: Option<String>,
+    /// Whether the first row was treated as a header.
     pub has_header: bool,
+    /// Inferred data type for each column (e.g. `"string"`, `"integer"`, `"float"`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub column_types: Option<Vec<String>>,
 }
@@ -1004,12 +1033,16 @@ pub struct CsvMetadata {
 pub struct BibtexMetadata {
     /// Number of entries in the bibliography.
     pub entry_count: usize,
+    /// BibTeX citation keys (e.g. `"knuth1984"`) for all entries.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub citation_keys: Vec<String>,
+    /// Author names collected across all bibliography entries.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub authors: Vec<String>,
+    /// Earliest and latest publication years found in the bibliography.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub year_range: Option<YearRange>,
+    /// Count of entries grouped by BibTeX entry type (e.g. `"article"` → 5).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entry_types: Option<BTreeMap<String, usize>>,
 }
@@ -1018,15 +1051,21 @@ pub struct BibtexMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct CitationMetadata {
+    /// Total number of citation records in the file.
     pub citation_count: usize,
+    /// Detected citation file format (e.g. `"ris"`, `"pubmed"`, `"endnote"`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    /// Author names collected across all citation records.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub authors: Vec<String>,
+    /// Earliest and latest publication years found in the file.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub year_range: Option<YearRange>,
+    /// DOI identifiers found in the citation records.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub dois: Vec<String>,
+    /// Keywords collected from all citation records.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub keywords: Vec<String>,
 }
@@ -1035,10 +1074,13 @@ pub struct CitationMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct YearRange {
+    /// Earliest (minimum) year in the range.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<u32>,
+    /// Latest (maximum) year in the range.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<u32>,
+    /// All individual years present in the collection.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub years: Vec<u32>,
 }
@@ -1047,10 +1089,13 @@ pub struct YearRange {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct FictionBookMetadata {
+    /// Genre tags as declared in the FB2 `<genre>` elements.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub genres: Vec<String>,
+    /// Book series (sequence) names, if any.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sequences: Vec<String>,
+    /// Short annotation / summary from the FB2 `<annotation>` element.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotation: Option<String>,
 }
@@ -1059,8 +1104,11 @@ pub struct FictionBookMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct DbfMetadata {
+    /// Total number of data records in the DBF file.
     pub record_count: usize,
+    /// Number of field (column) definitions.
     pub field_count: usize,
+    /// Descriptor for each field in the table schema.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub fields: Vec<DbfFieldInfo>,
 }
@@ -1069,7 +1117,9 @@ pub struct DbfMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct DbfFieldInfo {
+    /// Field (column) name.
     pub name: String,
+    /// dBASE field type character (e.g. `"C"` for character, `"N"` for numeric).
     pub field_type: String,
 }
 
@@ -1077,12 +1127,16 @@ pub struct DbfFieldInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct JatsMetadata {
+    /// Copyright statement from the article's `<permissions>` element.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub copyright: Option<String>,
+    /// Open-access license URI from the article's `<license>` element.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
+    /// Publication history dates keyed by event type (e.g. `"received"`, `"accepted"`).
     #[serde(skip_serializing_if = "BTreeMap::is_empty", default)]
     pub history_dates: BTreeMap<String, String>,
+    /// Authors and contributors with their stated roles.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub contributor_roles: Vec<ContributorRole>,
 }
@@ -1091,7 +1145,9 @@ pub struct JatsMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct ContributorRole {
+    /// Contributor display name.
     pub name: String,
+    /// Contributor role (e.g. `"author"`, `"editor"`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
 }
@@ -1100,16 +1156,22 @@ pub struct ContributorRole {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct EpubMetadata {
+    /// Dublin Core `coverage` field (geographic or temporal scope).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coverage: Option<String>,
+    /// Dublin Core `format` field (media type of the resource).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dc_format: Option<String>,
+    /// Dublin Core `relation` field (related resource identifier).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relation: Option<String>,
+    /// Dublin Core `source` field (origin resource identifier).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    /// Dublin Core `type` field (nature or genre of the resource).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dc_type: Option<String>,
+    /// Path or identifier of the cover image within the EPUB container.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cover_image: Option<String>,
 }
@@ -1118,6 +1180,7 @@ pub struct EpubMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct PstMetadata {
+    /// Total number of email messages found in the PST archive.
     pub message_count: usize,
 }
 

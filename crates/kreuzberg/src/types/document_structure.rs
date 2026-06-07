@@ -131,7 +131,7 @@ pub struct DocumentStructure {
     /// Each value is the snake_case `node_type` tag of the corresponding
     /// [`NodeContent`] variant (e.g. `"paragraph"`, `"heading"`, `"table"`, …).
     ///
-    /// Computed from [`nodes`] via [`DocumentStructure::finalize_node_types`].
+    /// Computed from `nodes` via [`DocumentStructure::finalize_node_types`].
     /// Empty until that method is called (internal construction paths call it
     /// at the end of derivation).
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -304,27 +304,49 @@ impl ContentLayer {
 #[serde(tag = "node_type", rename_all = "snake_case")]
 pub enum NodeContent {
     /// Document title.
-    Title { text: String },
+    Title {
+        /// The title text content.
+        text: String,
+    },
 
     /// Section heading with level (1-6).
-    Heading { level: u8, text: String },
+    Heading {
+        /// Heading depth (1 = h1, 2 = h2, …, 6 = h6).
+        level: u8,
+        /// The heading text content.
+        text: String,
+    },
 
     /// Body text paragraph.
-    Paragraph { text: String },
+    Paragraph {
+        /// The paragraph text content.
+        text: String,
+    },
 
     /// List container — children are `ListItem` nodes.
-    List { ordered: bool },
+    List {
+        /// `true` for ordered (numbered) lists; `false` for unordered (bullet) lists.
+        ordered: bool,
+    },
 
     /// Individual list item.
-    ListItem { text: String },
+    ListItem {
+        /// The list item text content.
+        text: String,
+    },
 
     /// Table with structured cell grid.
-    Table { grid: TableGrid },
+    Table {
+        /// Structured grid of table cells.
+        grid: TableGrid,
+    },
 
     /// Image reference.
     Image {
+        /// Optional alt text or caption describing the image.
         #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
+        /// Index into the parent `ExtractionResult::images` list.
         #[serde(skip_serializing_if = "Option::is_none")]
         image_index: Option<u32>,
         /// Source URL or path of the image (from `<img src="...">` or `![](src)`).
@@ -334,7 +356,9 @@ pub enum NodeContent {
 
     /// Code block.
     Code {
+        /// The source code text content.
         text: String,
+        /// Programming language identifier (e.g. `"rust"`, `"python"`).
         #[serde(skip_serializing_if = "Option::is_none")]
         language: Option<String>,
     },
@@ -343,20 +367,29 @@ pub enum NodeContent {
     Quote,
 
     /// Mathematical formula / equation.
-    Formula { text: String },
+    Formula {
+        /// The formula source text (LaTeX or plain mathematical notation).
+        text: String,
+    },
 
     /// Footnote reference content.
-    Footnote { text: String },
+    Footnote {
+        /// The footnote body text.
+        text: String,
+    },
 
     /// Logical grouping container (section, key-value area).
     ///
     /// `heading_level` + `heading_text` capture the section heading directly
     /// rather than relying on a first-child positional convention.
     Group {
+        /// Optional display label for the group (e.g. section name).
         #[serde(skip_serializing_if = "Option::is_none")]
         label: Option<String>,
+        /// Heading level of the section heading that opened this group (1-6).
         #[serde(skip_serializing_if = "Option::is_none")]
         heading_level: Option<u8>,
+        /// Text of the section heading that opened this group.
         #[serde(skip_serializing_if = "Option::is_none")]
         heading_text: Option<String>,
     },
@@ -368,6 +401,7 @@ pub enum NodeContent {
     Slide {
         /// 1-indexed slide number.
         number: u32,
+        /// Slide title text, if present.
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
     },
@@ -376,10 +410,20 @@ pub enum NodeContent {
     DefinitionList,
 
     /// Individual definition list entry with term and definition.
-    DefinitionItem { term: String, definition: String },
+    DefinitionItem {
+        /// The term being defined.
+        term: String,
+        /// The definition or description of the term.
+        definition: String,
+    },
 
     /// Citation or bibliographic reference.
-    Citation { key: String, text: String },
+    Citation {
+        /// Citation key (e.g. BibTeX key or reference ID).
+        key: String,
+        /// Formatted citation text as it appears in the document.
+        text: String,
+    },
 
     /// Admonition / callout container (note, warning, tip, etc.).
     ///
@@ -387,6 +431,7 @@ pub enum NodeContent {
     Admonition {
         /// Kind of admonition (e.g. "note", "warning", "tip", "danger").
         kind: String,
+        /// Optional explicit title overriding the default kind label.
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
     },
@@ -398,11 +443,13 @@ pub enum NodeContent {
     RawBlock {
         /// Source format identifier (e.g. "html", "latex", "jsx").
         format: String,
+        /// Verbatim source content in the specified format.
         content: String,
     },
 
     /// Structured metadata block (email headers, YAML frontmatter, etc.).
     MetadataBlock {
+        /// Key-value pairs extracted from the metadata block.
         #[cfg_attr(feature = "api", schema(value_type = Vec<[String; 2]>))]
         #[cfg_attr(alef, alef(skip))]
         entries: Vec<(String, String)>,
@@ -509,16 +556,26 @@ pub struct TextAnnotation {
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[serde(tag = "annotation_type", rename_all = "snake_case")]
 pub enum AnnotationKind {
+    /// Bold (strong) text formatting.
     #[default]
     Bold,
+    /// Italic (emphasis) text formatting.
     Italic,
+    /// Underlined text.
     Underline,
+    /// Strikethrough text.
     Strikethrough,
+    /// Inline code span.
     Code,
+    /// Subscript text.
     Subscript,
+    /// Superscript text.
     Superscript,
+    /// Hyperlink annotation.
     Link {
+        /// Hyperlink target URL.
         url: String,
+        /// Optional link title attribute.
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
     },
@@ -526,15 +583,19 @@ pub enum AnnotationKind {
     Highlight,
     /// Text color (CSS-compatible value, e.g. "#ff0000", "red").
     Color {
+        /// CSS-compatible color value (e.g. `"#ff0000"`, `"red"`).
         value: String,
     },
     /// Font size with units (e.g. "12pt", "1.2em", "16px").
     FontSize {
+        /// Font size including unit (e.g. `"12pt"`, `"1.2em"`, `"16px"`).
         value: String,
     },
     /// Extensible annotation for format-specific styling.
     Custom {
+        /// Name of the custom annotation kind.
         name: String,
+        /// Optional value or parameter for the annotation.
         #[serde(skip_serializing_if = "Option::is_none")]
         value: Option<String>,
     },

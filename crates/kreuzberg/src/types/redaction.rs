@@ -68,14 +68,23 @@ pub enum RedactionStrategy {
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum PiiCategory {
+    /// Email address (e.g. `user@example.com`).
     Email,
+    /// Phone number in any common format.
     Phone,
+    /// US Social Security Number.
     Ssn,
+    /// Payment card number (Visa, Mastercard, Amex, etc.).
     CreditCard,
+    /// Postal / ZIP code.
     PostalCode,
+    /// IPv4 or IPv6 address.
     IpAddress,
+    /// International Bank Account Number.
     Iban,
+    /// SWIFT / BIC bank identifier code.
     SwiftBic,
+    /// Date of birth.
     DateOfBirth,
     /// Person name, surfaced by the optional NER backend.
     Person,

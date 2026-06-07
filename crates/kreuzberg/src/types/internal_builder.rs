@@ -1,6 +1,6 @@
 //! Ergonomic builder for constructing `InternalDocument` instances.
 //!
-//! Mirrors the API of [`DocumentStructureBuilder`](super::builder::DocumentStructureBuilder)
+//! Mirrors the API of `DocumentStructureBuilder`
 //! but outputs the flat [`InternalDocument`](super::internal::InternalDocument) representation
 //! instead of a tree-based `DocumentStructure`.
 //!

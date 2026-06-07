@@ -26,12 +26,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 /// A lightweight, cloneable cancellation token.
 ///
-/// Create one with [`CancellationToken::new`], pass clones to the extraction
-/// call (via [`ExtractionConfig::cancel_token`]) and to the caller. Call
-/// [`CancellationToken::cancel`] from the caller side when the operation
-/// should be aborted. The extraction code polls
-/// [`CancellationToken::is_cancelled`] at safe checkpoints and returns
-/// [`KreuzbergError::Cancelled`] if set.
+/// Create one with `CancellationToken::default()`, pass clones to the extraction
+/// call (via `ExtractionConfig::cancel_token`) and to the caller. Call
+/// `cancel` from the caller side when the operation should be aborted.
+/// The extraction code polls `is_cancelled` at safe checkpoints and returns
+/// a cancellation error if set.
 ///
 /// Cloning is cheap (increments the `Arc` reference count only).
 #[cfg_attr(alef, alef(skip))]

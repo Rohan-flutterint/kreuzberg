@@ -39,6 +39,7 @@ pub(crate) mod cache_dir;
 pub mod cancellation;
 pub mod core;
 pub mod error;
+/// Format-specific document extraction implementations and office metadata types.
 pub mod extraction;
 pub mod extractors;
 #[cfg(feature = "layout-detection")]
@@ -46,6 +47,7 @@ pub mod model_cache;
 pub mod plugins;
 pub mod rendering;
 pub mod telemetry;
+/// Text post-processing: NER, summarisation, redaction, token reduction, and translation.
 pub mod text;
 pub mod types;
 pub mod utils;
@@ -269,16 +271,26 @@ pub use llm::region_extractor::RegionKind;
 
 // Stub for targets without liter-llm (WASM) so alef-generated FFI bindings compile.
 #[cfg(not(all(feature = "liter-llm", not(target_arch = "wasm32"))))]
+/// Per-region VLM extraction type stub.
+///
+/// Identifies the semantic kind of a document region for VLM-based extraction.
+/// This stub is emitted on targets where the `liter-llm` feature is unavailable
+/// (WASM, Android x86_64 emulator) so that alef-generated bindings compile.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum RegionKind {
+    /// A figure or illustration region.
     Figure,
+    /// A data-dense table region.
     DenseTable,
+    /// A region with complex multi-column or mixed layout.
     ComplexLayout,
+    /// A figure or table caption.
     Caption,
 }
 
 #[cfg(not(all(feature = "liter-llm", not(target_arch = "wasm32"))))]
 impl RegionKind {
+    /// Returns an empty default prompt string for this stub implementation.
     pub fn default_prompt(self) -> &'static str {
         ""
     }
@@ -462,13 +474,21 @@ pub fn list_embedding_presets() -> Vec<String> {
 #[cfg_attr(alef, alef(skip))]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EmbeddingPreset {
+    /// Unique preset identifier (e.g. "balanced", "multilingual").
     pub name: String,
+    /// Maximum input size in Unicode characters for chunking.
     pub chunk_size: usize,
+    /// Overlap in characters between adjacent chunks.
     pub overlap: usize,
+    /// HuggingFace repository ID for the model (e.g. "BAAI/bge-small-en-v1.5").
     pub model_repo: String,
+    /// Pooling strategy used to aggregate token embeddings (e.g. "mean", "cls").
     pub pooling: String,
+    /// ONNX model file name within the repository.
     pub model_file: String,
+    /// Number of dimensions in the embedding output vectors.
     pub dimensions: usize,
+    /// Human-readable description of the preset's intended use case.
     pub description: String,
 }
 

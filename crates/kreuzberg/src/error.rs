@@ -67,6 +67,7 @@ pub type Result<T> = std::result::Result<T, KreuzbergError>;
 /// - `Other` - Catch-all for uncommon errors
 #[derive(Debug, Error)]
 pub enum KreuzbergError {
+    /// A file system or I/O operation failed. These errors always bubble up unchanged.
     #[error("IO error: {0}")]
     Io(
         #[from]
@@ -74,87 +75,131 @@ pub enum KreuzbergError {
         std::io::Error,
     ), // Excluded from bindings; IO errors bubble up via Result
 
+    /// Document parsing failed (e.g. corrupt file, unsupported format feature).
     #[error("Parsing error: {message}")]
     Parsing {
+        /// Human-readable description of what failed during parsing.
         message: String,
         #[source]
+        /// Underlying error that caused the parsing failure, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// An OCR engine returned an error or produced unusable output.
     #[error("OCR error: {message}")]
     Ocr {
+        /// Human-readable description of the OCR failure.
         message: String,
         #[source]
+        /// Underlying error from the OCR backend, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// Invalid configuration or input parameters were supplied.
     #[error("Validation error: {message}")]
     Validation {
+        /// Human-readable description of the validation failure.
         message: String,
         #[source]
+        /// Underlying error that triggered validation failure, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// A cache read or write operation failed.
     #[error("Cache error: {message}")]
     Cache {
+        /// Human-readable description of the cache failure.
         message: String,
         #[source]
+        /// Underlying error from the cache layer, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// An image manipulation operation (resize, decode, DPI conversion) failed.
     #[error("Image processing error: {message}")]
     ImageProcessing {
+        /// Human-readable description of the image processing failure.
         message: String,
         #[source]
+        /// Underlying error from the image library, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// JSON or MessagePack serialization/deserialization failed.
     #[error("Serialization error: {message}")]
     Serialization {
+        /// Human-readable description of the serialization failure.
         message: String,
         #[source]
+        /// Underlying serde error, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// A required optional system dependency (e.g. `tesseract`) was not found.
     #[error("Missing dependency: {0}")]
     MissingDependency(String),
 
+    /// A registered plugin returned an error during extraction.
     #[error("Plugin error in '{plugin_name}': {message}")]
-    Plugin { message: String, plugin_name: String },
+    Plugin {
+        /// Human-readable description of what the plugin failed to do.
+        message: String,
+        /// Name of the plugin that reported the error.
+        plugin_name: String,
+    },
 
+    /// An internal `Mutex` or `RwLock` was found in a poisoned state.
     #[error("Lock poisoned: {0}")]
     LockPoisoned(String),
 
+    /// The document's MIME type is not supported by any registered extractor.
     #[error("Unsupported format: {0}")]
     UnsupportedFormat(String),
 
+    /// The embedding model or embedding pipeline returned an error.
     #[error("Embedding error: {message}")]
     Embedding {
+        /// Human-readable description of the embedding failure.
         message: String,
         #[source]
+        /// Underlying error from the embedding backend, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// Audio/video transcription failed.
     #[error("Transcription error: {message}")]
     Transcription {
+        /// Human-readable description of the transcription failure.
         message: String,
         #[source]
+        /// Underlying error from the transcription backend, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// The extraction operation exceeded the configured time limit.
     #[error("Extraction timed out after {elapsed_ms}ms (limit: {limit_ms}ms)")]
-    Timeout { elapsed_ms: u64, limit_ms: u64 },
+    Timeout {
+        /// Wall-clock milliseconds elapsed before the timeout was detected.
+        elapsed_ms: u64,
+        /// Configured timeout limit in milliseconds.
+        limit_ms: u64,
+    },
 
+    /// The extraction was cancelled via a [`crate::cancellation::CancellationToken`].
     #[error("Extraction cancelled")]
     Cancelled,
 
+    /// A security policy was violated (e.g. zip bomb, oversized archive).
     #[error("Security violation: {message}")]
     Security {
+        /// Human-readable description of the security violation.
         message: String,
         #[source]
+        /// Underlying security error, if available.
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
+    /// A catch-all for uncommon errors that do not fit another variant.
     #[error("{0}")]
     Other(String),
 }

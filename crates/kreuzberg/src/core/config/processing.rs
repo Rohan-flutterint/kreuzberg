@@ -24,10 +24,14 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum ChunkerType {
+    /// Generic whitespace- and punctuation-aware text splitter (default).
     #[default]
     Text,
+    /// Markdown-aware splitter that preserves heading and code-block boundaries.
     Markdown,
+    /// YAML-aware splitter that creates one chunk per top-level key.
     Yaml,
+    /// Topic-aware chunker that splits at embedding-based topic shifts.
     Semantic,
 }
 
@@ -351,16 +355,27 @@ impl Default for EmbeddingConfig {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EmbeddingModelType {
     /// Use a preset model configuration (recommended)
-    Preset { name: String },
+    Preset {
+        /// Preset name (e.g. "balanced", "multilingual", "large").
+        name: String,
+    },
 
     /// Use a custom ONNX model from HuggingFace
-    Custom { model_id: String, dimensions: usize },
+    Custom {
+        /// HuggingFace model repository ID (e.g. "BAAI/bge-small-en-v1.5").
+        model_id: String,
+        /// Number of dimensions in the model's output embedding vectors.
+        dimensions: usize,
+    },
 
     /// Provider-hosted embedding model via liter-llm.
     ///
     /// Uses the model specified in the nested `LlmConfig` (e.g.,
     /// `"openai/text-embedding-3-small"`).
-    Llm { llm: super::llm::LlmConfig },
+    Llm {
+        /// LLM provider configuration specifying the model and API credentials.
+        llm: super::llm::LlmConfig,
+    },
 
     /// In-process embedding backend registered via the plugin system.
     ///
@@ -381,7 +396,10 @@ pub enum EmbeddingModelType {
     /// context window via `max_characters` directly.
     ///
     /// See [`crate::plugins::register_embedding_backend`].
-    Plugin { name: String },
+    Plugin {
+        /// Name the backend was registered under via `register_embedding_backend`.
+        name: String,
+    },
 }
 
 impl Default for EmbeddingModelType {
