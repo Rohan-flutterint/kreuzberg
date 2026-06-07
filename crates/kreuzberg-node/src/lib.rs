@@ -7962,7 +7962,7 @@ impl kreuzberg::OcrBackend for JsOcrBackendBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerOcrBackend")]
 pub fn register_ocr_backend(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsOcrBackendBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::OcrBackend> = Arc::new(bridge);
@@ -8237,7 +8237,7 @@ impl kreuzberg::PostProcessor for JsPostProcessorBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerPostProcessor")]
 pub fn register_post_processor(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsPostProcessorBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::PostProcessor> = Arc::new(bridge);
@@ -8475,7 +8475,7 @@ impl kreuzberg::Validator for JsValidatorBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerValidator")]
 pub fn register_validator(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsValidatorBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::Validator> = Arc::new(bridge);
@@ -8758,7 +8758,7 @@ impl kreuzberg::EmbeddingBackend for JsEmbeddingBackendBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerEmbeddingBackend")]
 pub fn register_embedding_backend(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsEmbeddingBackendBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::EmbeddingBackend> = Arc::new(bridge);
@@ -9082,7 +9082,7 @@ impl kreuzberg::DocumentExtractor for JsDocumentExtractorBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerDocumentExtractor")]
 pub fn register_document_extractor(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsDocumentExtractorBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::DocumentExtractor> = Arc::new(bridge);
@@ -9330,7 +9330,7 @@ impl kreuzberg::Renderer for JsRendererBridge {
     }
 }
 
-#[napi]
+#[napi(js_name = "registerRenderer")]
 pub fn register_renderer(obj: napi::bindgen_prelude::Object) -> napi::Result<()> {
     let bridge = JsRendererBridge::new(obj)?;
     let arc: Arc<dyn kreuzberg::Renderer> = Arc::new(bridge);
