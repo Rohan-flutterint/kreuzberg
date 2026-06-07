@@ -137,7 +137,10 @@ fn derive_document_structure_inner(doc: &mut InternalDocument) -> DocumentStruct
                     heading_level: None,
                     heading_text: None,
                 },
-                _ => unreachable!(),
+                // INVARIANT: the `is_container_start()` guard above already
+                // confirmed this is a ListStart, QuoteStart, or GroupStart variant;
+                // any other variant cannot reach this arm.
+                _ => unreachable!("variant already checked by is_container_start()"),
             };
             let node_idx = push_node(&mut ds, &stack, content, elem, elem_idx as u32);
             elem_to_node[elem_idx] = Some(node_idx);

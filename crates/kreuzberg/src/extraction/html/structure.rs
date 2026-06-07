@@ -785,7 +785,9 @@ impl<'a, 'b> HtmlWalker<'a, 'b> {
                         end,
                         kind: crate::types::document_structure::AnnotationKind::Highlight,
                     },
-                    InlineKind::Link { .. } => unreachable!("Links handled separately"),
+                    // INVARIANT: callers must use `pop_inline_link` for Link spans;
+                    // `pop_inline` must never be called with a Link variant.
+                    InlineKind::Link { .. } => unreachable!("Links handled separately by pop_inline_link"),
                 };
                 self.annotations.push(annotation);
             }

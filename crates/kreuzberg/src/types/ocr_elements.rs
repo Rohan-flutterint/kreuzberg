@@ -191,7 +191,8 @@ impl OcrRotation {
                 1 => 180.0,
                 2 => 90.0,
                 3 => 270.0,
-                _ => unreachable!(), // validated above
+                // INVARIANT: the range check above guarantees angle_index is 0..=3
+                _ => unreachable!("angle_index validated to 0..=3 above"),
             },
             confidence: Some((angle_score as f64).clamp(0.0, 1.0)),
         })

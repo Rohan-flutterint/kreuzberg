@@ -126,9 +126,11 @@ impl TessdataManager {
 /// Download a single traineddata file with retries.
 #[cfg(feature = "paddle-ocr")]
 fn download_traineddata(url: &str, dest: &Path) -> Result<(), String> {
-    let max_attempts = 3;
+    const MAX_ATTEMPTS: u32 = 3;
 
-    for attempt in 1..=max_attempts {
+    let mut last_error = String::new();
+
+    for attempt in 1..=MAX_ATTEMPTS {
         let result = (|| -> Result<Vec<u8>, String> {
             let agent = ureq::Agent::new_with_defaults();
             let response = agent.get(url).call().map_err(|e| format!("HTTP request failed: {e}"))?;
@@ -154,16 +156,14 @@ fn download_traineddata(url: &str, dest: &Path) -> Result<(), String> {
                 return Ok(());
             }
             Err(e) => {
-                if attempt == max_attempts {
-                    return Err(format!("Failed after {max_attempts} attempts: {e}"));
-                }
-                tracing::warn!(attempt, max_attempts, error = %e, "Download failed, retrying...");
+                tracing::warn!(attempt, max_attempts = MAX_ATTEMPTS, error = %e, "Download failed, retrying...");
                 std::thread::sleep(std::time::Duration::from_secs(2u64.pow((attempt - 1).min(3))));
+                last_error = e;
             }
         }
     }
 
-    unreachable!()
+    Err(format!("Failed after {MAX_ATTEMPTS} attempts: {last_error}"))
 }
 
 #[cfg(test)]

@@ -307,7 +307,9 @@ impl OrgModeExtractor {
                         b'_' => AnnotationKind::Underline,
                         b'=' | b'~' => AnnotationKind::Code,
                         b'+' => AnnotationKind::Strikethrough,
-                        _ => unreachable!(),
+                        // INVARIANT: `is_org_markup_char` only returns true for the five
+                        // bytes matched above; no other byte can reach this arm.
+                        _ => unreachable!("byte not in is_org_markup_char set"),
                     };
                     if start < end_off {
                         annotations.push(TextAnnotation {

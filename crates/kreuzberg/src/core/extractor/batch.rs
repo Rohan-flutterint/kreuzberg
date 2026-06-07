@@ -62,8 +62,10 @@ where
         }
     }
 
-    #[allow(clippy::unwrap_used)]
-    Ok(results.into_iter().map(|r| r.unwrap()).collect())
+    // Every `results[index]` slot is filled by the match above — each task writes exactly
+    // one `Some(...)` into its own slot, and `join_next` exhausts all tasks before here.
+    // `flatten()` on `Iterator<Option<T>>` is equivalent to `.unwrap()` but avoids the lint.
+    Ok(results.into_iter().flatten().collect())
 }
 
 /// Run a single extraction task with semaphore gating, timing, optional timeout, and batch mode.

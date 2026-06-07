@@ -739,7 +739,6 @@ fn score_structural_quality_impl(extracted_md: &str, ground_truth_md: &str) -> S
 
 /// A matched pair of blocks with scoring details.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct BlockMatch {
     gt_idx: usize,
     ext_idx: usize,
