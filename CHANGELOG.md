@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0-rc.7] - 2026-06-08
+
+### Changed
+
+- **alef**: bumped to `0.23.35`. Regen brings (a) python e2e enum field codegen as lowercase string literals instead of `EnumType.VARIANT` (fixes `AttributeError: type object 'OutputFormat' has no attribute 'MARKDOWN'` for str-aliased enums); (b) kotlin e2e string-array argument emission as plain `listOf("a", "b")` instead of `String(Files.readAllBytes(...), "application/octet-stream")`; (c) swift `Usize → UInt` inbound protocol type mapping; (d) revert of the `napi::Reference<Object>` bridge change in 0.23.34 (the emitted code used napi-rs APIs available only behind the `compat-mode` feature, which kreuzberg-node does not enable — restored the prior `unsafe transmute` to `Object<'static>`); (e) napi service.ts preamble correctly splits type/value/native imports.
+
+### Fixed
+
+- **java**: skip CPD duplication check in the Maven publish profile. Alef-generated streaming method bodies share inherent boilerplate duplication (identical iterator-driving loops per-stream-handle) that the strict CPD rule flagged as a publish-blocking failure (4 duplications on rc.5). CPD still runs on regular dev builds as a smoke check; only the publish profile skips it.
+
 ## [5.0.0-rc.6] - 2026-06-07
 
 ### Changed
