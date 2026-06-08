@@ -21,28 +21,30 @@ tasks:
     dir: test_apps/python
     cmds:
       - uv sync
-      - uv run --no-sync pytest smoke_test.py -v
+      - uv run --no-sync pytest tests/test_smoke.py -v
 
   smoke:node:
     desc: Run Node.js test_app smoke test
     dir: test_apps/node
     cmds:
       - pnpm install
-      - pnpm run test:smoke
+      - pnpm exec vitest run tests/smoke.test.ts
 
   smoke:ruby:
     desc: Run Ruby test_app smoke test
     dir: test_apps/ruby
     cmds:
       - bundle install
-      - bundle exec rspec smoke_test.rb
+      - bundle exec rspec spec/smoke_spec.rb
 
   smoke:go:
     desc: Run Go test_app smoke test
     dir: test_apps/go
+    env:
+      GOWORK: "off"
     cmds:
-      - go test -v -run TestBasicFixtures
-      - go test -v -run TestParseValidation
+      - go mod download
+      - go test -v -run '^Test_Smoke' ./...
 
   smoke:java:
     desc: Run Java test_app smoke test
@@ -55,40 +57,40 @@ tasks:
     dir: test_apps/elixir
     cmds:
       - mix deps.get
-      - mix test
+      - mix test test/smoke_test.exs
 
   smoke:csharp:
     desc: Run C# test_app smoke test
     dir: test_apps/csharp
     cmds:
       - dotnet restore
-      - dotnet test
+      - dotnet test --filter "FullyQualifiedName~SmokeTests"
 
   smoke:php:
     desc: Run PHP test_app smoke test
     dir: test_apps/php
     cmds:
       - composer install
-      - vendor/bin/phpunit smoke_test.php
+      - vendor/bin/phpunit tests/SmokeTest.php
 
   smoke:r:
     desc: Run R test_app smoke test
     dir: test_apps/r
     cmds:
-      - Rscript run_tests.R
+      - Rscript -e 'library(testthat); test_file("tests/test_smoke.R")'
 
   smoke:rust:
     desc: Run Rust test_app smoke test
     dir: test_apps/rust
     cmds:
-      - cargo run
+      - cargo test --release --test smoke_test
 
   smoke:wasm:
     desc: Run WASM test_app smoke test
     dir: test_apps/wasm
     cmds:
       - pnpm install
-      - pnpm run test:smoke
+      - pnpm exec vitest run tests/smoke.test.ts
 
   comprehensive:
     desc: Run all test_app comprehensive tests
@@ -103,25 +105,24 @@ tasks:
     dir: test_apps/python
     cmds:
       - uv sync
-      - uv run --no-sync pytest comprehensive_test.py -v
+      - uv run --no-sync pytest tests/ -v
 
   comprehensive:node:
     desc: Run Node.js test_app comprehensive tests
     dir: test_apps/node
     cmds:
       - pnpm install
-      - pnpm run test:comprehensive
+      - pnpm exec vitest run
 
   comprehensive:ruby:
     desc: Run Ruby test_app comprehensive tests
     dir: test_apps/ruby
     cmds:
       - bundle install
-      - bundle exec rspec comprehensive_test.rb
+      - bundle exec rspec
 
   comprehensive:go:
     desc: Run Go test_app comprehensive tests
     dir: test_apps/go
     cmds:
-      - go test -v -run TestProcessFixtures
-      - go test -v -run TestChunkingFixtures
+      - go test -v ./...
