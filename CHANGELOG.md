@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Maven publish suppresses CPD/PMD via property-level skips.** The
+  `publish` profile in `packages/java/pom.xml` now sets `<cpd.skip>true</cpd.skip>`
+  and `<pmd.skip>true</pmd.skip>` in its `<properties>` block. The previous
+  `<configuration><skip>true</skip>` inside the `maven-pmd-plugin` block did
+  not suppress the bound `cpd-check` goal in a profile context, so alef-regenerated
+  streaming method bodies that drift past the 200-token threshold could block
+  publish. Releases should never block on duplicate-code analysis.
+- **Go module Publish: subdirectory tag scheme.** `packages/go/v5/go.mod` is the
+  canonical Go module location. The default `finalize-release` behavior (strip
+  trailing `/vN` from `go-module-path`) produced `packages/go/v5.0.0-rc.7`,
+  matching a non-existent `packages/go/go.mod` instead. The publish workflow
+  now passes `go-strip-major-version: "false"` to `finalize-release@v1` so the
+  tag becomes `packages/go/v5/v5.0.0-rc.X` and Go's module proxy resolves
+  `go.mod` from the v5 subtree. Fixes `missing go.mod at revision v5.0.0-rc.7`.
+
 ## [5.0.0-rc.7] - 2026-06-08
 
 ### Changed
