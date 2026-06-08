@@ -375,15 +375,6 @@
             <id>publish</id>
             <properties>
                 <gpg.skip>false</gpg.skip>
-                <!--
-                    Skip CPD and PMD during publish. The maven-pmd-plugin <configuration><skip>
-                    flag does not suppress the bound `cpd-check` goal in a profile context — only
-                    these property-level toggles do. alef-regenerated stream methods can drift past
-                    the 200-token threshold between Rust core changes, and a publish should never
-                    block on duplicate-code analysis.
-                -->
-                <cpd.skip>true</cpd.skip>
-                <pmd.skip>true</pmd.skip>
             </properties>
             <build>
                 <plugins>

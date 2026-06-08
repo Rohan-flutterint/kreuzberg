@@ -317,15 +317,16 @@ Extract comprehensive metadata from all supported formats: authors, titles, crea
 
 ## AI Coding Assistants
 
-Kreuzberg ships with an [Agent Skill](https://agentskills.io) that teaches AI coding assistants how to use the library correctly. It works with Claude Code, Codex, Gemini CLI, Cursor, VS Code, Amp, Goose, Roo Code, and any tool supporting the Agent Skills standard.
+Install the Kreuzberg plugin from the [`kreuzberg-dev/plugins`](https://github.com/kreuzberg-dev/plugins) marketplace:
 
-Install the skill into any project using the [Vercel Skills CLI](https://github.com/vercel-labs/skills):
-
-```bash
-npx skills add kreuzberg-dev/kreuzberg
+```text
+/plugin marketplace add kreuzberg-dev/plugins
+/plugin install kreuzberg@kreuzberg
 ```
 
-The skill is located at [`skills/kreuzberg/SKILL.md`](skills/kreuzberg/SKILL.md) and is automatically discovered by supported AI coding tools once installed.
+Works with Claude Code, Codex, Cursor, Gemini CLI, Factory Droid, GitHub Copilot CLI, and opencode. See [the marketplace README](https://github.com/kreuzberg-dev/plugins) for harness-specific install instructions.
+
+The plugin ships the Kreuzberg agent skill — previously distributed from the in-tree `skills/` directory — and teaches assistants the extraction APIs, configuration fields, OCR backends, and language-specific conventions.
 
 ## Documentation
 

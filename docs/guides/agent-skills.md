@@ -1,26 +1,19 @@
 # AI Coding Assistants
 
-Kreuzberg ships with an [Agent Skill](https://agentskills.io) that teaches AI coding assistants how to use the library correctly — covering extraction, configuration, OCR, chunking, embeddings, batch processing, error handling, and plugins across Python, Node.js/TypeScript, Rust, and CLI.
-
-## Supported Assistants
-
-Works with any tool supporting the [Agent Skills](https://agentskills.io) standard: Claude Code, Codex, Gemini CLI, Cursor, Visual Studio Code (with AI extensions), Amp, Goose, and Roo Code.
+The Kreuzberg plugin teaches AI coding assistants how to use the library — covering extraction, configuration, OCR, chunking, embeddings, batch processing, error handling, and plugins across Python, Node.js/TypeScript, Rust, and CLI.
 
 ## Installing
 
-```bash title="Terminal"
-# Install into current project (recommended)
-npx skills add kreuzberg-dev/kreuzberg
+Install from the [`kreuzberg-dev/plugins`](https://github.com/kreuzberg-dev/plugins) marketplace:
 
-# Install globally
-npx skills add kreuzberg-dev/kreuzberg -g
+```text title="Terminal"
+/plugin marketplace add kreuzberg-dev/plugins
+/plugin install kreuzberg@kreuzberg
 ```
 
-Or copy manually:
+Works with Claude Code, Codex, Cursor, Gemini CLI, Factory Droid, GitHub Copilot CLI, and opencode. See [the marketplace README](https://github.com/kreuzberg-dev/plugins) for harness-specific install instructions.
 
-```bash title="Terminal"
-cp -r path/to/kreuzberg/skills/kreuzberg .claude/skills/kreuzberg
-```
+The Kreuzberg agent skill — previously distributed from the in-tree `skills/` directory of this repository — now lives inside the plugin and is loaded automatically by every supported assistant.
 
 ## What the Skill Provides
 
@@ -31,24 +24,6 @@ When your AI coding assistant discovers the skill, it knows:
 - Rust feature gates (for example, `tokio-runtime` for sync functions)
 - Language-specific conventions (snake_case in Python/Rust, camelCase in Node.js)
 - Error handling patterns for each language
-
-### Skill Structure
-
-```text
-skills/kreuzberg/
-├── SKILL.md                        # Main skill (~400 lines)
-└── references/
-    ├── python-api.md               # Complete Python API
-    ├── nodejs-api.md               # Complete Node.js API
-    ├── rust-api.md                 # Complete Rust API
-    ├── cli-reference.md            # All CLI commands and flags
-    ├── configuration.md            # Config file formats and schema
-    ├── supported-formats.md        # All 90+ supported formats
-    ├── advanced-features.md        # Plugins, embeddings, MCP, security
-    └── other-bindings.md           # Go, Ruby, Java, C#, PHP, Elixir
-```
-
-The main file stays under 500 lines for efficient AI consumption. Reference files load on demand.
 
 ## Quick Examples
 
@@ -94,7 +69,7 @@ The main file stays under 500 lines for efficient AI consumption. Reference file
 
 ## Further Reading
 
-- [Agent Skills Standard](https://agentskills.io) — the open standard
+- [Plugin marketplace](https://github.com/kreuzberg-dev/plugins) — install the plugin in every supported harness
 - [Extraction Basics](extraction.md) — core extraction API
 - [Configuration](configuration.md) — all configuration options
 - [Advanced Features](advanced.md) — chunking, embeddings, language detection
