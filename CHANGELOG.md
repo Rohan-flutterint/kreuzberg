@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Python sdist publish step now uses split-layout invocation.** `.github/workflows/publish.yaml`
+  passed `manifest-path: crates/kreuzberg-py/Cargo.toml` to `build-python-sdist@v1`. That input
+  routes the action into its single-tree branch, which cd's into the Rust crate directory and
+  runs `maturin sdist` — but the kreuzberg layout keeps `pyproject.toml` in `packages/python/`,
+  so maturin failed with `Failed to build source distribution, pyproject.toml not found`. PyPI
+  publish then skipped for rc.10. Dropped the `manifest-path` input so the action falls through
+  to the default `package-dir: packages/python` split-layout fallback, which cd's into the
+  package dir and lets maturin resolve `manifest-path` from pyproject.toml's `[tool.maturin]`
+  section itself.
 - **Windows MSVC CRT mismatch in PHP and Elixir cdylibs.** Linking `kreuzberg_php.dll` /
   `kreuzberg_nif.dll` on `x86_64-pc-windows-msvc` failed with
   `LNK1319: mismatch detected for 'RuntimeLibrary': MT_StaticRelease vs MD_DynamicRelease`.

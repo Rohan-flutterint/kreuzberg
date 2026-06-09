@@ -500,9 +500,15 @@ jobs:
         with:
           python-version: "3.13"
 
+      # kreuzberg uses a split layout: pyproject.toml lives in packages/python/
+      # while the PyO3 crate is at crates/kreuzberg-py/. Passing manifest-path
+      # routes the action to its single-tree branch which cd's into the Rust crate
+      # dir and runs `maturin sdist`, then fails with "pyproject.toml not found".
+      # Default package-dir=packages/python triggers the split-layout fallback
+      # which cd's into the package dir; maturin resolves manifest-path from
+      # pyproject.toml's [tool.maturin] section itself.
       - uses: kreuzberg-dev/actions/build-python-sdist@v1
         with:
-          manifest-path: crates/kreuzberg-py/Cargo.toml
           output-dir: dist
 
       - uses: actions/upload-artifact@v7
