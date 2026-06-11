@@ -10,7 +10,7 @@ defmodule E2e.FormatSpecificTest do
     test "format_docx_standalone" do
       content = File.read!("../../test_documents/docx/fake.docx")
       {:ok, result} = Kreuzberg.extract_bytes_sync(content, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 20)
+      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20)
     end
   end
 
@@ -18,7 +18,7 @@ defmodule E2e.FormatSpecificTest do
     test "format_hwpx_standalone" do
       content = File.read!("../../test_documents/hwpx/simple.hwpx")
       {:ok, result} = Kreuzberg.extract_bytes_sync(content, "application/haansofthwpx")
-      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 20)
+      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20)
       assert String.contains?(to_string(result.content), "Hello from HWPX")
     end
   end
@@ -27,7 +27,7 @@ defmodule E2e.FormatSpecificTest do
     test "format_pdf_text" do
       content = File.read!("../../test_documents/pdf/fake_memo.pdf")
       {:ok, result} = Kreuzberg.extract_bytes_sync(content, "application/pdf")
-      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 50)
+      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50)
       assert Enum.any?(["Mallori", "May"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end

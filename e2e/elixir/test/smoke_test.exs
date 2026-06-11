@@ -40,7 +40,7 @@ defmodule E2e.SmokeTest do
       content = File.read!("../../test_documents/images/test_hello_world.png")
       {:ok, result} = Kreuzberg.extract_bytes_async(content, "image/png", "{}")
       assert String.trim(result.mime_type) == "image/png"
-      assert (is_binary(result.content) && byte_size(result.content) >= 1) || (is_list(result.content) && length(result.content) >= 1) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 1)
+      assert (is_binary(result.content) && byte_size(result.content) >= 1) || (is_list(result.content) && length(result.content) >= 1)
       assert Enum.any?(["Hello", "World", "hello", "world"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -49,7 +49,7 @@ defmodule E2e.SmokeTest do
     test "smoke_docx_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/docx/fake.docx", mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", config: "{}")
       assert String.trim(result.mime_type) == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 20)
+      assert (is_binary(result.content) && byte_size(result.content) >= 20) || (is_list(result.content) && length(result.content) >= 20)
       assert Enum.any?(["Lorem", "ipsum", "document", "text"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -58,7 +58,7 @@ defmodule E2e.SmokeTest do
     test "smoke_html_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/html/simple_table.html", mime_type: "text/html", config: "{}")
       assert String.trim(result.mime_type) == "text/html"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["Sample Data Table", "Laptop", "Electronics", "Product"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -74,7 +74,7 @@ defmodule E2e.SmokeTest do
     test "smoke_json_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/json/simple.json", mime_type: "application/json", config: "{}")
       assert String.trim(result.mime_type) == "application/json"
-      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 5)
+      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5)
     end
   end
 
@@ -82,7 +82,7 @@ defmodule E2e.SmokeTest do
     test "smoke_pdf_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf", mime_type: "application/pdf", config: "{}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 50)
+      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50)
       assert Enum.any?(["May 5, 2023", "To Whom it May Concern"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -91,7 +91,7 @@ defmodule E2e.SmokeTest do
     test "smoke_txt_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/text/report.txt", mime_type: "text/plain", config: "{}")
       assert String.trim(result.mime_type) == "text/plain"
-      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 5)
+      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5)
     end
   end
 
@@ -99,7 +99,7 @@ defmodule E2e.SmokeTest do
     test "smoke_xlsx_basic" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/xlsx/stanley_cups.xlsx", mime_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", config: "{}")
       assert String.trim(result.mime_type) == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      assert (is_binary(result.content) && byte_size(result.content) >= 100) || (is_list(result.content) && length(result.content) >= 100) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 100)
+      assert (is_binary(result.content) && byte_size(result.content) >= 100) || (is_list(result.content) && length(result.content) >= 100)
       assert String.contains?(to_string(result.content), "Team")
       assert String.contains?(to_string(result.content), "Location")
       assert String.contains?(to_string(result.content), "Stanley Cups")

@@ -11,7 +11,7 @@ defmodule E2e.AsyncTest do
       content = File.read!("../../test_documents/pdf/fake_memo.pdf")
       {:ok, result} = Kreuzberg.extract_bytes_async(content, "application/pdf")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 50)
+      assert (is_binary(result.content) && byte_size(result.content) >= 50) || (is_list(result.content) && length(result.content) >= 50)
     end
   end
 

@@ -10,7 +10,7 @@ defmodule E2e.PdfTest do
     test "render_pdf_page_first" do
       pdf_bytes = File.read!("../../test_documents/pdf/fake_memo.pdf")
       {:ok, result} = Kreuzberg.render_pdf_page_to_png(pdf_bytes, 0)
-      assert (is_binary(result) && byte_size(result) >= 100) || (is_list(result) && length(result) >= 100) || (is_binary(result) == false && is_list(result) == false && String.length(result) >= 100)
+      assert (is_binary(result) && byte_size(result) >= 100) || (is_list(result) && length(result) >= 100)
     end
   end
 

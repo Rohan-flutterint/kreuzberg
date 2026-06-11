@@ -26,7 +26,7 @@ defmodule E2e.ContractTest do
     test "api_batch_bytes_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["May 5, 2023", "Mallori"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -35,7 +35,7 @@ defmodule E2e.ContractTest do
     test "api_batch_bytes_with_configs_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf", config: "{\"output_format\":\"markdown\"}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'metadata.output_format' not available on result type
     end
   end
@@ -44,7 +44,7 @@ defmodule E2e.ContractTest do
     test "api_batch_file_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["May 5, 2023", "Mallori"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -53,7 +53,7 @@ defmodule E2e.ContractTest do
     test "api_batch_file_with_configs_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf", config: "{\"output_format\":\"markdown\"}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'metadata.output_format' not available on result type
     end
   end
@@ -62,7 +62,7 @@ defmodule E2e.ContractTest do
     test "api_extract_bytes_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["May 5, 2023", "Mallori"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -71,7 +71,7 @@ defmodule E2e.ContractTest do
     test "api_extract_file_async" do
       {:ok, result} = Kreuzberg.extract_file_async("../../test_documents/pdf/fake_memo.pdf")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["May 5, 2023", "Mallori"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -97,7 +97,7 @@ defmodule E2e.ContractTest do
     test "config_extraction_timeout" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/pdf/fake_memo.pdf", config: "{\"extraction_timeout_secs\":300}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
     end
   end
 
@@ -105,7 +105,7 @@ defmodule E2e.ContractTest do
     test "config_keywords" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/pdf/fake_memo.pdf", config: "{\"keywords\":{\"algorithm\":\"yake\",\"max_keywords\":10}}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'keywords' not available on Elixir result type
       # skipped: field 'keywords' not available on Elixir result type
     end
@@ -115,7 +115,7 @@ defmodule E2e.ContractTest do
     test "config_pages" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/pdf/fake_memo.pdf", config: "{\"pages\":{\"extract_pages\":true,\"insert_page_markers\":true}}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       assert Enum.any?(["PAGE"], fn v -> String.contains?(to_string(result.content), v) end)
     end
   end
@@ -124,7 +124,7 @@ defmodule E2e.ContractTest do
     test "config_quality_enabled" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/pdf/fake_memo.pdf", config: "{\"enable_quality_processing\":true}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'quality_score' not available on result type
       # skipped: field 'quality_score' not available on result type
       # skipped: field 'quality_score' not available on result type
@@ -135,7 +135,7 @@ defmodule E2e.ContractTest do
     test "config_security_limits" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/archives/documents.zip", config: "{\"security_limits\":{\"max_archive_size\":104857600,\"max_compression_ratio\":50,\"max_files_in_archive\":100}}")
       assert Enum.any?(["application/zip", "application/x-zip-compressed"], fn v -> String.contains?(to_string(result.mime_type), v) end)
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
     end
   end
 
@@ -143,7 +143,7 @@ defmodule E2e.ContractTest do
     test "config_tree_sitter" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/code/hello.py", config: "{\"tree_sitter\":{\"groups\":[\"web\"],\"languages\":[\"python\",\"rust\"],\"process\":{\"comments\":false,\"diagnostics\":false,\"docstrings\":false,\"exports\":true,\"imports\":true,\"structure\":true,\"symbols\":false}}}")
       assert String.trim(result.mime_type) == "text/x-source-code"
-      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 5)
+      assert (is_binary(result.content) && byte_size(result.content) >= 5) || (is_list(result.content) && length(result.content) >= 5)
     end
   end
 
@@ -152,7 +152,7 @@ defmodule E2e.ContractTest do
       content = File.read!("../../test_documents/pdf/fake_memo.pdf")
       {:ok, result} = Kreuzberg.extract_bytes_sync(content, "application/pdf", "{\"output_format\":\"markdown\"}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'metadata.output_format' not available on result type
     end
   end
@@ -161,7 +161,7 @@ defmodule E2e.ContractTest do
     test "output_format_markdown" do
       {:ok, result} = Kreuzberg.extract_file_sync("../../test_documents/pdf/fake_memo.pdf", config: "{\"output_format\":\"markdown\"}")
       assert String.trim(result.mime_type) == "application/pdf"
-      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10) || (is_binary(result.content) == false && is_list(result.content) == false && String.length(result.content) >= 10)
+      assert (is_binary(result.content) && byte_size(result.content) >= 10) || (is_list(result.content) && length(result.content) >= 10)
       # skipped: field 'metadata.output_format' not available on result type
     end
   end
