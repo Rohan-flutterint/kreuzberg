@@ -1091,6 +1091,7 @@ args = [
 # CodeExtractor's path-based extension detection runs; everything else is
 # remapped to extractBytes automatically.
 async = true
+options_type = "ExtractionConfig"
 
 [crates.e2e.calls.extract_file.overrides.swift]
 # Kreuzberg.extractFile(_:_:_:) is async; matching the base call's async=true
@@ -1145,6 +1146,9 @@ arg_name_map = { data = "content" }
 # PHP facade exposes the async variant under the bare name (`extractBytes`);
 # the codegen emits it automatically — no override needed.
 
+[crates.e2e.calls.extract_bytes.overrides.dart]
+options_type = "ExtractionConfig"
+
 [crates.e2e.calls.extract_bytes.overrides.zig]
 function = "extract_bytes_sync"
 async = false
@@ -1187,6 +1191,7 @@ result_is_json_struct = true
 # so CodeExtractor's extract_file (extension-based language detection) runs.
 # For everything else the generator remaps to extractBytesSync.
 async = false
+options_type = "ExtractionConfig"
 
 [crates.e2e.calls.extract_bytes_sync]
 function = "extract_bytes_sync"
@@ -1214,6 +1219,9 @@ arg_name_map = { data = "content" }
 
 [crates.e2e.calls.extract_bytes_sync.overrides.swift]
 unnamed_arg_indices = [0, 1, 2]
+
+[crates.e2e.calls.extract_bytes_sync.overrides.dart]
+options_type = "ExtractionConfig"
 
 [crates.e2e.calls.extract_bytes_sync.overrides.zig]
 function = "extract_bytes_sync"

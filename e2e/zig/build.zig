@@ -17,6 +17,7 @@ pub fn build(b: *std.Build) void {
     kreuzberg_module.addLibraryPath(.{ .cwd_relative = ffi_path });
     kreuzberg_module.addIncludePath(.{ .cwd_relative = ffi_include });
     kreuzberg_module.linkSystemLibrary("kreuzberg_ffi", .{});
+    kreuzberg_module.addRPath(.{ .cwd_relative = ffi_path });
 
     const async_module = b.createModule(.{
         .root_source_file = b.path("src/async_test.zig"),
