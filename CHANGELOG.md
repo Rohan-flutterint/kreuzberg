@@ -128,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the default `package-dir: packages/python` split-layout fallback, which cd's into the
   package dir and lets maturin resolve `manifest-path` from pyproject.toml's `[tool.maturin]`
   section itself.
+
 - **Windows MSVC CRT mismatch in PHP and Elixir cdylibs.** Linking `kreuzberg_php.dll` /
   `kreuzberg_nif.dll` on `x86_64-pc-windows-msvc` failed with
   `LNK1319: mismatch detected for 'RuntimeLibrary': MT_StaticRelease vs MD_DynamicRelease`.
@@ -138,6 +139,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.cargo/config.toml [env]`. cc-rs honors these target-suffixed env vars only when actually
   building for that target, so non-Windows builds are unaffected. Same fix unblocks Elixir NIF
   Windows build (recurring failure since rc.7).
+
+- **captioning**: captioning was a no-op for all image paths — `CaptioningProcessor` never
+  received image bytes. Two root causes: (1) `ImageExtractor` built `extracted_image` on
+  the OCR path but passed `None` to `build_image_internal_document`, discarding the bytes;
+  (2) all document extractors (DOCX, PDF, PPTX, HTML, Markdown) gated binary image
+  extraction on `config.images.extract_images`, so setting only `config.captioning` left
+  them with empty data. Fix: add `ExtractionConfig::needs_image_data()` — true when
+  `images.extract_images` or `captioning` is set — and use it in every extractor image
+  gate and in `needs_image_processing()`. Also emits a `ProcessingWarning` when captioning
+  is configured but `result.images` is `None`. (#732)
 
 ## [5.0.0-rc.10] - 2026-06-09
 
