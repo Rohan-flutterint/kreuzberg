@@ -87,7 +87,7 @@
   </a>
 </div>
 
-Extract text, tables, images, and metadata from 90+ file formats and 300+ programming languages including PDF, Office documents, and images. C/C++ FFI bindings providing a stable ABI for native integration, shared library distribution, and cross-language interop.
+Extract text, tables, images, and metadata from 96 file formats and 306 programming languages including PDF, Office documents, and images. C/C++ FFI bindings providing a stable ABI for native integration, shared library distribution, and cross-language interop.
 
 ## What This Package Provides
 
@@ -146,7 +146,7 @@ See [Configuration Guide](https://docs.kreuzberg.dev/guides/configuration/) for 
 
 ### Supported File Formats (90+)
 
-90+ file formats across 8 major categories with intelligent format detection and comprehensive metadata extraction.
+96 file formats across 8 major categories with intelligent format detection and comprehensive metadata extraction.
 
 #### Office Documents
 
@@ -219,7 +219,7 @@ Powered by [tree-sitter-language-pack](https://github.com/kreuzberg-dev/tree-sit
 - **Batch Processing** - Efficiently process multiple documents in parallel
 - **Memory Efficient** - Stream large files without loading entirely into memory
 - **Language Detection** - Detect and support multiple languages in documents
-- **Code Intelligence** - Extract structure, imports, exports, symbols, and docstrings from [300+ programming languages](https://docs.tree-sitter-language-pack.kreuzberg.dev) via tree-sitter
+- **Code Intelligence** - Extract structure, imports, exports, symbols, and docstrings from [306 programming languages](https://docs.tree-sitter-language-pack.kreuzberg.dev) via tree-sitter
 - **Configuration** - Fine-grained control over extraction behavior
 
 ### Performance Characteristics

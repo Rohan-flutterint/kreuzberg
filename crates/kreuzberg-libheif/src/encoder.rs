@@ -24,7 +24,7 @@ pub enum CompressionFormat {
     Avc = lh::heif_compression_format_heif_compression_AVC as _,
     /// Rust equivalent of [lh::heif_compression_format_heif_compression_JPEG]
     Jpeg = lh::heif_compression_format_heif_compression_JPEG as _,
-    /// Rust equivalent of [lh::heif_compression_format_heif_compression_AV1]    
+    /// Rust equivalent of [lh::heif_compression_format_heif_compression_AV1]
     Av1 = lh::heif_compression_format_heif_compression_AV1 as _,
     /// Rust equivalent of [lh::heif_compression_format_heif_compression_VVC]
     Vvc = lh::heif_compression_format_heif_compression_VVC as _,

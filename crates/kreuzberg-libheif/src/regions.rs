@@ -9,7 +9,7 @@ pub struct PointRegion(ptr::NonNull<lh::heif_region>);
 #[allow(unsafe_code)]
 impl PointRegion {
     /// Get the values for a point region.
-    ///  
+    ///
     /// This returns the coordinates in the reference coordinate space
     /// (from the parent region item).
     #[allow(unsafe_code)]

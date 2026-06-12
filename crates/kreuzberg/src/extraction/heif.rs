@@ -16,8 +16,18 @@ pub(crate) fn is_heif_container(bytes: &[u8]) -> bool {
     }
     matches!(
         &bytes[8..12],
-        b"heic" | b"heix" | b"heim" | b"heis" | b"hevc" | b"hevm" | b"hevs"
-        | b"mif1" | b"msf1" | b"avif" | b"avis" | b"avcs"
+        b"heic"
+            | b"heix"
+            | b"heim"
+            | b"heis"
+            | b"hevc"
+            | b"hevm"
+            | b"hevs"
+            | b"mif1"
+            | b"msf1"
+            | b"avif"
+            | b"avis"
+            | b"avcs"
     )
 }
 
