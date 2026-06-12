@@ -5,6 +5,7 @@
 //! (`decode_heic_to_png`) lives behind the `heic` Cargo feature because it
 //! pulls in the C `libheif` dependency via `kreuzberg-libheif`.
 
+#[cfg(feature = "heic")]
 use crate::error::{KreuzbergError, Result};
 
 /// Detect a HEIF-family container (HEIC / HEIF / AVIF / HEICS / AVCS) by
