@@ -6,8 +6,8 @@
     "typecheck": "pnpm -r --if-present run typecheck"
   },
   "devDependencies": {
-    "@emnapi/core": "^1.11.0",
-    "@emnapi/runtime": "1.11.0",
+    "@emnapi/core": "^1.11.1",
+    "@emnapi/runtime": "1.11.1",
     "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",

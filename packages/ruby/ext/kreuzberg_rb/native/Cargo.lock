@@ -79,12 +79,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc7bb162ec39d46ab1ca8c77bf72e890535becd1751bb45f64c597edb4c8c6b3"
 
 [[package]]
-name = "alloc-stdlib"
-version = "0.2.2"
+name = "alloc-no-stdlib"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94fb8275041c72129eb51b7d0322c29b8387a0386127718b096429201a5d6ece"
+checksum = "c2fb6cfd47bf496ff64095c20eaba0c201404ee38714d4142fcfa1dc334fcc7a"
+
+[[package]]
+name = "alloc-stdlib"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "982052a20ce6eccdc3ee95f1fd77f10bf6b7ff5b02c3c4cc5a3fb50ce506a108"
 dependencies = [
- "alloc-no-stdlib",
+ "alloc-no-stdlib 3.0.0",
 ]
 
 [[package]]
@@ -446,9 +452,9 @@ dependencies = [
 
 [[package]]
 name = "biblib"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f289d61c020b03326674c9a13caf0b9a2744465510df96ff97979083a28517c6"
+checksum = "8b2780799e09e18acb1b4224c53f2491fac7b1bedeefe1ca6f60e75a5d30763b"
 dependencies = [
  "compact_str",
  "either",
@@ -591,18 +597,18 @@ version = "8.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8119e4516436f5708bbc474a9d395bf12f1b5395e93a92a56e647ac3388c8610"
 dependencies = [
- "alloc-no-stdlib",
+ "alloc-no-stdlib 2.0.4",
  "alloc-stdlib",
  "brotli-decompressor",
 ]
 
 [[package]]
 name = "brotli-decompressor"
-version = "5.0.1"
+version = "5.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5962523e1b92ce1b5e793d9169b9943eece10d39f62550bc04bb605d75b94924"
+checksum = "30bebb348517c190d59e80c4f19c2beef71cf89d9df0c46386be8f92c7021fec"
 dependencies = [
- "alloc-no-stdlib",
+ "alloc-no-stdlib 3.0.0",
  "alloc-stdlib",
 ]
 
@@ -1386,9 +1392,6 @@ name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
-dependencies = [
- "powerfmt",
-]
 
 [[package]]
 name = "derive_arbitrary"
@@ -2319,9 +2322,9 @@ dependencies = [
 
 [[package]]
 name = "html-to-markdown-rs"
-version = "3.6.1"
+version = "3.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "567f72be80982d7d1c9d46730506847e8782e62ff95bf8d3ede3489b3a8e963a"
+checksum = "b061a39cfb12b2fc469a7d72c7afdb973f3d2ff15c60bad9c8741f9d3ac2e719"
 dependencies = [
  "ahash",
  "astral-tl",
@@ -3109,7 +3112,7 @@ dependencies = [
  "uuid",
  "v_htmlescape",
  "whatlang",
- "zip 7.2.0",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -3187,7 +3190,7 @@ dependencies = [
  "cmake",
  "reqwest",
  "thiserror 2.0.18",
- "zip 7.2.0",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -3304,9 +3307,9 @@ checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 
 [[package]]
 name = "liter-llm"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "442609bd522ffd20983c7c9b852c1f33a6490d8dddb1b566f2c40960026db1e8"
+checksum = "031590859d28702ccb2ef27ead7d18072b1581827fc4e5d6433b945d547deb30"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -6057,12 +6060,11 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.47"
+version = "0.3.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "743bd48c283afc0388f9b8827b976905fb217ad9e647fae3a379a9283c4def2c"
+checksum = "711a53c2d47bbd818258c498c8dbfe186a2526c631495cfe7e078567f86b8469"
 dependencies = [
  "deranged",
- "itoa",
  "num-conv",
  "powerfmt",
  "serde_core",
@@ -6072,15 +6074,15 @@ dependencies = [
 
 [[package]]
 name = "time-core"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7694e1cfe791f8d31026952abf09c69ca6f6fa4e1a1229e18988f06a04a12dca"
+checksum = "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109"
 
 [[package]]
 name = "time-macros"
-version = "0.2.27"
+version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e70e4c5a0e0a8a4823ad65dfe1a6930e4f4d756dcd9dd7939022b5e8c501215"
+checksum = "71c652a3727a9cbb9a02f707f530b618ce00d0ccd762009c8c23bd191df3c17d"
 dependencies = [
  "num-conv",
  "time-core",
@@ -6451,9 +6453,9 @@ checksum = "009994f150cc0cd50ff54917d5bc8bffe8cad10ca10d81c34da2ec421ae61782"
 
 [[package]]
 name = "tree-sitter-language-pack"
-version = "1.9.0-rc.40"
+version = "1.9.0-rc.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf1f87dd4f0c55d0a058e42dd828585d81710ee76ee93e5110210df3642ee3ae"
+checksum = "728e7a2c5853ded180b7de064d39909636551f52e8acb6a2bb80f026bee106f1"
 dependencies = [
  "ahash",
  "cc",
