@@ -451,9 +451,10 @@ jobs:
         uses: ./.github/actions/install-system-deps
 
       - name: Build wheels
-        # Pinned to v1.8.64 for libheif 1.23.0 source-build in CIBW_BEFORE_ALL_LINUX.
-        # Drop the pin and revert to @v1 once the floating v1 tag points at 1.8.64+.
-        uses: kreuzberg-dev/actions/build-python-wheels@v1.8.64
+        # Pinned to v1 (currently → v1.8.66, includes the PKG=$(...) command
+        # substitution fix so the libheif source-build runs in the main shell
+        # scope, not a subshell where PKG silently expands to empty).
+        uses: kreuzberg-dev/actions/build-python-wheels@v1
         with:
           python-version: "3.13"
           package-dir: packages/python
