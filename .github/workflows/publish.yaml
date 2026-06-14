@@ -447,8 +447,13 @@ jobs:
           fetch-depth: 0
 
           submodules: recursive
+      - name: Install system dependencies
+        uses: ./.github/actions/install-system-deps
+
       - name: Build wheels
-        uses: kreuzberg-dev/actions/build-python-wheels@v1
+        # Pinned to v1.8.64 for libheif 1.23.0 source-build in CIBW_BEFORE_ALL_LINUX.
+        # Drop the pin and revert to @v1 once the floating v1 tag points at 1.8.64+.
+        uses: kreuzberg-dev/actions/build-python-wheels@v1.8.64
         with:
           python-version: "3.13"
           package-dir: packages/python

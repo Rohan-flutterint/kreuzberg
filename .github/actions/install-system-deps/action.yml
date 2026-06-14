@@ -58,6 +58,20 @@ runs:
           tesseract-linux-${{ runner.arch }}-v5-
           tesseract-linux-${{ runner.arch }}-
 
+    - name: Cache libheif source build (Linux)
+      if: runner.os == 'Linux'
+      id: cache-libheif-linux
+      uses: actions/cache@v5
+      with:
+        path: |
+          /usr/local/lib/libheif*
+          /usr/local/lib/pkgconfig/libheif.pc
+          /usr/local/include/libheif/
+          /usr/local/share/libheif/
+        key: libheif-linux-${{ runner.arch }}-v1.23.0
+        restore-keys: |
+          libheif-linux-${{ runner.arch }}-
+
     - name: Install dependencies (Linux)
       if: runner.os == 'Linux'
       shell: bash

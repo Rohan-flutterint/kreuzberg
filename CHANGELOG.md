@@ -26,6 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CI / publish: source-build libheif 1.23.0 to satisfy `libheif-sys 5.3 >= 1.21`.** Ubuntu Noble's
+  apt ships `libheif 1.17.6` and Alpine 3.21 ships `libheif 1.19.5` — both rejected by `libheif-sys`
+  with `Package 'libheif' has version '1.17.6', required version is '>= 1.21'`. Without a fix, every
+  Linux build job (Build FFI matrix, CLI binaries, Go FFI, C# natives, Zig package, Python wheels,
+  C FFI distribution, Java natives, Kotlin Android, Dart, Swift, manylinux_2_28 wheels) failed at
+  the `libheif-sys` build script. Three coordinated fixes:
+  - `scripts/ci/install-system-deps/install-linux.sh` drops apt `libheif-dev`, installs
+    `libde265-dev libaom-dev libx265-dev libdav1d-dev`, then downloads + builds + installs libheif
+    1.23.0 via cmake into `/usr/local`, exporting `PKG_CONFIG_PATH` + `LD_LIBRARY_PATH` via
+    `GITHUB_ENV`. Cached via a new `cache-libheif-linux` step in `install-system-deps/action.yml`.
+  - `docker/Dockerfile.musl-{build,ffi,rustler}` now pull `libheif-dev` and codec headers from
+    `alpine/edge/community` + `edge/main` (libheif 1.23.0) instead of Alpine 3.21 main.
+  - `kreuzberg-dev/actions/build-python-wheels@v1.8.64` source-builds libheif inside
+    `manylinux_2_28` via `CIBW_BEFORE_ALL_LINUX` (AlmaLinux 8 + EPEL ships codec subsets only —
+    we install what's available and let libheif compile without missing codec features).
+  - `python-wheels` job in `publish.yaml` now runs `install-system-deps` before `build-python-wheels`
+    so Windows wheels pick up vcpkg-built libheif.
+
 - **Publish workflow: fixed dead-code warnings as errors on Windows / `reranker-presets`-only builds.**
   `rerank_via_llm` and `extract_rerank_usage` in `crates/kreuzberg/src/llm/rerank.rs` were gated by
   `any(feature = "reranker-presets", feature = "reranker")`, but every caller was gated by

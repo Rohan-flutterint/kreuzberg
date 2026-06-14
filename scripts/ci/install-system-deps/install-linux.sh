@@ -27,7 +27,10 @@ packages=(
   cmake
   libmagic-dev
   libuv1-dev
-  libheif-dev
+  libde265-dev
+  libaom-dev
+  libx265-dev
+  libdav1d-dev
   php-cli
   php-dev
 )
@@ -50,6 +53,52 @@ else
       fi
     done
   fi
+fi
+
+echo "::endgroup::"
+
+echo "::group::Building libheif from source (Noble ships 1.17.6, libheif-sys needs >=1.21)"
+
+LIBHEIF_VERSION="${LIBHEIF_VERSION:-1.23.0}"
+LIBHEIF_PREFIX="${LIBHEIF_PREFIX:-/usr/local}"
+LIBHEIF_MARKER="$LIBHEIF_PREFIX/lib/pkgconfig/libheif.pc"
+
+if [ -f "$LIBHEIF_MARKER" ] && pkg-config --modversion libheif | grep -q "^${LIBHEIF_VERSION}$"; then
+  echo "✓ libheif ${LIBHEIF_VERSION} already installed (cached)"
+else
+  echo "Building libheif ${LIBHEIF_VERSION} from source..."
+  build_dir="$(mktemp -d)"
+  pushd "$build_dir" >/dev/null
+
+  if retry_with_backoff_timeout 300 curl -fsSL -o libheif.tar.gz \
+    "https://github.com/strukturag/libheif/releases/download/v${LIBHEIF_VERSION}/libheif-${LIBHEIF_VERSION}.tar.gz"; then
+    tar xzf libheif.tar.gz
+    cd "libheif-${LIBHEIF_VERSION}"
+    mkdir build
+    cd build
+    cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX="$LIBHEIF_PREFIX" \
+      -DCMAKE_INSTALL_LIBDIR=lib \
+      -DWITH_EXAMPLES=OFF \
+      -DWITH_GDK_PIXBUF=OFF \
+      -DBUILD_TESTING=OFF
+    make -j"$(nproc)"
+    sudo make install
+    sudo ldconfig
+    echo "✓ libheif ${LIBHEIF_VERSION} installed to $LIBHEIF_PREFIX"
+  else
+    echo "::error::Failed to download libheif source"
+    exit 1
+  fi
+
+  popd >/dev/null
+  rm -rf "$build_dir"
+fi
+
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+  echo "PKG_CONFIG_PATH=$LIBHEIF_PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >>"$GITHUB_ENV"
+  echo "LD_LIBRARY_PATH=$LIBHEIF_PREFIX/lib:${LD_LIBRARY_PATH:-}" >>"$GITHUB_ENV"
 fi
 
 echo "::endgroup::"

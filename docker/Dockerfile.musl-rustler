@@ -18,8 +18,8 @@ WORKDIR /build
 RUN apk add --no-cache \
     curl gcc g++ musl-dev cmake make pkgconf \
     openssl-dev openssl-libs-static \
-    perl linux-headers git file libheif-dev && \
-    apk add --no-cache onnxruntime-dev \
+    perl linux-headers git file && \
+    apk add --no-cache onnxruntime-dev libheif-dev libde265-dev aom-dev x265-dev dav1d-dev \
     --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
     --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 
