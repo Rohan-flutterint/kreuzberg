@@ -87,7 +87,7 @@ tasks:
     desc: Run Rust test_app smoke test
     dir: "{{.ROOT_DIR}}/test_apps/rust"
     cmds:
-      - cargo test --release --test smoke_test
+      - cargo test --locked --release --test smoke_test
 
   smoke:wasm:
     desc: Run WASM test_app smoke test

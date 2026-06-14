@@ -1385,7 +1385,7 @@ jobs:
         with:
           ort-version: "1.24.2"
       - name: Build Dart server native
-        run: cargo build -p kreuzberg-dart --release --target ${{ matrix.target }}
+        run: cargo build --locked -p kreuzberg-dart --release --target ${{ matrix.target }}
         shell: bash
       - name: Stage native library
         shell: bash

@@ -46,8 +46,8 @@ tasks:
       # info). A plain --release build strips Rust symbols, leaving the
       # flamegraph full of __mh_execute_header / raw addresses and unable
       # to surface kreuzberg::* hotspots. See docs/perf/profiling.md.
-      - cargo build --profile profiling -p kreuzberg-cli --features all
-      - cargo build --profile profiling -p benchmark-harness --features profiling
+      - cargo build --locked --profile profiling -p kreuzberg-cli --features all
+      - cargo build --locked --profile profiling -p benchmark-harness --features profiling
       - mkdir -p "{{.FLAMEGRAPH_DIR}}/{{.SHA}}"
       - |
         target/profiling/benchmark-harness pipeline-benchmark \
@@ -60,27 +60,27 @@ tasks:
   compare:
     desc: "Framework comparison with quality guardrails (baseline vs layout)"
     cmds:
-      - cargo run -p benchmark-harness -- compare --fixtures "{{.FIXTURES_DIR}}" --guardrails
+      - cargo run --locked -p benchmark-harness -- compare --fixtures "{{.FIXTURES_DIR}}" --guardrails
 
   pipeline:quick:
     desc: "Pipeline benchmark — native paths only (P1+P2)"
     cmds:
-      - cargo run -p benchmark-harness -- pipeline-benchmark --fixtures "{{.FIXTURES_DIR}}" --paths baseline,layout
+      - cargo run --locked -p benchmark-harness -- pipeline-benchmark --fixtures "{{.FIXTURES_DIR}}" --paths baseline,layout
 
   pipeline:all:
     desc: "Pipeline benchmark — all 6 extraction paths"
     cmds:
-      - cargo run -p benchmark-harness -- pipeline-benchmark --fixtures "{{.FIXTURES_DIR}}"
+      - cargo run --locked -p benchmark-harness -- pipeline-benchmark --fixtures "{{.FIXTURES_DIR}}"
 
   survey:
     desc: "Corpus-wide extraction stats for all PDFs"
     cmds:
-      - cargo run -p benchmark-harness -- survey --fixtures "{{.FIXTURES_DIR}}" --types pdf
+      - cargo run --locked -p benchmark-harness -- survey --fixtures "{{.FIXTURES_DIR}}" --types pdf
 
   models:
     desc: "Layout model A/B comparison (fast vs accurate)"
     cmds:
-      - cargo run -p benchmark-harness -- model-benchmark --fixtures "{{.FIXTURES_DIR}}"
+      - cargo run --locked -p benchmark-harness -- model-benchmark --fixtures "{{.FIXTURES_DIR}}"
 
   generate-gt:
     desc: "Generate markdown ground truth from PDFs using Gemini"

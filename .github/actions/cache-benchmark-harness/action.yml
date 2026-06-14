@@ -236,8 +236,8 @@ runs:
         esac
 
         # Build benchmark-harness
-        echo "Running: cargo build --manifest-path tools/benchmark-harness/Cargo.toml $BUILD_ARG"
-        if ! cargo build --manifest-path tools/benchmark-harness/Cargo.toml $BUILD_ARG; then
+        echo "Running: cargo build --locked --manifest-path tools/benchmark-harness/Cargo.toml $BUILD_ARG"
+        if ! cargo build --locked --manifest-path tools/benchmark-harness/Cargo.toml $BUILD_ARG; then
           echo "❌ Build failed for benchmark-harness"
           exit 1
         fi

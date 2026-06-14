@@ -66,14 +66,14 @@ if ! {
   # on the v5.0.0 publish path. TODO: re-enable doc tests once the failing
   # examples are rewritten against the public API.
   echo "=== cargo test -p kreuzberg --features full ==="
-  RUST_BACKTRACE=full cargo test -p kreuzberg --features full --all-targets --verbose
+  RUST_BACKTRACE=full cargo test --locked -p kreuzberg --features full --all-targets --verbose
 
   echo "=== cargo test --workspace (all features, excluding kreuzberg) ==="
   extra_excludes=()
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
     extra_excludes+=(--exclude benchmark-harness)
   fi
-  RUST_BACKTRACE=full cargo test \
+  RUST_BACKTRACE=full cargo test --locked \
     --workspace \
     --exclude kreuzberg \
     --exclude kreuzberg-e2e-generator \

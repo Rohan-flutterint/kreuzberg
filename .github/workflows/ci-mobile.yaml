@@ -84,6 +84,6 @@ jobs:
           cache-key-prefix: ci-mobile-ios-${{ matrix.target }}
           use-sccache: "true"
       - name: cargo check kreuzberg-dart
-        run: cargo check -p kreuzberg-dart --target ${{ matrix.target }}
+        run: cargo check --locked -p kreuzberg-dart --target ${{ matrix.target }}
       - name: cargo check kreuzberg-swift
-        run: cargo check -p kreuzberg-swift --target ${{ matrix.target }}
+        run: cargo check --locked -p kreuzberg-swift --target ${{ matrix.target }}

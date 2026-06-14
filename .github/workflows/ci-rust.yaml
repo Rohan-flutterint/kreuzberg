@@ -109,7 +109,7 @@ jobs:
           DYLD_FALLBACK_LIBRARY_PATH: ${{ env.DYLD_FALLBACK_LIBRARY_PATH || '' }}
 
       - name: Check no-default-features
-        run: cargo check -p kreuzberg --no-default-features
+        run: cargo check --locked -p kreuzberg --no-default-features
         shell: bash
 
   live-hf:
@@ -152,7 +152,7 @@ jobs:
 
       - name: Run live HF reranker tests
         run: |
-          cargo test \
+          cargo test --locked \
             -p kreuzberg \
             --features "reranker,reranker-presets,tokio-runtime" \
             --test reranker_live \

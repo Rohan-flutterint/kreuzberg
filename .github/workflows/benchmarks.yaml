@@ -92,10 +92,10 @@ jobs:
           build-profile: release
 
       - name: Build kreuzberg-cli (release, all features)
-        run: cargo build --release -p kreuzberg-cli --features all
+        run: cargo build --locked --release -p kreuzberg-cli --features all
 
       - name: Validate ground truth
-        run: cargo run --release -p benchmark-harness -- validate-gt --fixtures tools/benchmark-harness/fixtures/
+        run: cargo run --locked --release -p benchmark-harness -- validate-gt --fixtures tools/benchmark-harness/fixtures/
 
       - name: Log disk space before artifact upload
         run: scripts/ci/validate/show-disk-space.sh "Disk space before artifact upload"
@@ -1181,7 +1181,7 @@ jobs:
           echo "Artifact directories: $ARTIFACT_DIRS"
 
           # Run consolidation
-          cargo run --release --package benchmark-harness --bin benchmark-harness -- consolidate \
+          cargo run --locked --release --package benchmark-harness --bin benchmark-harness -- consolidate \
             --inputs "$ARTIFACT_DIRS" \
             --output consolidated-output/
 
