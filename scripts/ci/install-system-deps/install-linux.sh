@@ -31,6 +31,7 @@ packages=(
   libaom-dev
   libx265-dev
   libdav1d-dev
+  libnuma-dev
   php-cli
   php-dev
 )
